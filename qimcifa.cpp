@@ -79,14 +79,14 @@ bitLenInt log2(const bitCapInt& n)
     return pow;
 }
 
-// Source: https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
+// Source:
+// https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
 bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
 {
     bitCapInt result = 1U;
     bitCapInt b = base;
     bitCapInt e = exp;
-    for (;;)
-    {
+    for (;;) {
         if (b & 1U) {
             result *= b;
         }
@@ -146,7 +146,6 @@ int main()
     auto iterClock = std::chrono::high_resolution_clock::now();
 
     const bitLenInt qubitCount = log2(toFactor) + (!isPowerOfTwo(toFactor) ? 1U : 0U);
-    const unsigned long long qbBitPow = log2(qubitCount);
     const bitCapInt qubitPower = 1U << qubitCount;
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
