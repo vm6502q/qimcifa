@@ -105,7 +105,7 @@ bitCapInt intLog(const bitCapInt& base, const bitCapInt& arg)
 {
     bitCapInt x = arg;
     bitCapInt result = 0U;
-    while (x > base) {
+    while (x >= base) {
         x /= base;
         result++;
     }
