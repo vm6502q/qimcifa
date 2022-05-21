@@ -149,6 +149,8 @@ void calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* num
 
 int main()
 {
+    typedef std::uniform_int_distribution<uint64_t> rand_dist;
+
     bitCapInt toFactor;
 
     std::cout << "Number to factor: ";
@@ -163,15 +165,17 @@ int main()
 
     const bitLenInt wordSize = 64U;
     const bitCapInt maxPow = ONE_BCI << wordSize;
-    const bitCapInt toFactorMin2 = toFactor - 2U;
-    const uint64_t randRemainder = (uint64_t)(toFactorMin2 % maxPow);
-    const uint64_t maxLongLongs = (log2(toFactorMin2) + (!isPowerOfTwo(toFactorMin2) ? 1U : 0U) + (wordSize - 1U)) / wordSize;
-    const uint64_t maxLongLongsMin1 = maxLongLongs - 1U;
+    std::vector<rand_dist> toFactorDist;
+    bitCapInt distPart = toFactor - 2U;
+    while (distPart) {
+        const uint64_t randRemainder = (uint64_t)(distPart % maxPow);
+        distPart >>= wordSize;
+        toFactorDist.push_back(rand_dist(0U, randRemainder));
+    }
+    std::reverse(toFactorDist.begin(), toFactorDist.end());
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
-    std::uniform_int_distribution<uint64_t> first_dist(0U, randRemainder);
-    std::uniform_int_distribution<uint64_t> mid_dist;
 
     const unsigned threads = std::thread::hardware_concurrency();
     std::atomic<bool> isFinished;
@@ -185,11 +189,13 @@ int main()
             for (;;) {
                 for (uint64_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random, >1 and <toFactor.
-                    // Construct a random number, with padding in least significant word.
-                    bitCapInt base = (bitCapInt)(first_dist(rand_gen)) + 2U;
-                    for (uint64_t i = 0U; i < maxLongLongsMin1; i++) {
-                        base |= ((bitCapInt)(mid_dist(rand_gen))) << (i * wordSize);
+                    // Construct a random number from 2
+                    bitCapInt base = toFactorDist[0](rand_gen);
+                    for (size_t i = 1U; i < toFactorDist.size(); i++) {
+                        base <<= wordSize;
+                        base |= toFactorDist[i](rand_gen);
                     }
+                    base += 2U;
 
                     bitCapInt testFactor = gcd(toFactor, base);
                     if (testFactor != 1) {
@@ -215,10 +221,13 @@ int main()
                     // const uint64_t maxLeast = (uint64_t)(qubitPower - maxY);
                     // std::uniform_int_distribution<uint64_t> y_dist(0U, maxLeast);
 
-                    bitCapInt y = (bitCapInt)(first_dist(rand_gen)) + 1U;
-                    for (uint64_t i = 0U; i < maxLongLongsMin1; i++) {
-                        y |= ((bitCapInt)(mid_dist(rand_gen))) << (i * wordSize);
+                    // Construct a random number from 2
+                    bitCapInt y = toFactorDist[0](rand_gen);
+                    for (size_t i = 1U; i < toFactorDist.size(); i++) {
+                        y <<= wordSize;
+                        y |= toFactorDist[i](rand_gen);
                     }
+                    y++;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
