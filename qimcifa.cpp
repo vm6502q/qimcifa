@@ -212,13 +212,15 @@ int main()
                     // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                     // y is meant to be close to some number 2^(qubitCount) / r, where "r" is the period.
                     const bitCapInt minR = intLog(base, toFactor);
-                    bitCapInt minY = (qubitPower / (minR + 1U));
+                    const bitCapInt minY = (qubitPower / (minR + 1U));
                     bitCapInt mllm1 = maxLongLongsMin1;
-                    while (minY >= maxPow) {
-                        minY >>= 64U;
+                    bitCapInt mY = minY
+                    while (mY >= maxPow) {
+                        mY >>= 64U;
                         mllm1--;
                     }
-                    std::uniform_int_distribution<unsigned long long> y_dist(0U, randRemainder - (unsigned long long)minY);
+                    std::uniform_int_distribution<unsigned long long> y_dist(
+                        0U, randRemainder - (unsigned long long)minY);
 
                     // (Construct random number, backwards.)
                     bitCapInt y = (bitCapInt)(y_dist(rand_gen));
@@ -283,7 +285,7 @@ int main()
             }
         });
     };
-    
+
     for (unsigned cpu = 0U; cpu < threads; cpu++) {
         futures[cpu].get();
     }
