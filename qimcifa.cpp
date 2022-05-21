@@ -101,12 +101,15 @@ bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
 }
 
 // It's fine if this is not exact for the whole bitCapInt domain, so long as it is <= the exact result.
-unsigned long long intLog(bitCapInt base, bitCapInt x)
+bitCapInt intLog(const bitCapInt& base, const bitCapInt& arg)
 {
-    if (x < base) {
-        return 0U;
+    bitCapInt x = arg;
+    bitCapInt result = 0U;
+    while (x > base) {
+        x /= base;
+        result++;
     }
-    return (unsigned long long)(log((double)x) / log((double)base));
+    return result;
 }
 
 bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
@@ -208,10 +211,14 @@ int main()
 
                     // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                     // y is meant to be close to some number 2^(qubitCount) / r, where "r" is the period.
-                    const unsigned long long minR = intLog(base, toFactor);
-                    const unsigned long long minY = (unsigned long long)(qubitPower / (minR + 1U));
-                    const bitCapInt mllm1 = (randRemainder > minY) ? maxLongLongsMin1 : (maxLongLongsMin1 - 1U);
-                    std::uniform_int_distribution<unsigned long long> y_dist(0U, randRemainder - minY);
+                    const bitCapInt minR = intLog(base, toFactor);
+                    bitCapInt minY = (qubitPower / (minR + 1U));
+                    bitCapInt mllm1 = maxLongLongsMin1;
+                    while (minY >= maxPow) {
+                        minY >>= 64U;
+                        mllm1--;
+                    }
+                    std::uniform_int_distribution<unsigned long long> y_dist(0U, randRemainder - (unsigned long long)minY);
 
                     // (Construct random number, backwards.)
                     bitCapInt y = (bitCapInt)(y_dist(rand_gen));
