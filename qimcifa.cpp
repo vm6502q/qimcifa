@@ -160,7 +160,7 @@ int main()
     auto iterClock = std::chrono::high_resolution_clock::now();
 
     const bitLenInt qubitCount = log2(toFactor) + (!isPowerOfTwo(toFactor) ? 1U : 0U);
-    const bitCapInt qubitPower = 1U << qubitCount;
+    const bitCapInt qubitPower = ONE_BCI << qubitCount;
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
     const bitLenInt wordSize = 64U;
@@ -216,10 +216,17 @@ int main()
 
                     // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                     // y is meant to be close to some number 2^(qubitCount) / r, where "r" is the period.
-                    // const bitCapInt minR = intLog(base, toFactor);
-                    // const bitCapInt maxY = (qubitPower / minR);
-                    // const uint64_t maxLeast = (uint64_t)(qubitPower - maxY);
-                    // std::uniform_int_distribution<uint64_t> y_dist(0U, maxLeast);
+                    const bitCapInt minR = intLog(base, toFactor);
+                    const bitCapInt maxY = (qubitPower / minR);
+                            
+                    /*std::vector<rand_dist> yDist;
+                    bitCapInt yPart = maxY - 1U;
+                    while (yPart) {
+                        const uint64_t randRemainder = (uint64_t)(yPart % maxPow);
+                        yPart >>= wordSize;
+                        yDist.push_back(rand_dist(0U, randRemainder));
+                   }
+                   std::reverse(yDist.begin(), yDist.end());*/
 
                     // Construct a random number from 2
                     bitCapInt y = toFactorDist[0](rand_gen);
