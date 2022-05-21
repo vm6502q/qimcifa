@@ -218,7 +218,7 @@ int main()
                     // y is meant to be close to some number c * qubitPower / r, where "r" is the period.
                     // c is a positive integer or 0, and we don't want the 0 case.
                     // y is truncated by the number of qubits in the register, at most.
-                    // Varying both c and r, the maximum value of c before truncation is no higher than minR.
+                    // For r = minR, the maximum value of c before truncation is no higher than minR.
                     // Based on the above, y is between minR and qubitPower.
                     const bitCapInt yRange = qubitPower - minR;
                     bitCapInt yPart = yRange;
