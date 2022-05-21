@@ -165,7 +165,7 @@ int main()
     const bitCapInt maxPow = ONE_BCI << wordSize;
     const bitCapInt toFactorMin2 = toFactor - 2U;
     const uint64_t randRemainder = (uint64_t)(toFactorMin2 % maxPow);
-    const uint64_t maxLongLongs = (log2(toFactorMin2) + (!isPowerOfTwo(toFactorMin2) ? 1U : 0U) + 63U) / wordSize;
+    const uint64_t maxLongLongs = (log2(toFactorMin2) + (!isPowerOfTwo(toFactorMin2) ? 1U : 0U) + (wordSize - 1U)) / wordSize;
     const uint64_t maxLongLongsMin1 = maxLongLongs ? (maxLongLongs - 1U) : 0U;
 
     std::random_device rand_dev;
