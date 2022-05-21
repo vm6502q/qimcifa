@@ -103,6 +103,9 @@ bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
 // It's fine if this is not exact for the whole bitCapInt domain, so long as it is <= the exact result.
 unsigned long long intLog(bitCapInt base, bitCapInt x)
 {
+    if (x < base) {
+        return 0U;
+    }
     return (unsigned long long)(log((double)x) / log((double)base));
 }
 
