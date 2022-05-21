@@ -218,12 +218,9 @@ int main()
                     // y is meant to be close to some number c * qubitPower / r, where "r" is the period.
                     // c is a positive integer or 0, and we don't want the 0 case.
                     // y is truncated by the number of qubits in the register, at most.
-                    const bitCapInt maxR = qubitPower / minR;
-                    const bitCapInt maxC = qubitPower / maxR;
-
-                    const bitCapInt minY = maxC;
-                    const bitCapInt maxY = (maxC * qubitPower / minR) % qubitPower;
-                    const bitCapInt yRange = maxY - minY;
+                    // Varying both c and r, the maximum value of c before truncation is no higher than minR.
+                    // Based on the above, y is between minR and qubitPower.
+                    const bitCapInt yRange = qubitPower - minR;
                     bitCapInt yPart = yRange;
                     bitCapInt y = 0;
                     while (y) {
@@ -231,7 +228,7 @@ int main()
                         y >>= wordSize;
                         y |= yDist(rand_gen);
                     }
-                    y += minY;
+                    y += minR;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
