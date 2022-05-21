@@ -190,8 +190,6 @@ int main()
                     for (uint64_t i = 0U; i < maxLongLongsMin1; i++) {
                         base |= ((bitCapInt)(mid_dist(rand_gen))) << (i * wordSize);
                     }
-                    
-                    return;
 
                     bitCapInt testFactor = gcd(toFactor, base);
                     if (testFactor != 1) {
