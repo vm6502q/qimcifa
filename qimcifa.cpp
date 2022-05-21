@@ -208,12 +208,13 @@ int main()
 
                     // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                     // y is meant to be close to some number 2^(qubitCount) / r, where "r" is the period.
-                    const unsigned long long minY = intLog(base, toFactor) / qubitPower;
+                    const unsigned long long minR = intLog(base, toFactor);
+                    const unsigned long long minY = (unsigned long long)(qubitPower / (minR + 1U));
                     const bitCapInt mllm1 = (randRemainder > minY) ? maxLongLongsMin1 : (maxLongLongsMin1 - 1U);
                     std::uniform_int_distribution<unsigned long long> y_dist(0U, randRemainder - minY);
 
                     // (Construct random number, backwards.)
-                    bitCapInt y = (bitCapInt)(last_dist(rand_gen));
+                    bitCapInt y = (bitCapInt)(y_dist(rand_gen));
                     for (unsigned long long i = 0U; i < mllm1; i++) {
                         y <<= 64U;
                         y |= (bitCapInt)(mid_dist(rand_gen));
