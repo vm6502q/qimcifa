@@ -178,7 +178,7 @@ int main()
     isFinished = false;
 
     std::vector<std::future<void>> futures(threads);
-    for (unsigned cpu = 0U; cpu < 1U; cpu++) {
+    for (unsigned cpu = 0U; cpu < threads; cpu++) {
         futures[cpu] = std::async(std::launch::async, [&] {
             const uint64_t BATCH_SIZE = 1U << 9U;
 
