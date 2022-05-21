@@ -169,8 +169,8 @@ int main()
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
+    std::uniform_int_distribution<unsigned long long> first_dist(0U, -randRemainder);
     std::uniform_int_distribution<unsigned long long> mid_dist;
-    std::uniform_int_distribution<unsigned long long> last_dist(0U, randRemainder);
 
     const unsigned threads = std::thread::hardware_concurrency();
     std::atomic<bool> isFinished;
@@ -184,13 +184,14 @@ int main()
             for (;;) {
                 for (unsigned long long batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random, >1 and <toFactor.
-                    // (Construct random number, backwards.)
-                    bitCapInt base = (bitCapInt)(last_dist(rand_gen));
+                    // Construct a random number, backwards, with padding in least significant word.
+                    bitCapInt base = 0U;
                     for (unsigned long long i = 0U; i < maxLongLongsMin1; i++) {
-                        base <<= 64U;
                         base |= (bitCapInt)(mid_dist(rand_gen));
+                        base <<= 64U;
                     }
-                    base += 2;
+                    base |= (bitCapInt)(first_dist(rand_gen));
+                    base -= randRemainder + 2U;
 
                     bitCapInt testFactor = gcd(toFactor, base);
                     if (testFactor != 1) {
@@ -219,16 +220,17 @@ int main()
                         mY >>= 64U;
                         mllm1--;
                     }
-                    std::uniform_int_distribution<unsigned long long> y_dist(
-                        0U, randRemainder - (unsigned long long)minY);
+                    const unsigned long long maxLeast = ((unsigned long long)mY) - randRemainder;
+                    std::uniform_int_distribution<unsigned long long> y_dist(0U, maxLeast);
 
-                    // (Construct random number, backwards.)
-                    bitCapInt y = (bitCapInt)(y_dist(rand_gen));
-                    for (unsigned long long i = 0U; i < mllm1; i++) {
-                        y <<= 64U;
+                    // Construct a random number, backwards, with padding in least significant word.
+                    bitCapInt y = 0U;
+                    for (unsigned long long i = 0U; i < maxLongLongsMin1; i++) {
                         y |= (bitCapInt)(mid_dist(rand_gen));
+                        y <<= 64U;
                     }
-                    y += 1U + minY;
+                    y |= (bitCapInt)(y_dist(rand_gen));
+                    y -= minY + 1U;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
