@@ -161,37 +161,40 @@ int main()
     const bitCapInt qubitPower = 1U << qubitCount;
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
-    const bitCapInt maxPow = ONE_BCI << 64U;
-    const unsigned long long randRemainder =
-        (unsigned long long)((toFactor - 3U) - (((toFactor - 3U) / maxPow) * maxPow));
-    const unsigned long long maxLongLongs = log2(toFactor - 3U) + (!isPowerOfTwo(toFactor - 3U) ? 1U : 0U);
-    const unsigned long long maxLongLongsMin1 = maxLongLongs - 1U;
+    const bitLenInt wordSize = 64U;
+    const bitCapInt maxPow = ONE_BCI << wordSize;
+    const bitCapInt toFactorMin2 = toFactor - 2U;
+    const uint64_t randRemainder = (uint64_t)(toFactorMin2 % maxPow);
+    const uint64_t maxLongLongs = (log2(toFactorMin2) + (!isPowerOfTwo(toFactorMin2) ? 1U : 0U)) / wordSize;
+    const uint64_t maxLongLongsMin1 = maxLongLongs ? (maxLongLongs - 1U) : 0U;
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
-    std::uniform_int_distribution<unsigned long long> first_dist(0U, -randRemainder);
-    std::uniform_int_distribution<unsigned long long> mid_dist;
+    std::uniform_int_distribution<uint64_t> first_dist(0U, randRemainder);
+    std::uniform_int_distribution<uint64_t> mid_dist;
 
     const unsigned threads = std::thread::hardware_concurrency();
     std::atomic<bool> isFinished;
     isFinished = false;
 
     std::vector<std::future<void>> futures(threads);
-    for (unsigned cpu = 0U; cpu < threads; cpu++) {
+    for (unsigned cpu = 0U; cpu < 1U; cpu++) {
         futures[cpu] = std::async(std::launch::async, [&] {
-            const unsigned long long BATCH_SIZE = 1U << 9U;
+            const uint64_t BATCH_SIZE = 1U << 9U;
 
             for (;;) {
-                for (unsigned long long batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
+                for (uint64_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random, >1 and <toFactor.
                     // Construct a random number, backwards, with padding in least significant word.
                     bitCapInt base = 0U;
-                    for (unsigned long long i = 0U; i < maxLongLongsMin1; i++) {
+                    for (uint64_t i = 0U; i < maxLongLongsMin1; i++) {
                         base |= (bitCapInt)(mid_dist(rand_gen));
-                        base <<= 64U;
+                        base <<= wordSize;
                     }
                     base |= (bitCapInt)(first_dist(rand_gen));
-                    base -= randRemainder + 2U;
+                    base += 2U;
+                    
+                    return;
 
                     bitCapInt testFactor = gcd(toFactor, base);
                     if (testFactor != 1) {
@@ -212,25 +215,19 @@ int main()
 
                     // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                     // y is meant to be close to some number 2^(qubitCount) / r, where "r" is the period.
-                    const bitCapInt minR = intLog(base, toFactor);
-                    const bitCapInt minY = (qubitPower / (minR + 1U));
-                    bitCapInt mllm1 = maxLongLongsMin1;
-                    bitCapInt mY = minY;
-                    while (mY >= maxPow) {
-                        mY >>= 64U;
-                        mllm1--;
-                    }
-                    const unsigned long long maxLeast = ((unsigned long long)mY) - randRemainder;
-                    std::uniform_int_distribution<unsigned long long> y_dist(0U, maxLeast);
+                    // const bitCapInt minR = intLog(base, toFactor);
+                    // const bitCapInt minY = (qubitPower / minR);
+                    // const uint64_t maxLeast = (uint64_t)(qubitPower - minY);
+                    // std::uniform_int_distribution<uint64_t> y_dist(0U, maxLeast);
 
                     // Construct a random number, backwards, with padding in least significant word.
                     bitCapInt y = 0U;
-                    for (unsigned long long i = 0U; i < maxLongLongsMin1; i++) {
+                    for (uint64_t i = 0U; i < maxLongLongsMin1; i++) {
                         y |= (bitCapInt)(mid_dist(rand_gen));
-                        y <<= 64U;
+                        y <<= wordSize;
                     }
-                    y |= (bitCapInt)(y_dist(rand_gen));
-                    y -= minY + 1U;
+                    y |= (bitCapInt)(first_dist(rand_gen));
+                    y++;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
