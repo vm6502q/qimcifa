@@ -200,19 +200,20 @@ int main()
                         return;
                     }
 
-                    // This would be where we perform the quantum period finding algorith.
+                    // This would be where we perform the quantum period finding algorithm.
                     // However, we don't have a quantum computer!
                     // Instead, we "throw dice" for a guess to the output of the quantum subroutine.
                     // This guess will usually be wrong, at least for semi-prime inputs.
                     // If we try many times, though, this can be a practically valuable factoring method.
 
-                    // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor);
-                    const unsigned long long minY = intLog(base, toFactor);
+                    // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
+                    // y is meant to be close to some number 2^(qubitCount) / r, where "r" is the period.
+                    const unsigned long long minY = intLog(base, toFactor) / qubitPower;
                     const bitCapInt mllm1 = (randRemainder > minY) ? maxLongLongsMin1 : (maxLongLongsMin1 - 1U);
                     std::uniform_int_distribution<unsigned long long> y_dist(0U, randRemainder - minY);
 
                     // (Construct random number, backwards.)
-                    bitCapInt y = (bitCapInt)(y_dist(rand_gen));
+                    bitCapInt y = (bitCapInt)(last_dist(rand_gen));
                     for (unsigned long long i = 0U; i < mllm1; i++) {
                         y <<= 64U;
                         y |= (bitCapInt)(mid_dist(rand_gen));
