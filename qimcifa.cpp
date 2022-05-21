@@ -212,7 +212,7 @@ int main()
                     // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                     // y is meant to be close to some number 2^(qubitCount) / r, where "r" is the period.
                     const bitCapInt minR = intLog(base, toFactor);
-                    bitCapInt minY = (qubitPower / (minR + 1U));
+                    bitCapInt minY = (qubitPower / minR);
                     bitCapInt mllm1 = maxLongLongsMin1;
                     while (minY >= maxPow) {
                         minY >>= 64U;
