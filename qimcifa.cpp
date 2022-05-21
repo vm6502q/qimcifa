@@ -163,8 +163,8 @@ int main()
 
     const bitCapInt maxPow = ONE_BCI << 64U;
     const unsigned long long randRemainder =
-        (unsigned long long)((toFactor - 2U) - (((toFactor - 2U) / maxPow) * maxPow));
-    const unsigned long long maxLongLongs = log2(toFactor - 2U) + (!isPowerOfTwo(toFactor - 2U) ? 1U : 0U);
+        (unsigned long long)((toFactor - 3U) - (((toFactor - 3U) / maxPow) * maxPow));
+    const unsigned long long maxLongLongs = log2(toFactor - 3U) + (!isPowerOfTwo(toFactor - 3U) ? 1U : 0U);
     const unsigned long long maxLongLongsMin1 = maxLongLongs - 1U;
 
     std::random_device rand_dev;
@@ -183,7 +183,7 @@ int main()
 
             for (;;) {
                 for (unsigned long long batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
-                    // Choose a base at random.
+                    // Choose a base at random, >1 and <toFactor.
                     // (Construct random number, backwards.)
                     bitCapInt base = (bitCapInt)(last_dist(rand_gen));
                     for (unsigned long long i = 0U; i < maxLongLongsMin1; i++) {
