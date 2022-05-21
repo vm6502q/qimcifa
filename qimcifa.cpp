@@ -168,9 +168,8 @@ int main()
     std::vector<rand_dist> toFactorDist;
     bitCapInt distPart = toFactor - 2U;
     while (distPart) {
-        const uint64_t randRemainder = (uint64_t)(distPart % maxPow);
+        toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart % maxPow)));
         distPart >>= wordSize;
-        toFactorDist.push_back(rand_dist(0U, randRemainder));
     }
     std::reverse(toFactorDist.begin(), toFactorDist.end());
 
@@ -215,25 +214,24 @@ int main()
                     // If we try many times, though, this can be a practically valuable factoring method.
 
                     // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
-                    // y is meant to be close to some number c * 2^(qubitCount) / r, where "r" is the period.
-                    // const bitCapInt minR = intLog(base, toFactor);
-                            
-                    // std::vector<rand_dist> yDist;
-                    // bitCapInt yPart = maxY - 1U;
-                    // while (yPart) {
-                    //     const uint64_t randRemainder = (uint64_t)(yPart % maxPow);
-                    //     yPart >>= wordSize;
-                    //     yDist.push_back(rand_dist(0U, randRemainder));
-                    // }
-                    // std::reverse(yDist.begin(), yDist.end());*/
+                    const bitCapInt minR = intLog(base, toFactor);
+                    // y is meant to be close to some number c * qubitPower / r, where "r" is the period.
+                    // c is a positive integer or 0, and we don't want the 0 case.
+                    // y is truncated by the number of qubits in the register, at most.
+                    const bitCapInt maxR = qubitPower / minR;
+                    const bitCapInt maxC = qubitPower / maxR;
 
-                    // Construct a random number
-                    bitCapInt y = toFactorDist[0](rand_gen);
-                    for (size_t i = 1U; i < toFactorDist.size(); i++) {
-                        y <<= wordSize;
-                        y |= toFactorDist[i](rand_gen);
+                    const bitCapInt minY = maxC;
+                    const bitCapInt maxY = (maxC * qubitPower / minR) % qubitPower;
+                    const bitCapInt yRange = maxY - minY;
+                    bitCapInt yPart = yRange;
+                    bitCapInt y = 0;
+                    while (y) {
+                        rand_dist yDist(0, (uint64_t)(yPart % maxPow));
+                        y >>= wordSize;
+                        y |= yDist(rand_gen);
                     }
-                    y++;
+                    y += minY;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
