@@ -213,40 +213,31 @@ int main()
                     // This guess will usually be wrong, at least for semi-prime inputs.
                     // If we try many times, though, this can be a practically valuable factoring method.
 
-                    // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
-                    const bitCapInt minR = intLog(base, toFactor);
                     // y is meant to be close to some number c * qubitPower / r, where "r" is the period.
                     // c is a positive integer or 0, and we don't want the 0 case.
                     // y is truncated by the number of qubits in the register, at most.
                     // The maximum value of c before truncation is no higher than r.
-                    // Based on the above, y is between minR and qubitPower.
 
-                    // Consider c and r to be two independent numbers, bounded by any considerations including above.
+                    // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
+                    // const bitCapInt minR = intLog(base, toFactor);
+                    // It can be shown that the period of a modular exponentiation can be no higher than 1 less
+                    // than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
+                    const bitCapInt maxR = toFactor - 1U;
 
-                    // Independently, we guess that r is between intLog(base, toFactor) and qubitPower.
-                    const bitCapInt yRange = qubitPower - minR;
+                    // This is the smallest possible valid value of y with nonzero c at r = maxR:
+                    const bitCapInt minY = qubitPower / maxR;
+
+                    // First, we guess r, between minR and maxR.
+                    const bitCapInt yRange = qubitPower - minY;
                     bitCapInt yPart = yRange;
-                    bitCapInt rGuess = 0;
-                    bitCapInt c = 0;
+                    bitCapInt y = 0U;
                     while (yPart) {
-                        rand_dist yDist(0, (uint64_t)(yPart % maxPow));
+                        rand_dist yDist(0U, (uint64_t)(yPart % maxPow));
                         yPart >>= wordSize;
-                        rGuess <<= wordSize;
-                        rGuess |= yDist(rand_gen);
+                        y <<= wordSize;
+                        y |= yDist(rand_gen);
                     }
-                    rGuess += minR;
-                    
-                    // Independently, we guess that c is between 1 and r.
-                    yPart = rGuess - 1U;
-                    while (yPart) {
-                        rand_dist yDist(0, (uint64_t)(yPart % maxPow));
-                        yPart >>= wordSize;
-                        c <<= wordSize;
-                        c |= yDist(rand_gen);
-                    }
-                    c++;
-
-                    const bitCapInt y = (c * qubitPower) / rGuess;
+                    y += minY;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
