@@ -223,12 +223,13 @@ int main()
                     const bitCapInt yRange = qubitPower - minR;
                     bitCapInt yPart = yRange;
                     bitCapInt y = 0;
-                    while (y) {
+                    while (yPart) {
                         rand_dist yDist(0, (uint64_t)(yPart % maxPow));
-                        y >>= wordSize;
+                        yPart >>= wordSize;
+                        y <<= wordSize;
                         y |= yDist(rand_gen);
                     }
-                    y += minR;
+                    y++;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
