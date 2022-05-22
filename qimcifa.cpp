@@ -30,8 +30,9 @@
 #include <mutex>
 
 #define ONE_BCI ((bitCapInt)1UL)
-// Change QBCAPPOW, if you need more than 2^8 bits of factorized integer, within Boost and system limits.
-#define QBCAPPOW 8U
+// Change QBCAPPOW, if you need more than 2^6 bits of factorized integer, within Boost and system limits.
+// (2^7, only, needs custom std::cout << operator implementation.)
+#define QBCAPPOW 6U
 
 #if QBCAPPOW < 8U
 #define bitLenInt uint8_t
@@ -131,19 +132,23 @@ int main()
     const double clockFactor = 1.0 / 1000.0; // Report in ms
     auto iterClock = std::chrono::high_resolution_clock::now();
 
-    const bitLenInt qubitCount = log2(toFactor) + (!isPowerOfTwo(toFactor) ? 1U : 0U);
+    const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
     const bitCapInt qubitPower = ONE_BCI << qubitCount;
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
-    const bitLenInt wordSize = 64U;
-    const bitCapInt maxPow = ONE_BCI << wordSize;
     std::vector<rand_dist> toFactorDist;
+#if QBCAPPOW > 6U
+    const bitLenInt wordSize = 64U;
+    const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
     bitCapInt distPart = toFactor - 3U;
     while (distPart) {
-        toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart % maxPow)));
+        toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
         distPart >>= wordSize;
     }
     std::reverse(toFactorDist.begin(), toFactorDist.end());
+#else
+    toFactorDist.push_back(rand_dist(2U, toFactor - 1U));
+#endif
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
@@ -160,15 +165,16 @@ int main()
             for (;;) {
                 for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random, >1 and <toFactor.
-                    // Construct a random number
                     bitCapInt base = toFactorDist[0](rand_gen);
+#if QBCAPPOW > 6U
                     for (size_t i = 1U; i < toFactorDist.size(); i++) {
                         base <<= wordSize;
                         base |= toFactorDist[i](rand_gen);
                     }
                     base += 2U;
+#endif
 
-                    bitCapInt testFactor = gcd(toFactor, base);
+                    const bitCapInt testFactor = gcd(toFactor, base);
                     if (testFactor != 1) {
                         std::cout << "Chose non- relative prime: " << testFactor << " * " << (toFactor / testFactor)
                                   << std::endl;
@@ -205,15 +211,20 @@ int main()
                     // However, results are better with uniformity over r, rather than y.
 
                     // So, we guess r, between minR and maxR.
+#if QBCAPPOW > 6U
                     bitCapInt rPart = maxR - minR;
                     bitCapInt r = 0U;
                     while (rPart) {
-                        rand_dist rDist(0U, (uint64_t)(rPart % maxPow));
+                        rand_dist rDist(0U, (uint64_t)(rPart & wordMask));
                         rPart >>= wordSize;
                         r <<= wordSize;
                         r |= rDist(rand_gen);
                     }
                     r += minR;
+#else
+                    rand_dist rDist(minR, maxR);
+                    bitCapInt r = rDist(rand_gen);
+#endif
 
                     // Since our output is r rather than y, we can skip the continued fractions step.
 
