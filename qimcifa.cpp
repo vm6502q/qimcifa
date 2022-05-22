@@ -222,7 +222,8 @@ int main()
                     // Based on the above, y is between minR and qubitPower.
 
                     // Consider c and r to be two independent numbers, bounded by any considerations including above.
-                    // (They probably shouldn't have the same range limits for RNG. This is being considered.)
+
+                    // Independently, we guess that r is between intLog(base, toFactor) and qubitPower.
                     const bitCapInt yRange = qubitPower - minR;
                     bitCapInt yPart = yRange;
                     bitCapInt rGuess = 0;
@@ -232,11 +233,19 @@ int main()
                         yPart >>= wordSize;
                         rGuess <<= wordSize;
                         rGuess |= yDist(rand_gen);
+                    }
+                    rGuess += minR;
+                    
+                    // Independently, we guess that c is between 1 and r.
+                    yPart = rGuess - 1U;
+                    while (yPart) {
+                        rand_dist yDist(0, (uint64_t)(yPart % maxPow));
+                        yPart >>= wordSize;
                         c <<= wordSize;
                         c |= yDist(rand_gen);
                     }
-                    rGuess += minR;
                     c++;
+
                     const bitCapInt y = (c * qubitPower) / rGuess;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
