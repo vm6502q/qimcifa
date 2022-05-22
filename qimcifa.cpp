@@ -222,13 +222,14 @@ int main()
                     // const bitCapInt minR = intLog(base, toFactor);
                     // It can be shown that the period of a modular exponentiation can be no higher than 1 less
                     // than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
-                    const bitCapInt maxR = toFactor - 1U;
+                    // const bitCapInt maxR = toFactor - 1U;
 
                     // This is the smallest possible valid value of y with nonzero c at r = maxR:
-                    const bitCapInt minY = qubitPower / maxR;
+                    // const bitCapInt minY = qubitPower / maxR;
+                    // However, by choice of qubitPower, this has to be equal to 1.
 
-                    // First, we guess r, between minR and maxR.
-                    const bitCapInt yRange = qubitPower - minY;
+                    // First, we guess y, between 1 and qubitPower.
+                    const bitCapInt yRange = qubitPower - 1U;
                     bitCapInt yPart = yRange;
                     bitCapInt y = 0U;
                     while (yPart) {
@@ -237,7 +238,7 @@ int main()
                         y <<= wordSize;
                         y |= yDist(rand_gen);
                     }
-                    y += minY;
+                    y++;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
