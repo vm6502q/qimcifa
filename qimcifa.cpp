@@ -220,16 +220,24 @@ int main()
                     // y is truncated by the number of qubits in the register, at most.
                     // The maximum value of c before truncation is no higher than r.
                     // Based on the above, y is between minR and qubitPower.
+
+                    // Consider c and r to be two independent numbers, bounded by any considerations including above.
+                    // (They probably shouldn't have the same range limits for RNG. This is being considered.)
                     const bitCapInt yRange = qubitPower - minR;
                     bitCapInt yPart = yRange;
-                    bitCapInt y = 0;
+                    bitCapInt rGuess = 0;
+                    bitCapInt c = 0;
                     while (yPart) {
                         rand_dist yDist(0, (uint64_t)(yPart % maxPow));
                         yPart >>= wordSize;
-                        y <<= wordSize;
-                        y |= yDist(rand_gen);
+                        rGuess <<= wordSize;
+                        rGuess |= yDist(rand_gen);
+                        c <<= wordSize;
+                        c |= yDist(rand_gen);
                     }
-                    y += minR;
+                    rGuess += minR;
+                    c++;
+                    const bitCapInt y = (c * qubitPower) / rGuess;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
