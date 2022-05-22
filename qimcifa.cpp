@@ -219,26 +219,27 @@ int main()
                     // The maximum value of c before truncation is no higher than r.
 
                     // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
-                    // const bitCapInt minR = intLog(base, toFactor);
+                    const bitCapInt minR = intLog(base, toFactor);
                     // It can be shown that the period of a modular exponentiation can be no higher than 1 less
                     // than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
-                    // const bitCapInt maxR = toFactor - 1U;
+                    const bitCapInt maxR = toFactor - 1U;
 
-                    // This is the smallest possible valid value of y with nonzero c at r = maxR:
-                    // const bitCapInt minY = qubitPower / maxR;
-                    // However, by choice of qubitPower, this has to be equal to 1.
-
-                    // First, we guess y, between 1 and qubitPower.
-                    const bitCapInt yRange = qubitPower - 1U;
-                    bitCapInt yPart = yRange;
-                    bitCapInt y = 0U;
-                    while (yPart) {
-                        rand_dist yDist(0U, (uint64_t)(yPart % maxPow));
-                        yPart >>= wordSize;
-                        y <<= wordSize;
-                        y |= yDist(rand_gen);
+                    // First, we guess R, between minR and maxR.
+                    bitCapInt rPart = maxR - minR;
+                    bitCapInt rGuess = 0U;
+                    while (rPart) {
+                        rand_dist rDist(0U, (uint64_t)(rPart % maxPow));
+                        rPart >>= wordSize;
+                        rGuess <<= wordSize;
+                        rGuess |= rDist(rand_gen);
                     }
-                    y++;
+                    rGuess += minR;
+
+                    // c is basically a harmonic degeneracy factor, and there might be no value in testing
+                    // any case except c = 1, without loss of generality.
+
+                    // This sets a nonuniform distribution on our y values to test.
+                    const bitCapInt y = qubitPower / rGuess;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
