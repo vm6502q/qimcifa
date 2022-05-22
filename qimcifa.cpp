@@ -229,7 +229,7 @@ int main()
                         y <<= wordSize;
                         y |= yDist(rand_gen);
                     }
-                    y++;
+                    y += minR;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
