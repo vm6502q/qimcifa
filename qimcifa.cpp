@@ -30,8 +30,8 @@
 #include <mutex>
 
 #define ONE_BCI ((bitCapInt)1UL)
-// Change QBCAPPOW, if you need more than 2^12 bits of factorized integer, within Boost and system limits.
-#define QBCAPPOW 12U
+// Change QBCAPPOW, if you need more than 2^8 bits of factorized integer, within Boost and system limits.
+#define QBCAPPOW 8U
 
 #if QBCAPPOW < 8U
 #define bitLenInt uint8_t
@@ -166,7 +166,7 @@ int main()
     const bitLenInt wordSize = 64U;
     const bitCapInt maxPow = ONE_BCI << wordSize;
     std::vector<rand_dist> toFactorDist;
-    bitCapInt distPart = toFactor - 2U;
+    bitCapInt distPart = toFactor - 3U;
     while (distPart) {
         toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart % maxPow)));
         distPart >>= wordSize;
@@ -183,10 +183,10 @@ int main()
     std::vector<std::future<void>> futures(threads);
     for (unsigned cpu = 0U; cpu < threads; cpu++) {
         futures[cpu] = std::async(std::launch::async, [&] {
-            const uint64_t BATCH_SIZE = 1U << 9U;
+            const size_t BATCH_SIZE = 1U << 9U;
 
             for (;;) {
-                for (uint64_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
+                for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random, >1 and <toFactor.
                     // Construct a random number
                     bitCapInt base = toFactorDist[0](rand_gen);
