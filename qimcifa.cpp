@@ -224,7 +224,7 @@ int main()
                     // than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
                     const bitCapInt maxR = toFactor - 1U;
 
-                    // First, we guess R, between minR and maxR.
+                    // First, we guess r, between minR and maxR.
                     bitCapInt rPart = maxR - minR;
                     bitCapInt rGuess = 0U;
                     while (rPart) {
@@ -239,7 +239,8 @@ int main()
                     // any case except c = 1, without loss of generality.
 
                     // This sets a nonuniform distribution on our y values to test.
-                    const bitCapInt y = qubitPower / rGuess;
+                    // y values are close to qubitPower / rGuess, and we midpoint round.
+                    const bitCapInt y = (qubitPower / rGuess) + (((2U * (qubitPower % rGuess)) < rGuess) ? 0U : 1U);
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
