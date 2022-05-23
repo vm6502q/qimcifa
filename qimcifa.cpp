@@ -223,26 +223,6 @@ int main()
                 // but multiple PERIOD_TRIALS control a ratio of base distribution to period coverage.
                 const size_t PERIOD_TRIALS = 1U;
 
-                // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-                // const bitCapInt minPhi = floorSqrt(toFactor / 2);
-                // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
-                const bitCapInt minPhi = pow(toFactor / 2, PHI_EXPONENT);
-
-                // #if IS_SEMI_PRIME
-                // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
-                // This expression is maximized for p == q, which yields an upper bound.
-                // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
-                // (This isn't the number we're looking for yet, below.)
-                // const bitCapInt floorRootToFactor = floorSqrt(toFactor);
-                // const bitCapInt maxR = floorRootToFactor * floorRootToFactor;
-                // #else
-                // It can be shown that the period of this modular exponentiation can be no higher than 1
-                // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
-                // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
-                // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-                const bitCapInt maxR = toFactor - floorSqrt(toFactor);
-                // #endif
-
                 const double clockFactor = 1.0 / 1000.0; // Report in ms
                 const unsigned threads = std::thread::hardware_concurrency();
 
@@ -277,6 +257,26 @@ int main()
 #else
                 toFactorDist.push_back(rand_dist(baseMin, baseMax));
 #endif
+
+                // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
+                // const bitCapInt minPhi = floorSqrt(toFactor / 2);
+                // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
+#if IS_SEMI_PRIME
+                // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
+                // The minimum value of this formula, for our input, is (fullMin - 1) * (fullMax - 1).
+                // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
+                const bitCapInt minPhiGen = pow(toFactor / 2, PHI_EXPONENT);
+                const bitCapInt minPhiSemiprime = (fullMin - 1U) * (fullMax - 1U);
+                const bitCapInt minPhi = (minPhiGen < minPhiSemiprime) ? minPhiSemiprime : minPhiGen;
+#else
+                const bitCapInt minPhi = pow(toFactor / 2, PHI_EXPONENT);
+#endif
+
+                // It can be shown that the period of this modular exponentiation can be no higher than 1
+                // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
+                // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
+                // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
+                const bitCapInt maxR = toFactor - floorSqrt(toFactor);
 
                 for (;;) {
                     for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
