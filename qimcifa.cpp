@@ -195,7 +195,8 @@ int main()
 #endif
                 const bitCapInt nodeRange = (1U + fullMax - fullMin) / nodeCount;
                 const bitCapInt nodeMin = fullMin + nodeRange * nodeId;
-                const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMax : (fullMin + nodeRange * (nodeId + 1U) - 1U);
+                const bitCapInt nodeMax =
+                    ((nodeId + 1U) == nodeCount) ? fullMax : (fullMin + nodeRange * (nodeId + 1U) - 1U);
                 const bitCapInt threadRange = (1U + nodeMax - nodeMin) / threads;
                 const bitCapInt baseMin = nodeMin + threadRange * cpu;
                 const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
