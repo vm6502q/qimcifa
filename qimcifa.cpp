@@ -210,11 +210,6 @@ int main()
     isFinished = false;
 
 #if IS_RSA_SEMI_PRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 32779U, 65519U, 65521U } },
-        { 28U, { 134217757U, 134217773U, 268435367U, 268435399U } },
-        { 32U, { 2147483659U, 2147483693U, 4294967279U, 4294967291U } },
-        { 64U, { 9223372036854775837U, 9223372036854775907U, 1844674407370955137U, 1844674407370955143U } } };
-
     // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
     // The minimum value of this formula, for our input, without consideration of actual
     // primes in the interval, is as follows:
@@ -243,8 +238,8 @@ int main()
 
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
-        futures[cpu] = std::async(std::launch::async,
-            [cpu, nodeId, nodeCount, toFactor, minR, maxR, &primeDict, &iterClock, &rand_gen, &isFinished] {
+        futures[cpu] = std::async(
+            std::launch::async, [cpu, nodeId, nodeCount, toFactor, minR, maxR, &iterClock, &rand_gen, &isFinished] {
                 // These constants are semi-redundant, but they're only defined once per thread,
                 // and compilers differ on lambda expression capture of constants.
 
@@ -254,10 +249,19 @@ int main()
                 // Number of times to reuse a random base:
                 const size_t BASE_TRIALS = 1U;
                 // Number of random period guesses per random base:
-                const size_t PERIOD_TRIALS = 1U << 6U;
+                const size_t PERIOD_TRIALS = 1U << 9U;
 
                 const double clockFactor = 1.0 / 1000.0; // Report in ms
                 const unsigned threads = std::thread::hardware_concurrency();
+
+#if IS_RSA_SEMIPRIME
+                std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = {
+                    { 16U, { 32771U, 32779U, 65519U, 65521U } },
+                    { 28U, { 134217757U, 134217773U, 268435367U, 268435399U } },
+                    { 32U, { 2147483659U, 2147483693U, 4294967279U, 4294967291U } },
+                    { 64U, { 9223372036854775837U, 9223372036854775907U, 1844674407370955137U, 1844674407370955143U } }
+                };
+#endif
 
                 const bitCapInt fullRange = maxR + 1U - minR;
                 const bitCapInt nodeRange = fullRange / nodeCount;
@@ -348,7 +352,7 @@ int main()
                             const bitCapInt p = (r & 1U) ? r : (r >> 1U);
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
-    std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;             \
+    std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
     auto tClock =                                                                                                      \
         std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);  \
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
@@ -362,11 +366,12 @@ int main()
 
                             // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                             // we first check if our guess for r is already a factor.
-                            if ((RGUESS > 1U) && (((toFactor / RGUESS) * RGUESS) == toFactor)) {
+                            if (((toFactor / RGUESS) * RGUESS) == toFactor) {
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
-                                PRINT_SUCCESS(RGUESS, toFactor / RGUESS, toFactor, "Success (on r trial division): Found ");
+                                PRINT_SUCCESS(
+                                    RGUESS, toFactor / RGUESS, toFactor, "Success (on r trial division): Found ");
                                 return;
                             }
 
@@ -374,7 +379,7 @@ int main()
                             bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
                             bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
                             bitCapInt fmul = f1 * f2;
-                            while ((fmul != toFactor) && (fmul > 1U) && (((toFactor / fmul) * fmul) == toFactor)) {
+                            while ((fmul > 1U) && (fmul != toFactor) && (((toFactor / fmul) * fmul) == toFactor)) {
                                 fmul = f1;
                                 f1 = fmul * f2;
                                 f2 = toFactor / (fmul * f2);
@@ -384,7 +389,8 @@ int main()
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
-                                PRINT_SUCCESS(RGUESS, toFactor / RGUESS, toFactor, "Success (on r difference of squares): Found ");
+                                PRINT_SUCCESS(RGUESS, toFactor / RGUESS, toFactor,
+                                    "Success (on r difference of squares): Found ");
                                 return;
                             }
                         }
