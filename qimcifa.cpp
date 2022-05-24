@@ -209,7 +209,14 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
-#if IS_RSA_SEMI_PRIME
+#if IS_RSA_SEMIPRIME
+    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = {
+        { 16U, { 32771U, 32779U, 65519U, 65521U } },
+        { 28U, { 134217757U, 134217773U, 268435367U, 268435399U } },
+        { 32U, { 2147483659U, 2147483693U, 4294967279U, 4294967291U } },
+        { 64U, { 9223372036854775837U, 9223372036854775907U, 1844674407370955137U, 1844674407370955143U } }
+    };
+
     // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
     // The minimum value of this formula, for our input, without consideration of actual
     // primes in the interval, is as follows:
@@ -253,15 +260,6 @@ int main()
 
                 const double clockFactor = 1.0 / 1000.0; // Report in ms
                 const unsigned threads = std::thread::hardware_concurrency();
-
-#if IS_RSA_SEMIPRIME
-                std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = {
-                    { 16U, { 32771U, 32779U, 65519U, 65521U } },
-                    { 28U, { 134217757U, 134217773U, 268435367U, 268435399U } },
-                    { 32U, { 2147483659U, 2147483693U, 4294967279U, 4294967291U } },
-                    { 64U, { 9223372036854775837U, 9223372036854775907U, 1844674407370955137U, 1844674407370955143U } }
-                };
-#endif
 
                 const bitCapInt fullRange = maxR + 1U - minR;
                 const bitCapInt nodeRange = fullRange / nodeCount;
