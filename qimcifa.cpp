@@ -335,7 +335,7 @@ int main()
                                 r <<= wordSize;
                                 r |= rDist[i](rand_gen);
                             }
-                            r += minR;
+                            r += baseMin;
 #endif
                             // Since our output is r rather than y, we can skip the continued fractions step.
 
