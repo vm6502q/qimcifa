@@ -269,7 +269,7 @@ int main()
 #else
                 const bitLenInt wordSize = 64U;
                 const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
-                bitCapInt distPart = fullRange;
+                bitCapInt distPart = baseMax - baseMin;
                 while (distPart) {
                     rDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
                     distPart >>= wordSize;
