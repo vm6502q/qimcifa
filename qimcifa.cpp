@@ -30,7 +30,7 @@
 #include <mutex>
 
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
-#define IS_RSA_SEMI_PRIME 0
+#define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
