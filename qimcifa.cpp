@@ -229,27 +229,18 @@ int main()
                 const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
                 const bitCapInt qubitPower = ONE_BCI << qubitCount;
 
-                const bitCapInt fullMin = 2U;
-                const bitCapInt fullMax = (toFactor - 1U);
-                const bitCapInt fullRange = fullMax + 1U - fullMin;
-                const bitCapInt nodeRange = fullRange / nodeCount;
-                const bitCapInt nodeMin = fullMin + nodeRange * nodeId;
-                const bitCapInt nodeMax =
-                    ((nodeId + 1U) == nodeCount) ? fullMax : (fullMin + nodeRange * (nodeId + 1U) - 1U);
-                const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
-                const bitCapInt baseMin = nodeMin + threadRange * cpu;
-                const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
-
 #if IS_RSA_SEMI_PRIME
-                const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-                const bitCapInt minPrime = (ONE_BCI << (primeBits - 1U)) + 1U;
-                const bitCapInt maxPrime = (ONE_BCI << primeBits) - 1U;
                 // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
                 // The minimum value of this formula, for our input, without consideration of actual
                 // primes in the interval, is as follows:
                 // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
-                const bitCapInt minR = (toFactor / maxPrime - 1U) * (toFactor / maxPrime - 1U);
-                const bitCapInt maxR = (toFactor / minPrime - 1U) * (toFactor / minPrime - 1U);
+                const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
+                const bitCapInt fullMin = ONE_BCI << (primeBits - 1U);
+                const bitCapInt fullMax = (ONE_BCI << primeBits) - 1U;
+                const bitCapInt minPrime = fullMin + 1U;
+                const bitCapInt maxPrime = fullMax;
+                const bitCapInt minR = (toFactor / maxPrime - 1U) * (toFactor / (maxPrime - 2U) - 1U);
+                const bitCapInt maxR = (toFactor / minPrime - 1U) * (toFactor / (minPrime + 2U) - 1U);
 #else
                 // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
                 const bitCapInt minR = floorSqrt(toFactor >> 1U);
@@ -263,22 +254,22 @@ int main()
                 const bitCapInt maxR = toFactor - floorSqrt(toFactor);
 #endif
 
-                std::vector<rand_dist> toFactorDist;
+                const bitCapInt fullRange = maxR + 1U - minR;
+                const bitCapInt nodeRange = fullRange / nodeCount;
+                const bitCapInt nodeMin = minR + nodeRange * nodeId;
+                const bitCapInt nodeMax =
+                    ((nodeId + 1U) == nodeCount) ? maxR : (minR + nodeRange * (nodeId + 1U) - 1U);
+                const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
+                const bitCapInt baseMin = nodeMin + threadRange * cpu;
+                const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
+
                 std::vector<rand_dist> rDist;
 #if QBCAPPOW < 7U
-                toFactorDist.push_back(rand_dist(baseMin, baseMax));
-                rDist.push_back(rand_dist(minR, maxR));
+                rDist.push_back(rand_dist(baseMin, baseMax));
 #else
                 const bitLenInt wordSize = 64U;
                 const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
-                bitCapInt distPart = baseMax - baseMin;
-                while (distPart) {
-                    toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
-                    distPart >>= wordSize;
-                }
-                std::reverse(toFactorDist.begin(), toFactorDist.end());
-
-                distPart = maxR - minR;
+                bitCapInt distPart = fullRange;
                 while (distPart) {
                     rDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
                     distPart >>= wordSize;
@@ -289,11 +280,11 @@ int main()
                 for (;;) {
                     for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                         // Choose a base at random, >1 and <toFactor.
-                        bitCapInt base = toFactorDist[0](rand_gen);
+                        bitCapInt base = rDist[0](rand_gen);
 #if QBCAPPOW > 6U
-                        for (size_t i = 1U; i < toFactorDist.size(); i++) {
+                        for (size_t i = 1U; i < rDist.size(); i++) {
                             base <<= wordSize;
-                            base |= toFactorDist[i](rand_gen);
+                            base |= rDist[i](rand_gen);
                         }
                         base += baseMin;
 #endif
