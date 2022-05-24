@@ -272,8 +272,8 @@ int main()
                 // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
                 const bitCapInt minPhiGen = pow(toFactor / 2, PHI_EXPONENT);
                 const bitCapInt minPhiSemiprime = (toFactor < (fullRange >> 1U))
-                    ? fullMax * toFactor / (fullMin + 1U)
-                    : ((fullMin + 1U) * toFactor / fullMax);
+                    ? (fullMin + 1U) * toFactor / fullMax
+                    : (fullMax * toFactor / (fullMin + 1U));
                 const bitCapInt minPhi = (minPhiGen < minPhiSemiprime) ? minPhiSemiprime : minPhiGen;
 #else
                 // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
