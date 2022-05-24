@@ -347,8 +347,8 @@ int main()
                             // Since our output is r rather than y, we can skip the continued fractions step.
                             const bitCapInt p = (r & 1U) ? r : (r >> 1U);
 
-#define PRINT_SUCCESS(f1, f2, toFactor)                                                                                \
-    std::cout << "Success: Found " << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                       \
+#define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
+    std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;             \
     auto tClock =                                                                                                      \
         std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);  \
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
@@ -366,7 +366,7 @@ int main()
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
-                                PRINT_SUCCESS(RGUESS, toFactor / RGUESS, toFactor);
+                                PRINT_SUCCESS(RGUESS, toFactor / RGUESS, toFactor, "Success (on r trial division): Found ");
                                 return;
                             }
 
@@ -384,7 +384,7 @@ int main()
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
-                                PRINT_SUCCESS(f1, f2, toFactor);
+                                PRINT_SUCCESS(RGUESS, toFactor / RGUESS, toFactor, "Success (on r difference of squares): Found ");
                                 return;
                             }
                         }
