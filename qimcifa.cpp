@@ -223,6 +223,14 @@ int main()
                 // but multiple PERIOD_TRIALS control a ratio of base distribution to period coverage.
                 const size_t PERIOD_TRIALS = 1U;
 
+#if IS_RSA_SEMI_PRIME
+                std::map<bitLenInt, std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 32779U, 65519U, 65521U } },
+                    { 28U, { 134217757U, 134217773U, 268435367U, 268435399U } },
+                    { 32U, { 2147483659U, 2147483693U, 4294967279U, 4294967291U } },
+                    { 64U,
+                        { 9223372036854775837U, 9223372036854775907U, 1844674407370955137U, 1844674407370955143U } } };
+#endif
+
                 const double clockFactor = 1.0 / 1000.0; // Report in ms
                 const unsigned threads = std::thread::hardware_concurrency();
 
@@ -237,10 +245,12 @@ int main()
                 const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
                 const bitCapInt fullMin = ONE_BCI << (primeBits - 1U);
                 const bitCapInt fullMax = (ONE_BCI << primeBits) - 1U;
-                const bitCapInt minPrime = fullMin + 1U;
-                const bitCapInt maxPrime = fullMax;
-                const bitCapInt minR = (toFactor / maxPrime - 1U) * (toFactor / (maxPrime - 2U) - 1U);
-                const bitCapInt maxR = (toFactor / minPrime - 1U) * (toFactor / (minPrime + 2U) - 1U);
+                const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : (fullMin + 1U);
+                const bitCapInt minPrime2 = primeDict[primeBits].size() ? primeDict[primeBits][1] : (fullMin + 3U);
+                const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][3] : fullMax;
+                const bitCapInt maxPrime2 = primeDict[primeBits].size() ? primeDict[primeBits][2] : (fullMax - 2U);
+                const bitCapInt minR = (toFactor / maxPrime - 1U) * (toFactor / maxPrime2 - 1U);
+                const bitCapInt maxR = (toFactor / minPrime - 1U) * (toFactor / minPrime2 - 1U);
 #else
                 // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
                 const bitCapInt minR = floorSqrt(toFactor >> 1U);
@@ -257,8 +267,7 @@ int main()
                 const bitCapInt fullRange = maxR + 1U - minR;
                 const bitCapInt nodeRange = fullRange / nodeCount;
                 const bitCapInt nodeMin = minR + nodeRange * nodeId;
-                const bitCapInt nodeMax =
-                    ((nodeId + 1U) == nodeCount) ? maxR : (minR + nodeRange * (nodeId + 1U) - 1U);
+                const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? maxR : (minR + nodeRange * (nodeId + 1U) - 1U);
                 const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
                 const bitCapInt baseMin = nodeMin + threadRange * cpu;
                 const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
