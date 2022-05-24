@@ -228,25 +228,25 @@ int main()
     const bitCapInt minPrime2 = primeDict[primeBits].size() ? primeDict[primeBits][1] : (fullMin + 3U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][3] : fullMax;
     const bitCapInt maxPrime2 = primeDict[primeBits].size() ? primeDict[primeBits][2] : (fullMax - 2U);
-    const bitCapInt minR = (toFactor / maxPrime - 1U) * (toFactor / maxPrime2 - 1U);
-    const bitCapInt maxR = (toFactor / minPrime - 1U) * (toFactor / minPrime2 - 1U);
+    const bitCapInt nodeMinR = (toFactor / maxPrime - 1U) * (toFactor / maxPrime2 - 1U);
+    const bitCapInt nodeMaxR = (toFactor / minPrime - 1U) * (toFactor / minPrime2 - 1U);
 #else
     // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-    const bitCapInt minR = floorSqrt(toFactor >> 1U);
+    const bitCapInt nodeMinR = floorSqrt(toFactor >> 1U);
     // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
-    // const bitCapInt minR = pow(toFactor / 2, PHI_EXPONENT);
+    // const bitCapInt nodeMinR = pow(toFactor / 2, PHI_EXPONENT);
 
     // It can be shown that the period of this modular exponentiation can be no higher than 1
     // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
     // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
     // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-    const bitCapInt maxR = toFactor - floorSqrt(toFactor);
+    const bitCapInt nodeMaxR = toFactor - floorSqrt(toFactor);
 #endif
 
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
         futures[cpu] = std::async(
-            std::launch::async, [cpu, nodeId, nodeCount, toFactor, minR, maxR, &iterClock, &rand_gen, &isFinished] {
+            std::launch::async, [cpu, nodeId, nodeCount, toFactor, nodeMinR, nodeMaxR, &iterClock, &rand_gen, &isFinished] {
                 // These constants are semi-redundant, but they're only defined once per thread,
                 // and compilers differ on lambda expression capture of constants.
 
@@ -261,21 +261,31 @@ int main()
                 const double clockFactor = 1.0 / 1000.0; // Report in ms
                 const unsigned threads = std::thread::hardware_concurrency();
 
-                const bitCapInt fullRange = maxR + 1U - minR;
+                const bitCapInt fullRange = nodeMaxR + 1U - nodeMinR;
                 const bitCapInt nodeRange = fullRange / nodeCount;
-                const bitCapInt nodeMin = minR + nodeRange * nodeId;
-                const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? maxR : (minR + nodeRange * (nodeId + 1U) - 1U);
+                const bitCapInt nodeMin = nodeMinR + nodeRange * nodeId;
+                const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? nodeMaxR : (nodeMinR + nodeRange * (nodeId + 1U) - 1U);
                 const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
-                const bitCapInt baseMin = nodeMin + threadRange * cpu;
-                const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
+                const bitCapInt rMin = nodeMin + threadRange * cpu;
+                const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
 
+                std::vector<rand_dist> baseDist;
                 std::vector<rand_dist> rDist;
 #if QBCAPPOW < 7U
-                rDist.push_back(rand_dist(baseMin, baseMax));
+                baseDist.push_back(rand_dist(2U, toFactor - 1U));
+                rDist.push_back(rand_dist(rMin, rMax));
 #else
                 const bitLenInt wordSize = 64U;
                 const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
-                bitCapInt distPart = baseMax - baseMin;
+
+                bitCapInt distPart = toFactor - 3U;
+                while (distPart) {
+                    baseDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
+                    distPart >>= wordSize;
+                }
+                std::reverse(rDist.begin(), rDist.end());
+
+                distPart = rMax - rMin;
                 while (distPart) {
                     rDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
                     distPart >>= wordSize;
@@ -286,13 +296,13 @@ int main()
                 for (;;) {
                     for (size_t batchItem = 0U; batchItem < BASE_TRIALS; batchItem++) {
                         // Choose a base at random, >1 and <toFactor.
-                        bitCapInt base = rDist[0U](rand_gen);
+                        bitCapInt base = baseDist[0U](rand_gen);
 #if QBCAPPOW > 6U
-                        for (size_t i = 1U; i < rDist.size(); i++) {
+                        for (size_t i = 1U; i < baseDist.size(); i++) {
                             base <<= wordSize;
-                            base |= rDist[i](rand_gen);
+                            base |= baseDist[i](rand_gen);
                         }
-                        base += baseMin;
+                        base += 2U;
 #endif
 
                         const bitCapInt testFactor = gcd(toFactor, base);
@@ -325,7 +335,7 @@ int main()
                         // const bitCapInt logBaseToFactor = (bitCapInt)intLog(base, toFactor) + 1U;
                         // Euler's Theorem tells us, if gcd(a, n) = 1, then a^\phi(n) = 1 MOD n,
                         // where \phi(n) is Euler's totient for n.
-                        // const bitCapInt minR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
+                        // const bitCapInt nodeMinR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
 
                         // c is basically a harmonic degeneracy factor, and there might be no value in testing
                         // any case except c = 1, without loss of generality.
@@ -335,7 +345,7 @@ int main()
 
                         // However, results are better with uniformity over r, rather than y.
 
-                        // So, we guess r, between minR and maxR.
+                        // So, we guess r, between nodeMinR and nodeMaxR.
                         for (size_t rTrial = 0U; rTrial < PERIOD_TRIALS; rTrial++) {
                             // Choose a base at random, >1 and <toFactor.
                             bitCapInt r = rDist[0U](rand_gen);
@@ -344,7 +354,7 @@ int main()
                                 r <<= wordSize;
                                 r |= rDist[i](rand_gen);
                             }
-                            r += baseMin;
+                            r += rMin;
 #endif
                             // Since our output is r rather than y, we can skip the continued fractions step.
                             const bitCapInt p = (r & 1U) ? r : (r >> 1U);
