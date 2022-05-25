@@ -17,6 +17,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "qimcifa_cl.hpp"
+
 #include <chrono>
 #include <cmath>
 #include <iomanip> // For setw
