@@ -211,10 +211,10 @@ int main()
 
 #if IS_RSA_SEMIPRIME
     std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = {
-        { 16U, { 32771U, 32779U, 65519U, 65521U } },
-        { 28U, { 134217757U, 134217773U, 268435367U, 268435399U } },
-        { 32U, { 2147483659U, 2147483693U, 4294967279U, 4294967291U } },
-        { 64U, { 9223372036854775837U, 9223372036854775907U, 1844674407370955137U, 1844674407370955143U } }
+        { 16U, { 32771U, 65521U } },
+        { 28U, { 134217757U, 268435399U } },
+        { 32U, { 2147483659U, 4294967291U } },
+        { 64U, { 9223372036854775837U, 1844674407370955143U } }
     };
 
     // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
@@ -225,28 +225,26 @@ int main()
     const bitCapInt fullMin = ONE_BCI << (primeBits - 1U);
     const bitCapInt fullMax = (ONE_BCI << primeBits) - 1U;
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : (fullMin + 1U);
-    const bitCapInt minPrime2 = primeDict[primeBits].size() ? primeDict[primeBits][1] : (fullMin + 3U);
-    const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][3] : fullMax;
-    const bitCapInt maxPrime2 = primeDict[primeBits].size() ? primeDict[primeBits][2] : (fullMax - 2U);
-    const bitCapInt nodeMinR = (toFactor / maxPrime - 1U) * (toFactor / maxPrime2 - 1U);
-    const bitCapInt nodeMaxR = (toFactor / minPrime - 1U) * (toFactor / minPrime2 - 1U);
+    const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : fullMax;
+    const bitCapInt fullMinR = (minPrime - 1U) * (toFactor / minPrime - 1U);
+    const bitCapInt fullMaxR = (maxPrime - 1U) * (toFactor / maxPrime - 1U);
 #else
     // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-    const bitCapInt nodeMinR = floorSqrt(toFactor >> 1U);
+    const bitCapInt fullMinR = floorSqrt(toFactor >> 1U);
     // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
-    // const bitCapInt nodeMinR = pow(toFactor / 2, PHI_EXPONENT);
+    // const bitCapInt fullMinR = pow(toFactor / 2, PHI_EXPONENT);
 
     // It can be shown that the period of this modular exponentiation can be no higher than 1
     // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
     // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
     // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-    const bitCapInt nodeMaxR = toFactor - floorSqrt(toFactor);
+    const bitCapInt fullMaxR = toFactor - floorSqrt(toFactor);
 #endif
 
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
         futures[cpu] = std::async(
-            std::launch::async, [cpu, nodeId, nodeCount, toFactor, nodeMinR, nodeMaxR, &iterClock, &rand_gen, &isFinished] {
+            std::launch::async, [cpu, nodeId, nodeCount, toFactor, fullMinR, fullMaxR, &iterClock, &rand_gen, &isFinished] {
                 // These constants are semi-redundant, but they're only defined once per thread,
                 // and compilers differ on lambda expression capture of constants.
 
@@ -261,10 +259,10 @@ int main()
                 const double clockFactor = 1.0 / 1000.0; // Report in ms
                 const unsigned threads = std::thread::hardware_concurrency();
 
-                const bitCapInt fullRange = nodeMaxR + 1U - nodeMinR;
+                const bitCapInt fullRange = fullMaxR + 1U - fullMinR;
                 const bitCapInt nodeRange = fullRange / nodeCount;
-                const bitCapInt nodeMin = nodeMinR + nodeRange * nodeId;
-                const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? nodeMaxR : (nodeMinR + nodeRange * (nodeId + 1U) - 1U);
+                const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
+                const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
                 const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
                 const bitCapInt rMin = nodeMin + threadRange * cpu;
                 const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
@@ -335,7 +333,7 @@ int main()
                         // const bitCapInt logBaseToFactor = (bitCapInt)intLog(base, toFactor) + 1U;
                         // Euler's Theorem tells us, if gcd(a, n) = 1, then a^\phi(n) = 1 MOD n,
                         // where \phi(n) is Euler's totient for n.
-                        // const bitCapInt nodeMinR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
+                        // const bitCapInt fullMinR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
 
                         // c is basically a harmonic degeneracy factor, and there might be no value in testing
                         // any case except c = 1, without loss of generality.
@@ -345,7 +343,7 @@ int main()
 
                         // However, results are better with uniformity over r, rather than y.
 
-                        // So, we guess r, between nodeMinR and nodeMaxR.
+                        // So, we guess r, between fullMinR and fullMaxR.
                         for (size_t rTrial = 0U; rTrial < PERIOD_TRIALS; rTrial++) {
                             // Choose a base at random, >1 and <toFactor.
                             bitCapInt r = rDist[0U](rand_gen);
