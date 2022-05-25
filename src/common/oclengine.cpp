@@ -52,8 +52,7 @@ void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, Dev
 
 void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
 
-cl::Program OCLEngine::MakeProgram(
-    bool buildFromSource, cl::Program::Sources sources, std::string path, std::shared_ptr<OCLDeviceContext> devCntxt)
+cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::shared_ptr<OCLDeviceContext> devCntxt)
 {
     FILE* clBinFile;
     cl::Program program;
@@ -92,11 +91,18 @@ cl::Program OCLEngine::MakeProgram(
     }
 
     // If, either, there are no cached binaries, or binary loading failed, then fall back to JIT.
-    if (buildError != CL_SUCCESS) {
-        program = cl::Program(devCntxt->context, sources);
-        std::cout << "Built JIT." << std::endl;
+    if (buildError == CL_SUCCESS) {
+        return program;
     }
+    
+    // TODO: This needs manual file I/O.
+    // create the programs that we want to execute on the devices
+    cl::Program::Sources sources;
+    sources.push_back({ (const char*)qimcifa_uint64cl, (long unsigned int)qimcifa_uint64cl_len });
 
+    program = cl::Program(devCntxt->context, sources);
+    std::cout << "Built JIT." << std::endl;
+    
     return program;
 }
 
@@ -196,11 +202,6 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         }
     }
 
-    // TODO: This needs manual file I/O.
-    // create the programs that we want to execute on the devices
-    cl::Program::Sources sources;
-    sources.push_back({ (const char*)qimcifa_uint64cl, (long unsigned int)qimcifa_uint64cl_len });
-
     int64_t plat_id = -1;
     std::vector<cl::Context> all_contexts;
     std::vector<std::string> all_filenames;
@@ -219,7 +220,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         std::string clBinName = home + fileName;
 
         std::cout << "Device #" << i << ", ";
-        cl::Program program = MakeProgram(buildFromSource, sources, clBinName, devCntxt);
+        cl::Program program = MakeProgram(buildFromSource, clBinName, devCntxt);
 
         cl_int buildError =
             program.build({ all_devices[i] }, "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math");

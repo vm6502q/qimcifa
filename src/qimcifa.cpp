@@ -139,7 +139,7 @@ bitCapInt floorSqrt(const bitCapInt& x)
     }
 
     // Binary search for floor(sqrt(x))
-    bitCapInt start = 1U, end = x >> 1U, ans;
+    bitCapInt start = 1U, end = x >> 1U, ans = 0U;
     while (start <= end) {
         bitCapInt mid = (start + end) >> 1U;
 
