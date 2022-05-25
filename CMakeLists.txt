@@ -26,7 +26,25 @@ if (NOT OpenCL_FOUND)
     endif()
 endif ()
 
-message ("Found OpenCL.")
+# Build the OpenCL command files
+find_program (XXD_BIN xxd)
+file (GLOB_RECURSE COMPILABLE_RESOURCES "src/common/*.cl")
+foreach (INPUT_FILE ${COMPILABLE_RESOURCES})
+    get_filename_component (INPUT_NAME ${INPUT_FILE} NAME)
+    get_filename_component (INPUT_BASENAME ${INPUT_FILE} NAME_WE)
+    get_filename_component (INPUT_DIR ${INPUT_FILE} DIRECTORY)
+
+    set (OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/include/common/${INPUT_BASENAME}cl.hpp)
+
+    message (" Creating XXD Rule for ${INPUT_FILE} -> ${OUTPUT_FILE}")
+    add_custom_command (
+        WORKING_DIRECTORY ${INPUT_DIR}
+        OUTPUT ${OUTPUT_FILE}
+        COMMAND ${XXD_BIN} -i ${INPUT_NAME} > ${OUTPUT_FILE}
+        COMMENT "Building OpenCL Commands in ${INPUT_FILE}"
+        )
+    list (APPEND COMPILED_RESOURCES ${OUTPUT_FILE})
+endforeach ()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3")
 
@@ -34,4 +52,9 @@ add_executable (qimcifa
     src/qimcifa.cpp
     )
 target_link_libraries (qimcifa pthread)
+
+add_executable (qimcifa_cl
+    src/qimcifa_cl.cpp
+    )
+target_link_libraries (qimcifa_cl OpenCL)
 
