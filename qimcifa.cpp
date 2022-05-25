@@ -393,7 +393,7 @@ int main()
                                 f2 = toFactor / (fmul * f2);
                                 fmul = f1 * f2;
                             }
-                            if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+                            if ((fmul > 1U) && (fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
