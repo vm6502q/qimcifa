@@ -74,6 +74,8 @@
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
 #endif
 
+namespace Qimcifa {
+
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
 inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
 
@@ -166,6 +168,10 @@ bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
     }
     return n1;
 }
+
+} // namespace Qimcifa
+
+using namespace Qimcifa;
 
 int main()
 {

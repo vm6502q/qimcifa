@@ -10,13 +10,11 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include "oclengine.hpp"
+#include "common/oclengine.hpp"
 
 #include <algorithm>
 #include <iostream>
 #include <memory>
-
-#include "qimcifa_uint64cl.hpp"
 
 namespace Qimcifa {
 
@@ -198,36 +196,10 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         }
     }
 
+    // TODO: This needs manual file I/O.
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
-#if UINTPOW < 4
-    sources.push_back({ (const char*)qheader_uint8_cl, (long unsigned int)qheader_uint8_cl_len });
-#elif UINTPOW < 5
-    sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
-#elif UINTPOW < 6
-    sources.push_back({ (const char*)qheader_uint32_cl, (long unsigned int)qheader_uint32_cl_len });
-#else
-    sources.push_back({ (const char*)qheader_uint64_cl, (long unsigned int)qheader_uint64_cl_len });
-#endif
-
-#if FPPOW < 5
-    sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
-#elif FPPOW < 6
-    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
-#elif FPPOW < 7
-    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
-#else
-    sources.push_back({ (const char*)qheader_quad_cl, (long unsigned int)qheader_quad_cl_len });
-#endif
-
-    sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
-
-#if ENABLE_ALU
-    sources.push_back({ (const char*)qheader_alu_cl, (long unsigned int)qheader_alu_cl_len });
-#if ENABLE_BCD
-    sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
-#endif
-#endif
+    sources.push_back({ (const char*)qimcifa_uint64cl, (long unsigned int)qimcifa_uint64cl_len });
 
     int64_t plat_id = -1;
     std::vector<cl::Context> all_contexts;
@@ -300,11 +272,9 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
 }
 
 OCLEngine::OCLEngine()
-    : maxActiveAllocSize(-1)
 {
     InitOClResult initResult = InitOCL(false);
     SetDeviceContextPtrVector(initResult.all_dev_contexts, initResult.default_dev_context);
-    activeAllocSizes = std::vector<size_t>(initResult.all_dev_contexts.size());
 }
 
 } // namespace Qimcifa
