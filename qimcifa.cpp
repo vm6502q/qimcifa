@@ -397,7 +397,7 @@ int main()
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
-                                PRINT_SUCCESS(RGUESS, toFactor / RGUESS, toFactor,
+                                PRINT_SUCCESS(f1, f2, toFactor,
                                     "Success (on r difference of squares): Found ");
                                 return;
                             }
