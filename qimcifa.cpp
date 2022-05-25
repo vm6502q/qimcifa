@@ -297,7 +297,7 @@ int main()
                     for (size_t batchItem = 0U; batchItem < BASE_TRIALS; batchItem++) {
                         // Choose a base at random, >1 and <toFactor.
                         bitCapInt base = baseDist[0U](rand_gen);
-#if QBCAPPOW > 6U
+#if QBCAPPOW > 5U
                         for (size_t i = 1U; i < baseDist.size(); i++) {
                             base <<= wordSize;
                             base |= baseDist[i](rand_gen);
@@ -349,7 +349,7 @@ int main()
                         for (size_t rTrial = 0U; rTrial < PERIOD_TRIALS; rTrial++) {
                             // Choose a base at random, >1 and <toFactor.
                             bitCapInt r = rDist[0U](rand_gen);
-#if QBCAPPOW > 6U
+#if QBCAPPOW > 5U
                             for (size_t i = 1U; i < rDist.size(); i++) {
                                 r <<= wordSize;
                                 r |= rDist[i](rand_gen);
