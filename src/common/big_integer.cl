@@ -420,3 +420,11 @@ BigInteger big_integer_div(const BigInteger left, const BigInteger right)
 
     return result;
 }
+
+BigInteger big_integer_mod(const BigInteger left, const BigInteger right)
+{
+    BigInteger temp = big_integer_div(left, right);
+    temp = big_integer_mul(temp, right);
+
+    return big_integer_subtract(left, temp);
+}
