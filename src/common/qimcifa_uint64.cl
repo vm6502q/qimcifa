@@ -19,10 +19,41 @@
 
 // TODO: Consider this pseudocode, copied from qimcifa.cpp.
 
-#include "kiss09.cl"
+// #include "kiss09.cl"
 
-#define bitLenInt unsigned char
-#define bitCapInt unsigned long
+#define bitLenInt uchar
+#define bitCapInt ulong
+#define bitCapInt4 ulong4
+
+// Source:
+// https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
+bitCapInt uipow(bitCapInt b, bitCapInt e)
+{
+    bitCapInt result = 1U;
+    for (;;) {
+        if (b & 1U) {
+            result *= b;
+        }
+        e >>= 1U;
+        if (!e) {
+            break;
+        }
+        b *= b;
+    }
+
+    return result;
+}
+
+bitLenInt _log2(bitCapInt n)
+{
+    bitLenInt pow = 0U;
+    bitCapInt p = n >> 1U;
+    while (p) {
+        p >>= 1U;
+        pow++;
+    }
+    return pow;
+}
 
 bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
@@ -49,17 +80,22 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
     // This can become a bit flag register, in the future:
     const bitCapInt isRsaSemiprime = bitCapIntArgs[6];
 
-    const kiss09_state rngState = vload4(thread, rngSeeds);
+    const bitCapInt4 rngLoad = vload4(thread, rngSeeds);
+    kiss09_state rngState;
+    rngState.x = rngLoad.x;
+    rngState.c = rngLoad.y;
+    rngState.y = rngLoad.z;
+    rngState.z = rngLoad.w;
 
-    const bitLenInt byteCount = (log2(toFactor) >> 3) + 1;
+    const bitLenInt byteCount = (_log2(toFactor) >> 3) + 1;
 
     const bitCapInt fullRange = fullMaxR + 1 - fullMinR;
     const bitCapInt nodeRange = fullRange / nodeCount;
     const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1) - 1);
     const bitCapInt threadRange = (nodeMax + 1 - nodeMin) / threadCount;
-    const bitCapInt rMin = nodeMin + threadRange * cpu;
-    const bitCapInt rMax = ((cpu + 1) == threadCount) ? nodeMax : (nodeMin + threadRange * (cpu + 1) - 1);
+    const bitCapInt rMin = nodeMin + threadRange * thread;
+    const bitCapInt rMax = ((thread + 1) == threadCount) ? nodeMax : (nodeMin + threadRange * (thread + 1) - 1);
     const bitCapInt rRange = rMax + 1 - rMin;
 
     // TODO: Replace the initialization of random base and r distributions, equivalently,

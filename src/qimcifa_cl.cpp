@@ -304,7 +304,7 @@ int main()
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
     
-    BufferPtr rngSeedBufferPtr = MakeBuffer(context, CL_MEM_READ_WRITE, sizeof(bitCapInt) * itemCount);
+    BufferPtr rngSeedBufferPtr = MakeBuffer(context, CL_MEM_READ_WRITE, sizeof(bitCapInt) * itemCount * 4U);
     std::unique_ptr<bitCapInt[]> rngSeeds(new bitCapInt[itemCount * 4]);
     rand_dist seedDist(0, 0xFFFFFFFFFFFFFFFF);
     rand_dist cSeedDist(0, 0x3FFFFFFFFFFFFFF);
@@ -325,13 +325,14 @@ int main()
     if (error != CL_SUCCESS) {
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
-    
-    // TODO: Dispatch kernel, in batches, until success.
-    // Check for success across outputBufferPtr, every batch.
 
     // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
     // other QEngineOCL instances, until we're done queueing it.
     OCLDeviceCall ocl = deviceContext->Reserve(OCL_API_QIMCIFA_BATCH);
+
+    ocl.call.setArg(0, *argsBufferPtr);
+    ocl.call.setArg(1, *rngSeedBufferPtr);
+    ocl.call.setArg(2, *outputBufferPtr);
 
     bitCapInt testFactor = 1U;
     while (testFactor <= 1U) {
