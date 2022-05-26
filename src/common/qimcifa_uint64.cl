@@ -38,7 +38,8 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
 {
     const bitLenInt wordSize = 64;
 
-    const bitCapInt threads = get_global_size(0);
+    const bitCapInt thread = get_global_id(0);
+    const bitCapInt threadCount = get_global_size(0);
     const bitCapInt toFactor = bitCapIntArgs[0];
     const bitCapInt batchSize = bitCapIntArgs[1];
     const bitCapInt nodeId = bitCapIntArgs[2];
@@ -48,7 +49,7 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
     // This can become a bit flag register, in the future:
     const bitCapInt isRsaSemiprime = bitCapIntArgs[6];
 
-    const kiss09_state rngState = vload4(threads, rngSeeds);
+    const kiss09_state rngState = vload4(thread, rngSeeds);
 
     const bitLenInt byteCount = (log2(toFactor) >> 3) + 1;
 
@@ -56,9 +57,9 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
     const bitCapInt nodeRange = fullRange / nodeCount;
     const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1) - 1);
-    const bitCapInt threadRange = (nodeMax + 1 - nodeMin) / threads;
+    const bitCapInt threadRange = (nodeMax + 1 - nodeMin) / threadCount;
     const bitCapInt rMin = nodeMin + threadRange * cpu;
-    const bitCapInt rMax = ((cpu + 1) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1) - 1);
+    const bitCapInt rMax = ((cpu + 1) == threadCount) ? nodeMax : (nodeMin + threadRange * (cpu + 1) - 1);
     const bitCapInt rRange = rMax + 1 - rMin;
 
     // TODO: Replace the initialization of random base and r distributions, equivalently,
