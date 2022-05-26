@@ -12,6 +12,8 @@
 
 #include "common/oclengine.hpp"
 
+#include "qimcifa_uint64cl.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <memory>

@@ -319,13 +319,42 @@ int main()
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
     
-    // TODO: Fill this buffer with zeros.
+    std::unique_ptr<bitCapInt[]> outputArray(new bitCapInt[itemCount]());
     BufferPtr outputBufferPtr = MakeBuffer(context, CL_MEM_WRITE_ONLY, sizeof(bitCapInt) * itemCount);
+    error = queue.enqueueWriteBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
+    if (error != CL_SUCCESS) {
+        throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
+    }
     
     // TODO: Dispatch kernel, in batches, until success.
     // Check for success across outputBufferPtr, every batch.
-    
+
+    // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
+    // other QEngineOCL instances, until we're done queueing it.
+    OCLDeviceCall ocl = deviceContext->Reserve(OCL_API_QIMCIFA_BATCH);
+
     bitCapInt testFactor = 1U;
+    while (testFactor <= 1U) {
+        cl::Event kernelEvent;
+        error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+            cl::NDRange(groupCount), // global number of work items
+            cl::NDRange(groupSize), // local number (per group)
+            NULL, // vector of events to wait for
+            &kernelEvent); // handle to wait for the kernel
+
+        if (error != CL_SUCCESS) {
+            throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
+        }
+
+        kernelEvent.wait();
+        queue.enqueueReadBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
+        for (size_t i = 0; i < itemCount; i++) {
+            testFactor = outputArray.get()[i];
+            if (((toFactor / testFactor) * testFactor) == toFactor) {
+                break;
+            }
+        }
+    }
 
     std::cout << "Success: " << testFactor << " * " << (toFactor / testFactor) << std::endl;
     const double clockFactor = 1.0 / 1000.0; // Report in ms

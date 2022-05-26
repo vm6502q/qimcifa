@@ -5,6 +5,7 @@ project (qimcifa VERSION 0.1.0 DESCRIPTION "Quantum-inspired Monte Carlo integer
 include (GNUInstallDirs)
 
 include_directories ("include" "include/common")
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
 
 set (OPENCL_AMDSDK /opt/AMDAPPSDK-3.0 CACHE PATH "Installation path for the installed AMD OpenCL SDK, if used")
 
@@ -58,4 +59,7 @@ add_executable (qimcifa_cl
     src/common/oclengine.cpp
     )
 target_link_libraries (qimcifa_cl OpenCL)
+
+target_compile_definitions (qimcifa_cl PUBLIC CL_HPP_TARGET_OPENCL_VERSION=200)
+target_compile_definitions (qimcifa_cl PUBLIC CL_HPP_MINIMUM_OPENCL_VERSION=110)
 
