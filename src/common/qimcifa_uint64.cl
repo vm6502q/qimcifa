@@ -19,6 +19,8 @@
 
 // TODO: Consider this pseudocode, copied from qimcifa.cpp.
 
+#include "kiss09.cl"
+
 #define bitLenInt unsigned char
 #define bitCapInt unsigned long
 
@@ -32,7 +34,7 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs)
+void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rngSeeds)
 {
     const bitCapInt threads = get_global_size(0);
     const bitCapInt toFactor = bitCapIntArgs[0];
@@ -43,6 +45,8 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs)
     const bitCapInt fullMaxR = bitCapIntArgs[5];
     // This can become a bit flag register, in the future:
     const bitCapInt isRsaSemiprime = bitCapIntArgs[6];
+
+    const kiss09_state rngState = vload4(threads, rngSeeds);
 
     const bitLenInt byteCount = (log2(toFactor) >> 3) + 1;
 
