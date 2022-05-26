@@ -30,6 +30,7 @@ endif ()
 # Build the OpenCL command files
 find_program (XXD_BIN xxd)
 file (GLOB_RECURSE COMPILABLE_RESOURCES "src/common/*.cl")
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/common/)
 foreach (INPUT_FILE ${COMPILABLE_RESOURCES})
     get_filename_component (INPUT_NAME ${INPUT_FILE} NAME)
     get_filename_component (INPUT_BASENAME ${INPUT_FILE} NAME_WE)
@@ -55,6 +56,7 @@ add_executable (qimcifa
 target_link_libraries (qimcifa pthread)
 
 add_executable (qimcifa_cl
+    ${COMPILED_RESOURCES}
     src/qimcifa_cl.cpp
     src/common/oclengine.cpp
     )

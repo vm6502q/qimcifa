@@ -100,7 +100,7 @@ cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::
     // TODO: This needs manual file I/O.
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
-    sources.push_back({ (const char*)qimcifa_uint64cl, (long unsigned int)qimcifa_uint64cl_len });
+    sources.push_back({ (const char*)qimcifa_uint64_cl, (long unsigned int)qimcifa_uint64_cl_len });
 
     program = cl::Program(devCntxt->context, sources);
     std::cout << "Built JIT." << std::endl;
