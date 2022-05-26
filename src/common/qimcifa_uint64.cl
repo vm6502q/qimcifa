@@ -29,12 +29,12 @@
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
 bitCapInt uipow(bitCapInt b, bitCapInt e)
 {
-    bitCapInt result = 1U;
+    bitCapInt result = 1;
     for (;;) {
-        if (b & 1U) {
+        if (b & 1) {
             result *= b;
         }
-        e >>= 1U;
+        e >>= 1;
         if (!e) {
             break;
         }
@@ -42,17 +42,6 @@ bitCapInt uipow(bitCapInt b, bitCapInt e)
     }
 
     return result;
-}
-
-bitLenInt _log2(bitCapInt n)
-{
-    bitLenInt pow = 0U;
-    bitCapInt p = n >> 1U;
-    while (p) {
-        p >>= 1U;
-        pow++;
-    }
-    return pow;
 }
 
 bitCapInt gcd(bitCapInt n1, bitCapInt n2)
@@ -79,6 +68,7 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
     const bitCapInt fullMaxR = bitCapIntArgs[5];
     // This can become a bit flag register, in the future:
     const bitCapInt isRsaSemiprime = bitCapIntArgs[6];
+    const bitLenInt byteCount = (bitLenInt)bitCapIntArgs[7];
 
     const bitCapInt4 rngLoad = vload4(thread, rngSeeds);
     kiss09_state rngState;
@@ -86,8 +76,6 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
     rngState.c = rngLoad.y;
     rngState.y = rngLoad.z;
     rngState.z = rngLoad.w;
-
-    const bitLenInt byteCount = (_log2(toFactor) >> 3) + 1;
 
     const bitCapInt fullRange = fullMaxR + 1 - fullMinR;
     const bitCapInt nodeRange = fullRange / nodeCount;
@@ -98,21 +86,22 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
     const bitCapInt rMax = ((thread + 1) == threadCount) ? nodeMax : (nodeMin + threadRange * (thread + 1) - 1);
     const bitCapInt rRange = rMax + 1 - rMin;
 
-    // TODO: Replace the initialization of random base and r distributions, equivalently,
-    // with functions for random number generation.
-
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
-        bitCapInt base = kiss09_uint(rngState);
+        bitCapInt base = kiss09_ulong(rngState);
         for (size_t i = 1; i < byteCount; i++) {
             base <<= wordSize;
-            base |= kiss09_uint(rngState);
+            base |= kiss09_ulong(rngState);
         }
-        base = (base % (toFactor - 1U)) + 2U;
+        base = (base % (toFactor - 3)) + 2;
 
         const bitCapInt testFactor = gcd(toFactor, base);
         if (testFactor != 1) {
             outputs[thread] = testFactor;
+            rngSeeds[(4 * thread) + 0] = rngState.x;
+            rngSeeds[(4 * thread) + 1] = rngState.c;
+            rngSeeds[(4 * thread) + 2] = rngState.y;
+            rngSeeds[(4 * thread) + 3] = rngState.z;
 
             return;
         }
@@ -145,10 +134,10 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
 
         // So, we guess r, between fullMinR and fullMaxR.
         // Choose a base at random, >1 and <toFactor.
-        bitCapInt r = kiss09_uint(rngState);
+        bitCapInt r = kiss09_ulong(rngState);
         for (size_t i = 1; i < byteCount; i++) {
             r <<= wordSize;
-            r |= kiss09_uint(rngState);
+            r |= kiss09_ulong(rngState);
         }
         r = (r % rRange) + rMin;
 
@@ -161,6 +150,10 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
         // we first check if our guess for r is already a factor.
         if ((rGuess > 1) && ((toFactor / rGuess) * rGuess) == toFactor) {
             outputs[thread] = rGuess;
+            rngSeeds[(4 * thread) + 0] = rngState.x;
+            rngSeeds[(4 * thread) + 1] = rngState.c;
+            rngSeeds[(4 * thread) + 2] = rngState.y;
+            rngSeeds[(4 * thread) + 3] = rngState.z;
 
             return;
         }
@@ -177,8 +170,17 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
         }
         if ((fmul > 1) && (fmul == toFactor) && (f1 > 1) && (f2 > 1)) {
             outputs[thread] = f1;
+            rngSeeds[(4 * thread) + 0] = rngState.x;
+            rngSeeds[(4 * thread) + 1] = rngState.c;
+            rngSeeds[(4 * thread) + 2] = rngState.y;
+            rngSeeds[(4 * thread) + 3] = rngState.z;
 
             return;
         }
     }
+    
+    rngSeeds[(4 * thread) + 0] = rngState.x;
+    rngSeeds[(4 * thread) + 1] = rngState.c;
+    rngSeeds[(4 * thread) + 2] = rngState.y;
+    rngSeeds[(4 * thread) + 3] = rngState.z;
 }

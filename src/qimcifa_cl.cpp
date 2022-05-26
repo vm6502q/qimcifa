@@ -295,10 +295,10 @@ int main()
     const size_t groupCount = deviceContext->GetPreferredConcurrency();
     const size_t itemCount = groupSize * groupCount;
 
-    const size_t argsCount = 7U;
+    const size_t argsCount = 8U;
     const size_t batchSize = 1U << 9U;
     BufferPtr argsBufferPtr = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * argsCount);
-    bitCapInt bciArgs[7] = { toFactor, batchSize, nodeId, nodeCount, fullMinR, fullMaxR, (bitCapInt)IS_RSA_SEMIPRIME };
+    bitCapInt bciArgs[8] = { toFactor, batchSize, nodeId, nodeCount, fullMinR, fullMaxR, (bitCapInt)(log2(toFactor) / 64U), (bitCapInt)IS_RSA_SEMIPRIME };
     cl_int error = queue.enqueueWriteBuffer(*argsBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * argsCount, bciArgs, NULL);
     if (error != CL_SUCCESS) {
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
@@ -351,7 +351,7 @@ int main()
         queue.enqueueReadBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
         for (size_t i = 0; i < itemCount; i++) {
             testFactor = outputArray.get()[i];
-            if (((toFactor / testFactor) * testFactor) == toFactor) {
+            if ((testFactor > 1U) && (((toFactor / testFactor) * testFactor) == toFactor)) {
                 break;
             }
         }
