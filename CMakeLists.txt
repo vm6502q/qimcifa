@@ -55,6 +55,7 @@ target_link_libraries (qimcifa pthread)
 
 add_executable (qimcifa_cl
     src/qimcifa_cl.cpp
+    src/common/oclengine.cpp
     )
 target_link_libraries (qimcifa_cl OpenCL)
 
