@@ -441,6 +441,7 @@ BigInteger big_integer_lshift_64(const BigInteger left, const unsigned int right
     for (int i = maxLcv; i < BIG_INTEGER_DATA_MAX_SIZE; i++) {
         result.data.bits[i] = 0;
     }
+    result.sign = (char)(result.data.bits[BIG_INTEGER_DATA_MAX_SIZE - 1] & 1);
 
     return result;
 }
@@ -457,6 +458,7 @@ BigInteger big_integer_rshift_64(const BigInteger left, const unsigned int right
     for (int i = 0; i < maxLcv; i++) {
         result.data.bits[i + rightMult] = left.data.bits[i];
     }
+    result.sign = (char)(result.data.bits[BIG_INTEGER_DATA_MAX_SIZE - 1] & 1);
 
     return result;
 }
