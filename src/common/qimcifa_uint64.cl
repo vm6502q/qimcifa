@@ -36,6 +36,8 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 
 void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rngSeeds)
 {
+    const bitLenInt wordSize = 64;
+
     const bitCapInt threads = get_global_size(0);
     const bitCapInt toFactor = bitCapIntArgs[0];
     const bitCapInt batchSize = bitCapIntArgs[1];
