@@ -22,9 +22,8 @@
 // #include "kiss09.cl"
 // #include "big_integer.cl"
 
-#define bitLenInt uchar
-#define bitCapInt ulong
-#define bitCapInt4 ulong4
+#define bitLenInt uint
+#define bitCapInt BigInteger
 
 // Source:
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
@@ -55,7 +54,7 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rngSeeds, global bitCapInt* outputs)
+void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global ulong* rngSeeds, global bitCapInt* outputs)
 {
     const bitLenInt wordSize = 64;
 
@@ -71,7 +70,7 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
     const bitCapInt isRsaSemiprime = bitCapIntArgs[6];
     const bitLenInt byteCount = (bitLenInt)bitCapIntArgs[7];
 
-    const bitCapInt4 rngLoad = vload4(thread, rngSeeds);
+    const ulong rngLoad = vload4(thread, rngSeeds);
     kiss09_state rngState;
     rngState.x = rngLoad.x;
     rngState.c = rngLoad.y;
