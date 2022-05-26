@@ -57,20 +57,19 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
     const bitCapInt threadRange = (nodeMax + 1 - nodeMin) / threads;
     const bitCapInt rMin = nodeMin + threadRange * cpu;
     const bitCapInt rMax = ((cpu + 1) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1) - 1);
+    const bitCapInt rRange = rMax + 1 - rMin;
 
     // TODO: Replace the initialization of random base and r distributions, equivalently,
     // with functions for random number generation.
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
-        bitCapInt base = baseDist[0](rand_gen);
-#if QBCAPPOW > 5U
+        bitCapInt base = kiss09_uint(rngState);
         for (size_t i = 1; i < byteCount; i++) {
             base <<= wordSize;
-            base |= baseDist[i](rand_gen);
+            base |= kiss09_uint(rngState);
         }
-        base += 2U;
-#endif
+        base = (base % (toFactor - 1U)) + 2U;
 
         const bitCapInt testFactor = gcd(toFactor, base);
         if (testFactor != 1) {
@@ -107,14 +106,13 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
 
         // So, we guess r, between fullMinR and fullMaxR.
         // Choose a base at random, >1 and <toFactor.
-        bitCapInt r = rDist[0](rand_gen);
-#if QBCAPPOW > 5U
+        bitCapInt r = kiss09_uint(rngState);
         for (size_t i = 1; i < byteCount; i++) {
             r <<= wordSize;
-            r |= rDist[i](rand_gen);
+            r |= kiss09_uint(rngState);
         }
-        r += rMin;
-#endif
+        r = (r % rRange) + rMin;
+
         // Since our output is r rather than y, we can skip the continued fractions step.
         const bitCapInt p = (r & 1) ? r : (r >> 1);
 
