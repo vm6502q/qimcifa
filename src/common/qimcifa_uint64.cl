@@ -98,10 +98,6 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
         const bitCapInt testFactor = gcd(toFactor, base);
         if (testFactor != 1) {
             outputs[thread] = testFactor;
-            rngSeeds[(4 * thread) + 0] = rngState.x;
-            rngSeeds[(4 * thread) + 1] = rngState.c;
-            rngSeeds[(4 * thread) + 2] = rngState.y;
-            rngSeeds[(4 * thread) + 3] = rngState.z;
 
             return;
         }
@@ -150,10 +146,6 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
         // we first check if our guess for r is already a factor.
         if ((rGuess > 1) && ((toFactor / rGuess) * rGuess) == toFactor) {
             outputs[thread] = rGuess;
-            rngSeeds[(4 * thread) + 0] = rngState.x;
-            rngSeeds[(4 * thread) + 1] = rngState.c;
-            rngSeeds[(4 * thread) + 2] = rngState.y;
-            rngSeeds[(4 * thread) + 3] = rngState.z;
 
             return;
         }
@@ -170,17 +162,15 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
         }
         if ((fmul > 1) && (fmul == toFactor) && (f1 > 1) && (f2 > 1)) {
             outputs[thread] = f1;
-            rngSeeds[(4 * thread) + 0] = rngState.x;
-            rngSeeds[(4 * thread) + 1] = rngState.c;
-            rngSeeds[(4 * thread) + 2] = rngState.y;
-            rngSeeds[(4 * thread) + 3] = rngState.z;
 
             return;
         }
     }
-    
-    rngSeeds[(4 * thread) + 0] = rngState.x;
-    rngSeeds[(4 * thread) + 1] = rngState.c;
-    rngSeeds[(4 * thread) + 2] = rngState.y;
-    rngSeeds[(4 * thread) + 3] = rngState.z;
+
+    // We need to update the global seeds, but only if we didn't succeeed.
+    const bitCapInt threadOffset = thread * 4;
+    rngSeeds[threadOffset + 0] = rngState.x;
+    rngSeeds[threadOffset + 1] = rngState.c;
+    rngSeeds[threadOffset + 2] = rngState.y;
+    rngSeeds[threadOffset + 3] = rngState.z;
 }
