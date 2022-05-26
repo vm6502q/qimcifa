@@ -34,7 +34,7 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rngSeeds)
+void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rngSeeds, global bitCapInt* outputs)
 {
     const bitLenInt wordSize = 64;
 
@@ -76,8 +76,8 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
 
         const bitCapInt testFactor = gcd(toFactor, base);
         if (testFactor != 1) {
-            // Inform the other threads on this node that we've succeeded and are done, if feasible.
-            std::cout << "Chose non-relative prime: " << testFactor << " * " << (toFactor / testFactor) << std::endl;
+            outputs[thread] = testFactor;
+
             return;
         }
 
@@ -119,16 +119,12 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
         // Since our output is r rather than y, we can skip the continued fractions step.
         const bitCapInt p = (r & 1) ? r : (r >> 1);
 
-#define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
-    std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;
-
         const bitCapInt rGuess = isRsaSemiprime ? p : r;
 
         // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
         // we first check if our guess for r is already a factor.
         if ((rGuess > 1) && ((toFactor / rGuess) * rGuess) == toFactor) {
-            // Inform the other threads on this node that we've succeeded and are done, if feasible.
-            PRINT_SUCCESS(rGuess, toFactor / rGuess, toFactor, "Success (on r trial division): Found ");
+            outputs[thread] = rGuess;
 
             return;
         }
@@ -144,8 +140,7 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global bitCapInt* rng
             fmul = f1 * f2;
         }
         if ((fmul > 1) && (fmul == toFactor) && (f1 > 1) && (f2 > 1)) {
-            // Inform the other threads on this node that we've succeeded and are done, if feasible.
-            PRINT_SUCCESS(rGuess, toFactor / rGuess, toFactor, "Success (on r difference of squares): Found ");
+            outputs[thread] = f1;
 
             return;
         }
