@@ -24,15 +24,16 @@
 
 #define bitLenInt uint
 #define bitCapInt BigInteger
+#define BIT_AND_1(x) (x.data.bits[0] & 1)
 
 // Source:
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
 bitCapInt uipow(bitCapInt b, bitCapInt e)
 {
-    bitCapInt result = 1;
+    bitCapInt result = big_integer_create(1);
     for (;;) {
-        if (b & 1) {
-            result *= b;
+        if (BIT_AND_1(b)) {
+            result = big_integer_mul(result, b);
         }
         e >>= 1;
         if (!e) {
@@ -47,8 +48,8 @@ bitCapInt uipow(bitCapInt b, bitCapInt e)
 bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
     while (n2) {
-        const bitCapInt temp = n2;
-        n2 = n1 % n2;
+        const bitCapInt temp = big_integer_copy(n2);
+        n2 = big_integer_mod(n1, n2);
         n1 = temp;
     }
     return n1;

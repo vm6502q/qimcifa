@@ -428,3 +428,35 @@ BigInteger big_integer_mod(const BigInteger left, const BigInteger right)
 
     return big_integer_subtract(left, temp);
 }
+
+BigInteger big_integer_lshift_64(const BigInteger left, const unsigned int rightMult)
+{
+    const int maxLcv = BIG_INTEGER_DATA_MAX_SIZE - rightMult;
+
+    BigInteger result = big_integer_copy(left);
+    
+    for (int i = 0; i < maxLcv; i++) {
+        result.data.bits[i] = left.data.bits[i + rightMult];
+    }
+    for (int i = maxLcv; i < BIG_INTEGER_DATA_MAX_SIZE; i++) {
+        result.data.bits[i] = 0;
+    }
+
+    return result;
+}
+
+BigInteger big_integer_rshift_64(const BigInteger left, const unsigned int rightMult)
+{
+    const int maxLcv = BIG_INTEGER_DATA_MAX_SIZE - rightMult;
+
+    BigInteger result = big_integer_copy(left);
+    
+    for (int i = 0; i < rightMult; i++) {
+        result.data.bits[i] = 0;
+    }
+    for (int i = 0; i < maxLcv; i++) {
+        result.data.bits[i + rightMult] = left.data.bits[i];
+    }
+
+    return result;
+}
