@@ -30,16 +30,17 @@
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
 bitCapInt uipow(bitCapInt b, bitCapInt e)
 {
+    const BigInteger BIGINT_0 = big_integer_create(0);
     bitCapInt result = big_integer_create(1);
     for (;;) {
         if (BIT_AND_1(b)) {
             result = big_integer_mul(result, b);
         }
-        e >>= 1;
-        if (!e) {
+        big_integer_rshift(e, 1);
+        if (big_integer_compare(e, BIGINT_0) == 0) {
             break;
         }
-        b *= b;
+        b = big_integer_mul(b, b);
     }
 
     return result;
@@ -47,7 +48,8 @@ bitCapInt uipow(bitCapInt b, bitCapInt e)
 
 bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
-    while (n2) {
+    const BigInteger BIGINT_0 = big_integer_create(0);
+    while (big_integer_compare(n2, BIGINT_0) != 0) {
         const bitCapInt temp = big_integer_copy(n2);
         n2 = big_integer_mod(n1, n2);
         n1 = temp;
@@ -55,49 +57,57 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global ulong* rngSeeds, global bitCapInt* outputs)
+void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, global ulong* rngSeeds, global ulong* outputs)
 {
     const bitLenInt wordSize = 64;
 
-    const bitCapInt thread = get_global_id(0);
-    const bitCapInt threadCount = get_global_size(0);
+    const ulong thread = get_global_id(0);
+    const ulong threadCount = get_global_size(0);
+    const ulong batchSize = ulongArgs[0];
+    const ulong nodeId = bitCapIntArgs[1];
+    const ulong nodeCount = bitCapIntArgs[2];
     const bitCapInt toFactor = bitCapIntArgs[0];
-    const bitCapInt batchSize = bitCapIntArgs[1];
-    const bitCapInt nodeId = bitCapIntArgs[2];
-    const bitCapInt nodeCount = bitCapIntArgs[3];
-    const bitCapInt fullMinR = bitCapIntArgs[4];
-    const bitCapInt fullMaxR = bitCapIntArgs[5];
+    const bitCapInt fullMinR = bitCapIntArgs[1];
+    const bitCapInt fullMaxR = bitCapIntArgs[2];
     // This can become a bit flag register, in the future:
     const bitCapInt isRsaSemiprime = bitCapIntArgs[6];
-    const bitLenInt byteCount = (bitLenInt)bitCapIntArgs[7];
+    const bitLenInt byteCount = (bitLenInt)(bitCapIntArgs[7].data.bits[0]);
 
-    const ulong rngLoad = vload4(thread, rngSeeds);
+    const ulong4 rngLoad = vload4(thread, rngSeeds);
     kiss09_state rngState;
     rngState.x = rngLoad.x;
     rngState.c = rngLoad.y;
     rngState.y = rngLoad.z;
     rngState.z = rngLoad.w;
 
-    const bitCapInt fullRange = fullMaxR + 1 - fullMinR;
-    const bitCapInt nodeRange = fullRange / nodeCount;
-    const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
-    const bitCapInt nodeMax = ((nodeId + 1) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1) - 1);
-    const bitCapInt threadRange = (nodeMax + 1 - nodeMin) / threadCount;
-    const bitCapInt rMin = nodeMin + threadRange * thread;
-    const bitCapInt rMax = ((thread + 1) == threadCount) ? nodeMax : (nodeMin + threadRange * (thread + 1) - 1);
-    const bitCapInt rRange = rMax + 1 - rMin;
+    const bitCapInt BIGINT_1 = big_integer_create(1);
+    const bitCapInt BIGINT_2 = big_integer_create(2);
+    const bitCapInt BIGINT_3 = big_integer_create(3);
+
+    const bitCapInt fullRange = big_integer_subtract(big_integer_add(fullMaxR, BIGINT_1), fullMinR);
+    const bitCapInt nodeRange = big_integer_div(fullRange, big_integer_create(nodeCount));
+    const bitCapInt nodeMin = big_integer_add(fullMinR, big_integer_mul(nodeRange, big_integer_create(nodeId)));
+    const bitCapInt nodeMax = ((nodeId + 1) == nodeCount)
+        ? fullMaxR
+        : big_integer_add(fullMinR, big_integer_subtract(big_integer_mul(nodeRange, big_integer_create(nodeId + 1)), BIGINT_1));
+    const bitCapInt threadRange = big_integer_subtract(big_integer_add(nodeMax, BIGINT_1), nodeMin) / threadCount;
+    const bitCapInt rMin = big_integer_add(nodeMin, big_integer_mul(threadRange, big_integer_create(thread)));
+    const bitCapInt rMax = ((thread + 1) == threadCount)
+        ? nodeMax
+        : big_integer_add(nodeMin, big_integer_subtract(big_integer_mul(threadRange, big_integer_create(thread + 1)), BIGINT_1));
+    const bitCapInt rRange = big_integer_subtract(big_integer_add(rMax, BIGINT_1), rMin);
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
         bitCapInt base = kiss09_ulong(rngState);
         for (size_t i = 1; i < byteCount; i++) {
-            base <<= wordSize;
+            big_integer_lshift_64(base, 1);
             base |= kiss09_ulong(rngState);
         }
-        base = (base % (toFactor - 3)) + 2;
+        base = big_integer_add(big_integer_mod(base, big_integer_subtract(toFactor, BIGINT_3)), BIGINT_2);
 
         const bitCapInt testFactor = gcd(toFactor, base);
-        if (testFactor != 1) {
+        if (big_integer_compare(testFactor, BIGINT_1) != 0) {
             outputs[thread] = testFactor;
 
             return;
@@ -133,35 +143,41 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global ulong* rngSeed
         // Choose a base at random, >1 and <toFactor.
         bitCapInt r = kiss09_ulong(rngState);
         for (size_t i = 1; i < byteCount; i++) {
-            r <<= wordSize;
+            big_integer_lshift_64(r, 1);
             r |= kiss09_ulong(rngState);
         }
-        r = (r % rRange) + rMin;
+        r = big_integer_add(big_integer_mod(r, rRange), rMin);
 
         // Since our output is r rather than y, we can skip the continued fractions step.
-        const bitCapInt p = (r & 1) ? r : (r >> 1);
+        const bitCapInt p = BIT_AND_1(r) ? r : big_integer_rshift(r, 1);
 
-        const bitCapInt rGuess = isRsaSemiprime ? p : r;
+        const bitCapInt rGuess = BIT_AND_1(isRsaSemiprime) ? p : r;
 
         // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
         // we first check if our guess for r is already a factor.
-        if ((rGuess > 1) && ((toFactor / rGuess) * rGuess) == toFactor) {
+        if ((big_integer_compare(rGuess, BIGINT_1) != 0)
+            && (big_integer_compare(big_integer_mul(big_integer_div(toFactor, rGuess), rGuess), toFactor) == 0) {
             outputs[thread] = rGuess;
 
             return;
         }
 
-        const bitCapInt apowrhalf = uipow(base, p) % toFactor;
-        bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1, toFactor);
-        bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1, toFactor);
-        bitCapInt fmul = f1 * f2;
-        while ((fmul > 1) && (fmul != toFactor) && (((toFactor / fmul) * fmul) == toFactor)) {
+        const bitCapInt apowrhalf = big_integer_mod(uipow(base, p), toFactor);
+        bitCapInt f1 = gcd(big_integer_add(apowrhalf, BIGINT_1), toFactor);
+        bitCapInt f2 = gcd(big_integer_subtract(apowrhalf, BIGINT_1), toFactor);
+        bitCapInt fmul = big_integer_mul(f1, f2);
+        while ((big_integer_compare(fmul, BIGINT_1) != 0)
+            && (big_integer_compare(fmul, toFactor) != 0)
+            && (big_integer_compare(big_integer_mul(big_integer_div(toFactor, fmul), fmul), toFactor) == 0) {
             fmul = f1;
-            f1 = fmul * f2;
-            f2 = toFactor / (fmul * f2);
-            fmul = f1 * f2;
+            f1 = big_integer_mul(fmul, f2);
+            f2 = big_integer_div(toFactor, big_integer_mul(fmul, f2));
+            fmul = big_integer_mul(f1, f2);
         }
-        if ((fmul > 1) && (fmul == toFactor) && (f1 > 1) && (f2 > 1)) {
+        if ((big_integer_compare(fmul, BIGINT_1) != 0)
+            && (big_integer_compare(fmul, toFactor) == 0)
+            && (big_integer_compare(f1, BIGINT_1) != 0)
+            && (big_integer_compare(f2, BIGINT_1) != 0)) {
             outputs[thread] = f1;
 
             return;
@@ -169,7 +185,7 @@ void kernel qimcifa_batch(global bitCapInt* bitCapIntArgs, global ulong* rngSeed
     }
 
     // We need to update the global seeds, but only if we didn't succeeed.
-    const bitCapInt threadOffset = thread * 4;
+    const ulong threadOffset = thread * 4;
     rngSeeds[threadOffset + 0] = rngState.x;
     rngSeeds[threadOffset + 1] = rngState.c;
     rngSeeds[threadOffset + 2] = rngState.y;
