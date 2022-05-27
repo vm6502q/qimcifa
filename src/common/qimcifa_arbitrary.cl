@@ -90,7 +90,7 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
     const bitCapInt nodeMax = ((nodeId + 1) == nodeCount)
         ? fullMaxR
         : big_integer_add(fullMinR, big_integer_subtract(big_integer_mul(nodeRange, big_integer_create(nodeId + 1)), BIGINT_1));
-    const bitCapInt threadRange = big_integer_div(big_integer_subtract(big_integer_add(nodeMax, BIGINT_1), nodeMin), threadCount);
+    const bitCapInt threadRange = big_integer_div(big_integer_subtract(big_integer_add(nodeMax, BIGINT_1), nodeMin), big_integer_create(threadCount));
     const bitCapInt rMin = big_integer_add(nodeMin, big_integer_mul(threadRange, big_integer_create(thread)));
     const bitCapInt rMax = ((thread + 1) == threadCount)
         ? nodeMax

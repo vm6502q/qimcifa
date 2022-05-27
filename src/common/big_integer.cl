@@ -504,6 +504,9 @@ BigInteger big_integer_rshift(const BigInteger left, const unsigned int right)
         carry = left.data.bits[i] << rModComp;
     }
     result.sign = (char)(result.data.bits[left.data.length - 1] & 1);
+    if (!(left.data.bits[maxLcv] >> rModComp)) {
+        result.data.length--;
+    }
 
     return result;
 }
