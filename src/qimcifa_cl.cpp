@@ -124,7 +124,7 @@ std::ostream& operator<<(std::ostream& os, const bitCapInt& bci) {
     for (int i = digits.size() - 1; i >= 0; i--) {
         os << digits[i];
     }
-    
+
     return os;
 }
 

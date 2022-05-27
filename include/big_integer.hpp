@@ -235,8 +235,8 @@ BigInteger bi_mul(const BigInteger left, const BigInteger right)
         for (unsigned j = 0; j < halfWordCount; j++) {
             const unsigned long lLoHalfWord = BIG_INT_LO_HALF_WORD(left.bits[j]);
             const unsigned long lHiHalfWord = BIG_INT_HI_HALF_WORD(left.bits[j]);
-            const unsigned long rLoHalfWord = BIG_INT_LO_HALF_WORD(right.bits[i]);
-            const unsigned long rHiHalfWord = BIG_INT_HI_HALF_WORD(right.bits[i]);
+            const unsigned long rLoHalfWord = BIG_INT_LO_HALF_WORD(right.bits[i + j]);
+            const unsigned long rHiHalfWord = BIG_INT_HI_HALF_WORD(right.bits[i + j]);
 
             partResult.bits[2 * j] += (lLoHalfWord * rLoHalfWord) |
                 ((lHiHalfWord * rLoHalfWord + lLoHalfWord * rHiHalfWord) << BIG_INTEGER_HALF_WORD_BITS);
