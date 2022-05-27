@@ -33,6 +33,7 @@
 #define BIG_INTEGER_HALF_WORD_SIZE 1
 #define BIG_INTEGER_HALF_WORD_BITS 32
 #define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFF
+#define BIG_INTEGER_BITS 128
 
 typedef struct BigInteger {
     BIG_INTEGER_WORD bits[BIG_INTEGER_WORD_SIZE];
@@ -74,15 +75,15 @@ int bi_compare(const BigInteger left, const BigInteger right)
 BigInteger bi_add(const BigInteger left, const BigInteger right)
 {
     const int maxLcv = BIG_INTEGER_WORD_SIZE - 1;
-    BigInteger result = bi_empty();
+    BigInteger result = bi_copy(left);
 
     for (int i = 0; i < maxLcv; ++i) {
-        result.bits[i] += left.bits[i] + right.bits[i];
+        result.bits[i] += right.bits[i];
         if (result.bits[i] < left.bits[i]) {
             result.bits[i + 1]++;
         }
     }
-    result.bits[maxLcv] += left.bits[maxLcv] + right.bits[maxLcv];
+    result.bits[maxLcv] += right.bits[maxLcv];
 
     return result;
 }
@@ -90,15 +91,15 @@ BigInteger bi_add(const BigInteger left, const BigInteger right)
 BigInteger bi_sub(const BigInteger left, const BigInteger right)
 {
     const int maxLcv = BIG_INTEGER_WORD_SIZE - 1;
-    BigInteger result = bi_empty();
+    BigInteger result = bi_copy(left);
 
     for (int i = 0; i < maxLcv; ++i) {
-        result.bits[i] += left.bits[i] - right.bits[i];
+        result.bits[i] -= right.bits[i];
         if (result.bits[i] > left.bits[i]) {
             result.bits[i + 1]--;
         }
     }
-    result.bits[maxLcv] += left.bits[maxLcv] - right.bits[maxLcv];
+    result.bits[maxLcv] -= right.bits[maxLcv];
 
     return result;
 }
