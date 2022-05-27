@@ -66,12 +66,11 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
     const ulong batchSize = ulongArgs[0];
     const ulong nodeId = bitCapIntArgs[1];
     const ulong nodeCount = bitCapIntArgs[2];
+    // This can become a bit flag register, in the future:
+    const bitCapInt isRsaSemiprime = bitCapIntArgs[3];
     const bitCapInt toFactor = bitCapIntArgs[0];
     const bitCapInt fullMinR = bitCapIntArgs[1];
     const bitCapInt fullMaxR = bitCapIntArgs[2];
-    // This can become a bit flag register, in the future:
-    const bitCapInt isRsaSemiprime = bitCapIntArgs[6];
-    const bitLenInt byteCount = (bitLenInt)(bitCapIntArgs[7].data.bits[0]);
 
     const ulong4 rngLoad = vload4(thread, rngSeeds);
     kiss09_state rngState;
@@ -100,7 +99,7 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
         bitCapInt base = big_integer_create(kiss09_ulong(rngState));
-        for (size_t i = 1; i < byteCount; i++) {
+        for (size_t i = 1; i < toFactor.data.length; i++) {
             big_integer_lshift_64(base, 1);
             base.data.bits[0] = kiss09_ulong(rngState);
         }
@@ -142,7 +141,7 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
         // So, we guess r, between fullMinR and fullMaxR.
         // Choose a base at random, >1 and <toFactor.
         bitCapInt r =big_integer_create(kiss09_ulong(rngState));
-        for (size_t i = 1; i < byteCount; i++) {
+        for (size_t i = 1; i < fullMaxR.data.length; i++) {
             big_integer_lshift_64(r, 1);
             r.data.bits[0] = kiss09_ulong(rngState);
         }

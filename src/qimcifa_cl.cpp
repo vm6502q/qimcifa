@@ -295,11 +295,17 @@ int main()
     const size_t groupCount = deviceContext->GetPreferredConcurrency();
     const size_t itemCount = groupSize * groupCount;
 
-    const size_t argsCount = 8U;
     const size_t batchSize = 1U << 9U;
-    BufferPtr argsBufferPtr = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * argsCount);
-    bitCapInt bciArgs[8] = { toFactor, batchSize, nodeId, nodeCount, fullMinR, fullMaxR, (bitCapInt)(log2(toFactor) / 64U), (bitCapInt)IS_RSA_SEMIPRIME };
-    cl_int error = queue.enqueueWriteBuffer(*argsBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * argsCount, bciArgs, NULL);
+    BufferPtr ulongArgsBufferPtr = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(uint64_t) * 4);
+    uint64_t ulongArgs[4] = { batchSize, nodeId, nodeCount, (bitCapInt)IS_RSA_SEMIPRIME };
+    cl_int error = queue.enqueueWriteBuffer(*ulongArgsBufferPtr, CL_TRUE, 0U, sizeof(uint64_t) * 4, ulongArgs, NULL);
+    if (error != CL_SUCCESS) {
+        throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
+    }
+
+    BufferPtr bciArgsBufferPtr = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * 3);
+    bitCapInt bciArgs[3] = { toFactor, fullMinR, fullMaxR };
+    error = queue.enqueueWriteBuffer(*bciArgsBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * 3, bciArgs, NULL);
     if (error != CL_SUCCESS) {
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
@@ -330,9 +336,10 @@ int main()
     // other QEngineOCL instances, until we're done queueing it.
     OCLDeviceCall ocl = deviceContext->Reserve(OCL_API_QIMCIFA_BATCH);
 
-    ocl.call.setArg(0, *argsBufferPtr);
-    ocl.call.setArg(1, *rngSeedBufferPtr);
-    ocl.call.setArg(2, *outputBufferPtr);
+    ocl.call.setArg(0, *ulongArgsBufferPtr);
+    ocl.call.setArg(1, *bciArgsBufferPtr);
+    ocl.call.setArg(2, *rngSeedBufferPtr);
+    ocl.call.setArg(3, *outputBufferPtr);
 
     bitCapInt testFactor = 1U;
     while (testFactor <= 1U) {
