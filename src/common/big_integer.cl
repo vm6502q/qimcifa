@@ -1,5 +1,3 @@
-// Adapted by Daniel Strano (2022) from the following source:
-
 /*
 ** big_integer.c
 **     Description: "Arbitrary"-precision integer
@@ -138,7 +136,7 @@ BigInteger bi_create(const BIG_INTEGER_WORD value)
     return bigInt;
 }
 
-BigInteger bi_load(BIG_INTEGER_WORD* a)
+BigInteger bi_load(global BIG_INTEGER_WORD* a)
 {
     BigInteger result;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; i++) {
@@ -244,7 +242,7 @@ BigInteger bi_mul(const BigInteger left, const BigInteger right)
                 ((lHiHalfWord * rLoHalfWord + lLoHalfWord * rHiHalfWord) << BIG_INTEGER_HALF_WORD_BITS);
             partResult.bits[2 * j + 1] += lHiHalfWord * rHiHalfWord;
         }
-        result = bi_add(result, partResult);
+        result = bi_add(result, bi_lshift_word(partResult, i));
     }
 
     return result;
