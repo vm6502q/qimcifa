@@ -390,6 +390,21 @@ void big_integer_decrement(BigInteger* bigInt, const unsigned int value)
 };
 
 /// Qimcifa API functions
+BigInteger big_integer_load(unsigned long* a) {
+    BigInteger result;
+    for (int i = 0; i < BIG_INTEGER_DATA_MAX_SIZE; i++) {
+        result.data.bits[i] = a[i];
+    }
+    int lengthComp = 0;
+    for (int i = BIG_INTEGER_DATA_MAX_SIZE - 1; i >= 0; i--) {
+        if (result.data.bits[i]) {
+            break;
+        }
+        lengthComp++;
+    }
+    result.data.length = BIG_INTEGER_DATA_MAX_SIZE - lengthComp;
+}
+
 BigInteger big_integer_copy(BigInteger orig) {
     BigInteger result;
     result.sign = orig.sign;
@@ -441,7 +456,6 @@ BigInteger big_integer_lshift_64(const BigInteger left, const unsigned int right
     for (int i = maxLcv; i < BIG_INTEGER_DATA_MAX_SIZE; i++) {
         result.data.bits[i] = 0;
     }
-    result.sign = (char)(result.data.bits[left.data.length - 1] & 1);
     result.data.length += rightMult;
 
     return result;
@@ -459,7 +473,6 @@ BigInteger big_integer_rshift_64(const BigInteger left, const unsigned int right
     for (int i = 0; i < maxLcv; i++) {
         result.data.bits[i + rightMult] = left.data.bits[i];
     }
-    result.sign = (char)(result.data.bits[left.data.length - 1] & 1);
     result.data.length -= rightMult;
 
     return result;
@@ -480,7 +493,6 @@ BigInteger big_integer_lshift(const BigInteger left, const unsigned int right)
         result.data.bits[i] = carry | (left.data.bits[i] << rMod);
         carry = left.data.bits[i] >> rModComp;
     }
-    result.sign = (char)(result.data.bits[left.data.length - 1] & 1);
     if (carry) {
         result.data.length++;
     }
@@ -499,11 +511,10 @@ BigInteger big_integer_rshift(const BigInteger left, const unsigned int right)
     BigInteger result = big_integer_rshift_64(left, rShift64);
 
     unsigned long carry = 0;
-    for (int i = maxLcv; i >= 0; i++) {
+    for (int i = maxLcv; i >= 0; i--) {
         result.data.bits[i] = carry | (left.data.bits[i] >> rMod);
         carry = left.data.bits[i] << rModComp;
     }
-    result.sign = (char)(result.data.bits[left.data.length - 1] & 1);
     if (!carry) {
         result.data.length--;
     }
