@@ -108,7 +108,7 @@ cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::
     sources.push_back({ (const char*)qimcifa_arbitrary_cl, (long unsigned int)qimcifa_arbitrary_cl_len });
 
     program = cl::Program(devCntxt->context, sources);
-    std::cout << "Built JIT." << std::endl;
+    std::cout << "Building JIT." << std::endl;
     
     return program;
 }

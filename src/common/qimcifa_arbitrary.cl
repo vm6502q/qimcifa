@@ -67,10 +67,10 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
     const ulong nodeId = bitCapIntArgs[1];
     const ulong nodeCount = bitCapIntArgs[2];
     // This can become a bit flag register, in the future:
-    const bitCapInt isRsaSemiprime = bitCapIntArgs[3];
-    const bitCapInt toFactor = bitCapIntArgs[0];
-    const bitCapInt fullMinR = bitCapIntArgs[1];
-    const bitCapInt fullMaxR = bitCapIntArgs[2];
+    const ulong isRsaSemiprime = bitCapIntArgs[3];
+    const bitCapInt toFactor = big_integer_load(bitCapIntArgs);
+    const bitCapInt fullMinR = big_integer_load(bitCapIntArgs + 1);
+    const bitCapInt fullMaxR = big_integer_load(bitCapIntArgs + 2);
 
     const ulong4 rngLoad = vload4(thread, rngSeeds);
     kiss09_state rngState;
@@ -107,7 +107,10 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
 
         const bitCapInt testFactor = gcd(toFactor, base);
         if (big_integer_compare(testFactor, BIGINT_1) != 0) {
-            outputs[thread] = testFactor;
+            const ulong threadOffset = thread * BIG_INTEGER_DATA_MAX_SIZE;
+            for (int i = 0; i < testFactor.data.length; i++) {
+                outputs[threadOffset + i] = testFactor.data.bits[i];
+            }
 
             return;
         }
@@ -150,13 +153,16 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
         // Since our output is r rather than y, we can skip the continued fractions step.
         const bitCapInt p = BIT_AND_1(r) ? r : big_integer_rshift(r, 1);
 
-        const bitCapInt rGuess = BIT_AND_1(isRsaSemiprime) ? p : r;
+        const bitCapInt rGuess = (isRsaSemiprime & 1) ? p : r;
 
         // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
         // we first check if our guess for r is already a factor.
         if ((big_integer_compare(rGuess, BIGINT_1) != 0)
-            && (big_integer_compare(big_integer_mul(big_integer_div(toFactor, rGuess), rGuess), toFactor) == 0) {
-            outputs[thread] = rGuess;
+            && (big_integer_compare(big_integer_mul(big_integer_div(toFactor, rGuess), rGuess), toFactor) == 0)) {
+            const ulong threadOffset = thread * BIG_INTEGER_DATA_MAX_SIZE;
+            for (int i = 0; i < rGuess.data.length; i++) {
+                outputs[threadOffset + i] = rGuess.data.bits[i];
+            }
 
             return;
         }
@@ -167,7 +173,7 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
         bitCapInt fmul = big_integer_mul(f1, f2);
         while ((big_integer_compare(fmul, BIGINT_1) != 0)
             && (big_integer_compare(fmul, toFactor) != 0)
-            && (big_integer_compare(big_integer_mul(big_integer_div(toFactor, fmul), fmul), toFactor) == 0) {
+            && (big_integer_compare(big_integer_mul(big_integer_div(toFactor, fmul), fmul), toFactor) == 0)) {
             fmul = f1;
             f1 = big_integer_mul(fmul, f2);
             f2 = big_integer_div(toFactor, big_integer_mul(fmul, f2));
@@ -177,7 +183,10 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
             && (big_integer_compare(fmul, toFactor) == 0)
             && (big_integer_compare(f1, BIGINT_1) != 0)
             && (big_integer_compare(f2, BIGINT_1) != 0)) {
-            outputs[thread] = f1;
+            const ulong threadOffset = thread * BIG_INTEGER_DATA_MAX_SIZE;
+            for (int i = 0; i < f1.data.length; i++) {
+                outputs[threadOffset + i] = f1.data.bits[i];
+            }
 
             return;
         }

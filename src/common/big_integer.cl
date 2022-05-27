@@ -390,7 +390,7 @@ void big_integer_decrement(BigInteger* bigInt, const unsigned int value)
 };
 
 /// Qimcifa API functions
-BigInteger big_integer_load(unsigned long* a) {
+BigInteger big_integer_load(global unsigned long* a) {
     BigInteger result;
     for (int i = 0; i < BIG_INTEGER_DATA_MAX_SIZE; i++) {
         result.data.bits[i] = a[i];
@@ -403,6 +403,8 @@ BigInteger big_integer_load(unsigned long* a) {
         lengthComp++;
     }
     result.data.length = BIG_INTEGER_DATA_MAX_SIZE - lengthComp;
+
+    return result;
 }
 
 BigInteger big_integer_copy(BigInteger orig) {
