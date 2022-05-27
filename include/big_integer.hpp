@@ -30,6 +30,7 @@
 #define BIG_INTEGER_WORD_BITS 64
 #define BIG_INTEGER_WORD_POWER 6
 #define BIG_INTEGER_WORD unsigned long
+#define BIG_INTEGER_HALF_WORD_SIZE 1
 #define BIG_INTEGER_HALF_WORD_BITS 32
 #define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFF
 
@@ -229,10 +230,10 @@ BigInteger bi_rshift(const BigInteger left, const BIG_INTEGER_WORD right)
 BigInteger bi_mul(const BigInteger left, const BigInteger right)
 {
     BigInteger result = bi_empty();
-    for (unsigned i = 0; i < BIG_INTEGER_WORD_SIZE; i++) {
+    for (unsigned i = 0; i < BIG_INTEGER_HALF_WORD_SIZE; i++) {
         BigInteger partResult = bi_empty();
-        const unsigned maxJ = (BIG_INTEGER_WORD_SIZE - i) >> 1;
-        for (unsigned j = 0; j < maxJ; j++) {
+        const int maxJ = BIG_INTEGER_HALF_WORD_SIZE - i;
+        for (int j = 0; j < maxJ; j++) {
             const unsigned long lLoHalfWord = BIG_INT_LO_HALF_WORD(left.bits[j]);
             const unsigned long lHiHalfWord = BIG_INT_HI_HALF_WORD(left.bits[j]);
             const unsigned long rLoHalfWord = BIG_INT_LO_HALF_WORD(right.bits[i]);
