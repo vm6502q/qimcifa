@@ -90,7 +90,7 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
     const bitCapInt nodeMax = ((nodeId + 1) == nodeCount)
         ? fullMaxR
         : big_integer_add(fullMinR, big_integer_subtract(big_integer_mul(nodeRange, big_integer_create(nodeId + 1)), BIGINT_1));
-    const bitCapInt threadRange = big_integer_subtract(big_integer_add(nodeMax, BIGINT_1), nodeMin) / threadCount;
+    const bitCapInt threadRange = big_integer_div(big_integer_subtract(big_integer_add(nodeMax, BIGINT_1), nodeMin), threadCount);
     const bitCapInt rMin = big_integer_add(nodeMin, big_integer_mul(threadRange, big_integer_create(thread)));
     const bitCapInt rMax = ((thread + 1) == threadCount)
         ? nodeMax
@@ -99,10 +99,10 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
-        bitCapInt base = kiss09_ulong(rngState);
+        bitCapInt base = big_integer_create(kiss09_ulong(rngState));
         for (size_t i = 1; i < byteCount; i++) {
             big_integer_lshift_64(base, 1);
-            base |= kiss09_ulong(rngState);
+            base.data.bits[0] = kiss09_ulong(rngState);
         }
         base = big_integer_add(big_integer_mod(base, big_integer_subtract(toFactor, BIGINT_3)), BIGINT_2);
 
@@ -141,10 +141,10 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global ulong* bitCapIntArgs, 
 
         // So, we guess r, between fullMinR and fullMaxR.
         // Choose a base at random, >1 and <toFactor.
-        bitCapInt r = kiss09_ulong(rngState);
+        bitCapInt r =big_integer_create(kiss09_ulong(rngState));
         for (size_t i = 1; i < byteCount; i++) {
             big_integer_lshift_64(r, 1);
-            r |= kiss09_ulong(rngState);
+            r.data.bits[0] = kiss09_ulong(rngState);
         }
         r = big_integer_add(big_integer_mod(r, rRange), rMin);
 

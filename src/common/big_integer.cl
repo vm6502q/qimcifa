@@ -431,7 +431,7 @@ BigInteger big_integer_mod(const BigInteger left, const BigInteger right)
 
 BigInteger big_integer_lshift_64(const BigInteger left, const unsigned int rightMult)
 {
-    const int maxLcv = BIG_INTEGER_DATA_MAX_SIZE - rightMult;
+    const int maxLcv = left.data.length - rightMult;
 
     BigInteger result = big_integer_copy(left);
     
@@ -441,14 +441,15 @@ BigInteger big_integer_lshift_64(const BigInteger left, const unsigned int right
     for (int i = maxLcv; i < BIG_INTEGER_DATA_MAX_SIZE; i++) {
         result.data.bits[i] = 0;
     }
-    result.sign = (char)(result.data.bits[BIG_INTEGER_DATA_MAX_SIZE - 1] & 1);
+    result.sign = (char)(result.data.bits[left.data.length - 1] & 1);
+    result.data.length += rightMult;
 
     return result;
 }
 
 BigInteger big_integer_rshift_64(const BigInteger left, const unsigned int rightMult)
 {
-    const int maxLcv = BIG_INTEGER_DATA_MAX_SIZE - rightMult;
+    const int maxLcv = left.data.length - rightMult;
 
     BigInteger result = big_integer_copy(left);
     
@@ -458,14 +459,15 @@ BigInteger big_integer_rshift_64(const BigInteger left, const unsigned int right
     for (int i = 0; i < maxLcv; i++) {
         result.data.bits[i + rightMult] = left.data.bits[i];
     }
-    result.sign = (char)(result.data.bits[BIG_INTEGER_DATA_MAX_SIZE - 1] & 1);
+    result.sign = (char)(result.data.bits[left.data.length - 1] & 1);
+    result.data.length -= rightMult;
 
     return result;
 }
 
 BigInteger big_integer_lshift(const BigInteger left, const unsigned int right)
 {
-    const int maxLcv = BIG_INTEGER_DATA_MAX_SIZE - 1;
+    const int maxLcv = left.data.length - 1;
     const unsigned int rShift64 = right / 64;
     const unsigned int rMod = right - (rShift64 * 64);
     const unsigned int rModComp = 64 - rMod;
@@ -478,14 +480,17 @@ BigInteger big_integer_lshift(const BigInteger left, const unsigned int right)
         result.data.bits[i] = carry | (left.data.bits[i] << rMod);
         carry = left.data.bits[i] >> rModComp;
     }
-    result.sign = (char)(result.data.bits[BIG_INTEGER_DATA_MAX_SIZE - 1] & 1);
+    result.sign = (char)(result.data.bits[left.data.length - 1] & 1);
+    if (carry) {
+        result.data.length++;
+    }
 
     return result;
 }
 
 BigInteger big_integer_rshift(const BigInteger left, const unsigned int right)
 {
-    const int maxLcv = BIG_INTEGER_DATA_MAX_SIZE - 1;
+    const int maxLcv = left.data.length - 1;
     const unsigned int rShift64 = right / 64;
     const unsigned int rMod = right - (rShift64 * 64);
     const unsigned int rModComp = 64 - rMod;
@@ -498,7 +503,7 @@ BigInteger big_integer_rshift(const BigInteger left, const unsigned int right)
         result.data.bits[i] = carry | (left.data.bits[i] >> rMod);
         carry = left.data.bits[i] << rModComp;
     }
-    result.sign = (char)(result.data.bits[BIG_INTEGER_DATA_MAX_SIZE - 1] & 1);
+    result.sign = (char)(result.data.bits[left.data.length - 1] & 1);
 
     return result;
 }
