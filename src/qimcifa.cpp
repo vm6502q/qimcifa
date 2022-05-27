@@ -37,9 +37,7 @@
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
-#define QBCAPPOW 6U
-
-#define ONE_BCI ((bitCapInt)1UL)
+#define QBCAPPOW 7U
 #define bitsInByte 8U
 
 #if QBCAPPOW < 8U
@@ -58,26 +56,102 @@
 #elif QBCAPPOW < 7U
 #define bitsInCap 64
 #define bitCapInt uint64_t
-#elif QBCAPPOW < 8U
-#define bitsInCap 128
-#ifdef BOOST_AVAILABLE
-#include <boost/multiprecision/cpp_int.hpp>
-#define bitCapInt boost::multiprecision::uint128_t
-#else
-#define bitCapInt __uint128_t
-#endif
 #else
 #define bitsInCap (8U * (((bitLenInt)1U) << QBCAPPOW))
-#include <boost/multiprecision/cpp_int.hpp>
-#define bitCapInt                                                                                                      \
-    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1ULL << QBCAPPOW, 1ULL << QBCAPPOW,           \
-        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+#include "big_integer.hpp"
+#define bitCapInt BigInteger
 #endif
 
+#if QBCAPPOW < 7U
+#define bci_copy(a) (a)
+#define bci_create(a) (a)
+#define bci_add(l, r) ((l) + (r))
+#define bci_sub(l, r) ((l) - (r))
+#define bci_mul(l, r) ((l) * (r))
+#define bci_div(l, r) ((l) / (r))
+#define bci_mod(l, r) ((l) % (r))
+#define bci_lshift(l, r) ((l) << (r))
+#define bci_rshift(l, r) ((l) >> (r))
+#define bci_or(l, r) ((l) | (r))
+#define bci_and(l, r) ((l) & (r))
+#define bci_eq(l, r) ((l) == (r))
+#define bci_neq(l, r) ((l) != (r))
+#define bci_lt(l, r) ((l) < (r))
+#define bci_gt(l, r) ((l) > (r))
+#define bci_geq(l, r) ((l) >= (r))
+#define bci_leq(l, r) ((l) <= (r))
+#define bci_and_1(l) ((l) & 1U)
+#define bci_eq_0(a) ((a) == 0)
+#define bci_neq_0(a) ((a) != 0)
+#define bci_eq_1(a) ((a) == 1)
+#define bci_gt_1(a) ((a) > 1)
+#define bci_first_word(a) (a)
+#else
+#define bci_copy(a) bi_copy(a)
+#define bci_create(a) bi_create(a)
+#define bci_add(l, r) bi_add(l, r)
+#define bci_sub(l, r) bi_sub(l, r)
+#define bci_mul(l, r) bi_mul(l, r)
+#define bci_div(l, r) bi_div(l, r)
+#define bci_mod(l, r) bi_mod(l, r)
+#define bci_lshift(l, r) bi_lshift(l, r)
+#define bci_rshift(l, r) bi_rshift(l, r)
+#define bci_or(l, r) bi_or(l, r)
+#define bci_and(l, r) bi_and(l, r)
+#define bci_eq(l, r) (bi_compare(l, r) == 0)
+#define bci_neq(l, r) (bi_compare(l, r) != 0)
+#define bci_lt(l, r) (bi_compare(l, r) < 0)
+#define bci_gt(l, r) (bi_compare(l, r) > 0)
+#define bci_geq(l, r) (bi_compare(l, r) >= 0)
+#define bci_leq(l, r) (bi_compare(l, r) <= 0)
+#define bci_and_1(l) bi_and_1(l)
+#define bci_eq_0(a) (bi_compare(a, bi_empty()) == 0)
+#define bci_neq_0(a) (bi_compare(a, bi_empty()) != 0)
+#define bci_eq_1(a) (bi_compare(a, ONE_BCI) == 0)
+#define bci_gt_1(a) (bi_compare(a, ONE_BCI) > 0)
+#define bci_first_word(a) (a.bits[0])
+#endif
 namespace Qimcifa {
 
+const bitCapInt ZERO_BCI = bci_create(0U);
+const bitCapInt ONE_BCI = bci_create(1U);
+
+#if QBCAPPOW > 6U
+std::ostream& operator<<(std::ostream& os, const bitCapInt& bci) {
+    const bitCapInt bci_10 = bci_create(10);
+
+    bitCapInt b = bci_copy(bci);
+    std::vector<std::string> digits;
+    while (bci_neq_0(b)) {
+        digits.push_back(std::to_string(b.bits[0] % 10));
+        b = bci_div(b, bci_10);
+    }
+    for (int i = digits.size() - 1; i >= 0; i--) {
+        os << digits[i];
+    }
+
+    return os;
+}
+
+std::istream &operator>>(std::istream &is, bitCapInt& b)
+{
+    const bitCapInt bci_10 = bci_create(10);
+
+    std::string input;
+    is >> input;
+
+    b = ZERO_BCI;
+    for (unsigned i = 0; i < input.size(); i++) {
+        b = bci_mul(b, bci_10);
+        b = bci_add(b, bci_create(input[i] - 48));
+    }
+
+    return is;
+}
+#endif
+
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
+inline bool isPowerOfTwo(const bitCapInt& x) { return (bci_neq_0(x) && bci_eq_0(bci_and(x, bci_sub(x, ONE_BCI)))); }
 
 inline bitLenInt log2(const bitCapInt& n)
 {
@@ -90,9 +164,9 @@ inline bitLenInt log2(const bitCapInt& n)
 #endif
 #else
     bitLenInt pow = 0U;
-    bitCapInt p = n >> 1U;
-    while (p) {
-        p >>= 1U;
+    bitCapInt p = bci_rshift(n, 1U);
+    while (bci_neq_0(p)) {
+        p = bci_rshift(p, 1U);
         pow++;
     }
     return pow;
@@ -103,18 +177,18 @@ inline bitLenInt log2(const bitCapInt& n)
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
 inline bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
 {
-    bitCapInt result = 1U;
+    bitCapInt result = ONE_BCI;
     bitCapInt b = base;
     bitCapInt e = exp;
     for (;;) {
-        if (b & 1U) {
-            result *= b;
+        if (bci_and_1(b)) {
+            result = bci_mul(result, b);
         }
-        e >>= 1U;
-        if (!e) {
+        e = bci_rshift(e, 1U);
+        if (bci_eq_0(e)) {
             break;
         }
-        b *= b;
+        b = bci_mul(b, b);
     }
 
     return result;
@@ -124,7 +198,7 @@ inline bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
 inline bitLenInt intLog(const bitCapInt& base, const bitCapInt& arg)
 {
     bitLenInt result = 0U;
-    for (bitCapInt x = arg; x >= base; x /= base) {
+    for (bitCapInt x = bci_copy(arg); bci_geq(x, base); x = bci_div(x, base)) {
         result++;
     }
     return result;
@@ -134,28 +208,28 @@ inline bitLenInt intLog(const bitCapInt& base, const bitCapInt& arg)
 bitCapInt floorSqrt(const bitCapInt& x)
 {
     // Base cases
-    if ((x == 0) || (x == 1)) {
+    if (bci_eq_0(x) || bci_eq_1(x)) {
         return x;
     }
 
     // Binary search for floor(sqrt(x))
-    bitCapInt start = 1U, end = x >> 1U, ans = 0U;
-    while (start <= end) {
-        bitCapInt mid = (start + end) >> 1U;
+    bitCapInt start = ONE_BCI, end = bci_rshift(x, 1U), ans = ZERO_BCI;
+    while (bci_leq(start, end)) {
+        bitCapInt mid = bci_rshift(bci_add(start, end), 1U);
 
         // If x is a perfect square
-        bitCapInt sqr = mid * mid;
-        if (sqr == x) {
+        bitCapInt sqr = bci_mul(mid, mid);
+        if (bci_eq(sqr, x)) {
             return mid;
         }
 
-        if (sqr < x) {
+        if (bci_lt(sqr, x)) {
             // Since we need floor, we update answer when mid*mid is smaller than x, and move closer to sqrt(x).
-            start = mid + 1U;
-            ans = mid;
+            start = bci_add(mid, ONE_BCI);
+            ans = bci_copy(mid);
         } else {
             // If mid*mid is greater than x
-            end = mid - 1U;
+            end = bci_sub(mid, ONE_BCI);
         }
     }
     return ans;
@@ -163,8 +237,8 @@ bitCapInt floorSqrt(const bitCapInt& x)
 
 bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
 {
-    if (n2) {
-        return gcd(n2, n1 % n2);
+    if (bci_neq_0(n2)) {
+        return gcd(n2, bci_mod(n1, n2));
     }
     return n1;
 }
@@ -178,8 +252,8 @@ int main()
     typedef std::uniform_int_distribution<uint64_t> rand_dist;
 
     bitCapInt toFactor;
-    bitCapInt nodeCount = 1U;
-    bitCapInt nodeId = 0U;
+    uint64_t nodeCount = 1U;
+    uint64_t nodeId = 0U;
 
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
@@ -213,29 +287,28 @@ int main()
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
 
-    const unsigned cpuCount = std::thread::hardware_concurrency();
     std::atomic<bool> isFinished;
     isFinished = false;
 
 #if IS_RSA_SEMIPRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 65521U } },
-        { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
-        { 64U, { 9223372036854775837U, 1844674407370955143U } } };
+    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict;// = { { 16U, { 32771U, 65521U } },
+    //    { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
+    //    { 64U, { 9223372036854775837U, 1844674407370955143U } } };
 
     // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
     // The minimum value of this formula, for our input, without consideration of actual
     // primes in the interval, is as follows:
     // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt fullMin = ONE_BCI << (primeBits - 1U);
-    const bitCapInt fullMax = (ONE_BCI << primeBits) - 1U;
-    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : (fullMin + 1U);
+    const bitCapInt fullMin = bci_lshift(ONE_BCI, primeBits - 1U);
+    const bitCapInt fullMax = bci_sub(bci_lshift(ONE_BCI, primeBits), ONE_BCI);
+    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : bci_add(fullMin, ONE_BCI);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : fullMax;
-    const bitCapInt fullMinR = (minPrime - 1U) * (toFactor / minPrime - 1U);
-    const bitCapInt fullMaxR = (maxPrime - 1U) * (toFactor / maxPrime - 1U);
+    const bitCapInt fullMinR = bci_mul(bci_sub(minPrime, ONE_BCI), bci_sub(bci_div(toFactor, minPrime), ONE_BCI));
+    const bitCapInt fullMaxR = bci_mul(bci_sub(maxPrime, ONE_BCI), bci_sub(bci_div(toFactor, maxPrime), ONE_BCI));
 #else
     // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-    const bitCapInt fullMinR = floorSqrt(toFactor >> 1U);
+    const bitCapInt fullMinR = floorSqrt(bci_rshift(toFactor, 1U));
     // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
     // const bitCapInt fullMinR = pow(toFactor / 2, PHI_EXPONENT);
 
@@ -243,9 +316,10 @@ int main()
     // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
     // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
     // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-    const bitCapInt fullMaxR = toFactor - floorSqrt(toFactor);
+    const bitCapInt fullMaxR = bci_sub(toFactor, floorSqrt(toFactor));
 #endif
 
+    const unsigned cpuCount = std::thread::hardware_concurrency();
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
         futures[cpu] = std::async(std::launch::async,
@@ -264,14 +338,17 @@ int main()
                 const double clockFactor = 1.0 / 1000.0; // Report in ms
                 const unsigned threads = std::thread::hardware_concurrency();
 
-                const bitCapInt fullRange = fullMaxR + 1U - fullMinR;
-                const bitCapInt nodeRange = fullRange / nodeCount;
-                const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
-                const bitCapInt nodeMax =
-                    ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
-                const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
-                const bitCapInt rMin = nodeMin + threadRange * cpu;
-                const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
+                const bitCapInt fullRange = bci_sub(bci_add(fullMaxR, ONE_BCI), fullMinR);
+                const bitCapInt nodeRange = bci_div(fullRange, bci_create(nodeCount));
+                const bitCapInt nodeMin = bci_add(fullMinR, bci_mul(nodeRange, bci_create(nodeId)));
+                const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount)
+                    ? fullMaxR
+                    : bci_sub(bci_add(fullMinR, bci_mul(nodeRange, bci_create(nodeId + 1U))), ONE_BCI);
+                const bitCapInt threadRange = bci_div(bci_sub(bci_add(nodeMax, ONE_BCI), nodeMin), bci_create(threads));
+                const bitCapInt rMin = bci_add(nodeMin, bci_mul(threadRange, bci_create(cpu)));
+                const bitCapInt rMax = ((cpu + 1U) == threads)
+                    ? nodeMax
+                    : bci_sub(bci_add(nodeMin, bci_mul(threadRange, bci_create(cpu + 1U))), ONE_BCI);
 
                 std::vector<rand_dist> baseDist;
                 std::vector<rand_dist> rDist;
@@ -280,41 +357,41 @@ int main()
                 rDist.push_back(rand_dist(rMin, rMax));
 #else
                 const bitLenInt wordSize = 32U;
-                const bitCapInt wordMask = 0xFFFFFFFF;
-
-                bitCapInt distPart = toFactor - 3U;
-                while (distPart) {
-                    baseDist.push_back(rand_dist(0U, (uint32_t)(distPart & wordMask)));
-                    distPart >>= wordSize;
+                bitCapInt distPart = bci_sub(toFactor, bci_create(3U));
+                while (bci_neq_0(distPart)) {
+                    baseDist.push_back(rand_dist(0U, bci_first_word(distPart)));
+                    distPart = bci_rshift(distPart, wordSize);
                 }
                 std::reverse(rDist.begin(), rDist.end());
 
-                distPart = rMax - rMin;
-                while (distPart) {
-                    rDist.push_back(rand_dist(0U, (uint32_t)(distPart & wordMask)));
-                    distPart >>= wordSize;
+                distPart = bci_sub(rMax, rMin);
+                while (bci_neq_0(distPart)) {
+                    rDist.push_back(rand_dist(0U, bci_first_word(distPart)));
+                    distPart = bci_rshift(distPart, wordSize);
                 }
                 std::reverse(rDist.begin(), rDist.end());
 #endif
+
+                const bitCapInt TWO_BCI = bci_create(2U);
 
                 for (;;) {
                     for (size_t batchItem = 0U; batchItem < BASE_TRIALS; batchItem++) {
                         // Choose a base at random, >1 and <toFactor.
-                        bitCapInt base = baseDist[0U](rand_gen);
+                        bitCapInt base = bci_create(baseDist[0U](rand_gen));
 #if QBCAPPOW > 5U
                         for (size_t i = 1U; i < baseDist.size(); i++) {
-                            base <<= wordSize;
-                            base |= baseDist[i](rand_gen);
+                            base = bci_lshift(base, wordSize);
+                            base = bci_or(base, bci_create(baseDist[i](rand_gen)));
                         }
-                        base += 2U;
+                        base = bci_add(base, TWO_BCI);
 #endif
 
                         const bitCapInt testFactor = gcd(toFactor, base);
-                        if (testFactor != 1U) {
+                        if (!bci_eq_1(testFactor)) {
                             // Inform the other threads on this node that we've succeeded and are done:
                             isFinished = true;
 
-                            std::cout << "Chose non-relative prime: " << testFactor << " * " << (toFactor / testFactor)
+                            std::cout << "Chose non-relative prime: " << testFactor << " * " << bci_div(toFactor, testFactor)
                                       << std::endl;
                             auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
                                 std::chrono::high_resolution_clock::now() - iterClock);
@@ -352,16 +429,16 @@ int main()
                         // So, we guess r, between fullMinR and fullMaxR.
                         for (size_t rTrial = 0U; rTrial < PERIOD_TRIALS; rTrial++) {
                             // Choose a base at random, >1 and <toFactor.
-                            bitCapInt r = rDist[0U](rand_gen);
+                            bitCapInt r = bci_create(rDist[0U](rand_gen));
 #if QBCAPPOW > 5U
                             for (size_t i = 1U; i < rDist.size(); i++) {
-                                r <<= wordSize;
-                                r |= rDist[i](rand_gen);
+                                r = bci_lshift(r, wordSize);
+                                r = bci_or(r, bci_create(baseDist[i](rand_gen)));
                             }
-                            r += rMin;
+                            r = bci_add(r, rMin);
 #endif
                             // Since our output is r rather than y, we can skip the continued fractions step.
-                            const bitCapInt p = (r & 1U) ? r : (r >> 1U);
+                            const bitCapInt p = bci_and_1(r) ? r : bci_rshift(r, 1U);
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
@@ -378,26 +455,26 @@ int main()
 
                             // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                             // we first check if our guess for r is already a factor.
-                            if ((RGUESS > 1U) && ((toFactor / RGUESS) * RGUESS) == toFactor) {
+                            if (bci_gt_1(RGUESS) && bci_eq(toFactor, bci_mul(bci_div(toFactor, RGUESS), RGUESS))) {
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
                                 PRINT_SUCCESS(
-                                    RGUESS, toFactor / RGUESS, toFactor, "Success (on r trial division): Found ");
+                                    RGUESS, bci_div(toFactor, RGUESS), toFactor, "Success (on r trial division): Found ");
                                 return;
                             }
 
-                            const bitCapInt apowrhalf = uipow(base, p) % toFactor;
-                            bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
-                            bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
-                            bitCapInt fmul = f1 * f2;
-                            while ((fmul > 1U) && (fmul != toFactor) && (((toFactor / fmul) * fmul) == toFactor)) {
-                                fmul = f1;
-                                f1 = fmul * f2;
-                                f2 = toFactor / (fmul * f2);
-                                fmul = f1 * f2;
+                            const bitCapInt apowrhalf = bci_mod(uipow(base, p), toFactor);
+                            bitCapInt f1 = gcd(bci_add(apowrhalf, ONE_BCI), toFactor);
+                            bitCapInt f2 = gcd(bci_sub(apowrhalf, ONE_BCI), toFactor);
+                            bitCapInt fmul = bci_mul(f1, f2);
+                            while (bci_gt_1(fmul) && bci_neq(fmul, toFactor) && bci_eq(toFactor, bci_mul(bci_div(toFactor, fmul), fmul))) {
+                                fmul = bci_copy(f1);
+                                f1 = bci_mul(fmul, f2);
+                                f2 = bci_div(toFactor, bci_mul(fmul, f2));
+                                fmul = bci_mul(f1, f2);
                             }
-                            if ((fmul > 1U) && (fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+                            if (bci_gt_1(fmul) && bci_eq(fmul, toFactor) && bci_gt_1(f1) && bci_gt_1(f2)) {
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 

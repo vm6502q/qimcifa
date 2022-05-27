@@ -1,5 +1,3 @@
-// Adapted by Daniel Strano (2022) from the following source:
-
 /*
 ** big_integer.c
 **     Description: "Arbitrary"-precision integer

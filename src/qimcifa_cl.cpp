@@ -39,9 +39,7 @@
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
-#define QBCAPPOW 6U
-
-#define ONE_BCI ((bitCapInt)1UL)
+#define QBCAPPOW 8U
 #define bitsInByte 8U
 
 #if QBCAPPOW < 8U
@@ -60,26 +58,94 @@
 #elif QBCAPPOW < 7U
 #define bitsInCap 64
 #define bitCapInt uint64_t
-#elif QBCAPPOW < 8U
-#define bitsInCap 128
-#ifdef BOOST_AVAILABLE
-#include <boost/multiprecision/cpp_int.hpp>
-#define bitCapInt boost::multiprecision::uint128_t
-#else
-#define bitCapInt __uint128_t
-#endif
 #else
 #define bitsInCap (8U * (((bitLenInt)1U) << QBCAPPOW))
-#include <boost/multiprecision/cpp_int.hpp>
-#define bitCapInt                                                                                                      \
-    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1ULL << QBCAPPOW, 1ULL << QBCAPPOW,           \
-        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+#include "big_integer.hpp"
+#define bitCapInt BigInteger
+#endif
+
+#if QBCAPPOW < 7U
+#define bci_copy(a) (a)
+#define bci_create(a) (a)
+#define bci_add(l, r) (l + r)
+#define bci_sub(l, r) (l - r)
+#define bci_mul(l, r) (l * r)
+#define bci_div(l, r) (l / r)
+#define bci_mod(l, r) (l % r)
+#define bci_lshift(l, r) (l << r)
+#define bci_rshift(l, r) (l >> r)
+#define bci_or(l, r) (l | r)
+#define bci_and(l, r) (l & r)
+#define bci_and_1(l) (l & 1U)
+#define bci_eq_0(a) (a == 0)
+#define bci_neq_0(a) (a != 0)
+#define bci_eq_1(a) (a == 1)
+#define bci_eq(l, r) (l == r)
+#define bci_lt(l, r) (l < r)
+#define bci_gt(l, r) (l > r)
+#define bci_geq(l, r) (l >= r)
+#define bci_leq(l, r) (l <= r)
+#else
+#define bci_copy(a) bi_copy(a)
+#define bci_create(a) bi_create(a)
+#define bci_add(l, r) bi_add(l, r)
+#define bci_sub(l, r) bi_sub(l, r)
+#define bci_mul(l, r) bi_mul(l, r)
+#define bci_div(l, r) bi_div(l, r)
+#define bci_mod(l, r) bi_mod(l, r)
+#define bci_lshift(l, r) bi_lshift(l, r)
+#define bci_rshift(l, r) bi_rshift(l, r)
+#define bci_or(l, r) bi_or(l, r)
+#define bci_and(l, r) bi_and(l, r)
+#define bci_and_1(l) bi_and_1(l)
+#define bci_eq_0(a) (bi_compare(a, bi_empty()) == 0)
+#define bci_neq_0(a) (bi_compare(a, bi_empty()) != 0)
+#define bci_eq_1(a) (bi_compare(a, bi_create(1)))
+#define bci_eq(l, r) (bi_compare(l, r) == 0)
+#define bci_lt(l, r) (bi_compare(l, r) < 0)
+#define bci_gt(l, r) (bi_compare(l, r) > 0)
+#define bci_geq(l, r) (bi_compare(l, r) >= 0)
+#define bci_leq(l, r) (bi_compare(l, r) <= 0)
 #endif
 
 namespace Qimcifa {
 
+const bitCapInt ONE_BCI = bci_create(1U);
+
+std::ostream& operator<<(std::ostream& os, const bitCapInt& bci) {
+    const bitCapInt bci_10 = bci_create(10);
+
+    bitCapInt b = bci_copy(bci);
+    std::vector<std::string> digits;
+    while (bci_neq_0(b)) {
+        digits.push_back(std::to_string(b.bits[0] % 10));
+        b = bci_div(b, bci_10);
+    }
+    for (int i = digits.size() - 1; i >= 0; i--) {
+        os << digits[i];
+    }
+    
+    return os;
+}
+
+std::istream &operator>>(std::istream &is, bitCapInt& b)
+{
+    const bitCapInt bci_10 = bci_create(10);
+
+    std::string input;
+    is >> input;
+
+    b = bci_create(0);
+    for (int i = input.size() - 1; i >= 0; i--) {
+        b = bci_mul(b, bci_10);
+        b = bci_add(b, bci_create(input[i] - 48));
+    }
+
+    return is;
+}
+
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
+inline bool isPowerOfTwo(const bitCapInt& x) { return (bci_neq_0(x) && bci_eq_0(bci_and(x, bci_sub(x, ONE_BCI)))); }
 
 inline bitLenInt log2(const bitCapInt& n)
 {
@@ -92,9 +158,9 @@ inline bitLenInt log2(const bitCapInt& n)
 #endif
 #else
     bitLenInt pow = 0U;
-    bitCapInt p = n >> 1U;
-    while (p) {
-        p >>= 1U;
+    bitCapInt p = bci_rshift(n, 1U);
+    while (bci_neq_0(p)) {
+        p = bci_rshift(p, 1U);
         pow++;
     }
     return pow;
@@ -105,18 +171,18 @@ inline bitLenInt log2(const bitCapInt& n)
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
 inline bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
 {
-    bitCapInt result = 1U;
+    bitCapInt result = ONE_BCI;
     bitCapInt b = base;
     bitCapInt e = exp;
     for (;;) {
-        if (b & 1U) {
-            result *= b;
+        if (bci_and_1(b)) {
+            result = bci_mul(result, b);
         }
-        e >>= 1U;
-        if (!e) {
+        e = bci_rshift(e, 1U);
+        if (bci_eq_0(e)) {
             break;
         }
-        b *= b;
+        b = bci_mul(b, b);
     }
 
     return result;
@@ -126,7 +192,7 @@ inline bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
 inline bitLenInt intLog(const bitCapInt& base, const bitCapInt& arg)
 {
     bitLenInt result = 0U;
-    for (bitCapInt x = arg; x >= base; x /= base) {
+    for (bitCapInt x = bci_copy(arg); bci_geq(x, base); x = bci_div(x, base)) {
         result++;
     }
     return result;
@@ -136,28 +202,28 @@ inline bitLenInt intLog(const bitCapInt& base, const bitCapInt& arg)
 bitCapInt floorSqrt(const bitCapInt& x)
 {
     // Base cases
-    if ((x == 0) || (x == 1)) {
+    if (bci_eq_0(x) || bci_eq_1(x)) {
         return x;
     }
 
     // Binary search for floor(sqrt(x))
-    bitCapInt start = 1U, end = x >> 1U, ans = 0U;
-    while (start <= end) {
-        bitCapInt mid = (start + end) >> 1U;
+    bitCapInt start = ONE_BCI, end = bci_rshift(x, 1U), ans = bci_create(0U);
+    while (bci_leq(start, end)) {
+        bitCapInt mid = bci_rshift(bci_add(start, end), 1U);
 
         // If x is a perfect square
-        bitCapInt sqr = mid * mid;
-        if (sqr == x) {
+        bitCapInt sqr = bci_mul(mid, mid);
+        if (bci_eq(sqr, x)) {
             return mid;
         }
 
-        if (sqr < x) {
+        if (bci_lt(sqr, x)) {
             // Since we need floor, we update answer when mid*mid is smaller than x, and move closer to sqrt(x).
-            start = mid + 1U;
-            ans = mid;
+            start = bci_add(mid, ONE_BCI);
+            ans = bci_copy(mid);
         } else {
             // If mid*mid is greater than x
-            end = mid - 1U;
+            end = bci_sub(mid, ONE_BCI);
         }
     }
     return ans;
@@ -165,8 +231,8 @@ bitCapInt floorSqrt(const bitCapInt& x)
 
 bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
 {
-    if (n2) {
-        return gcd(n2, n1 % n2);
+    if (bci_neq_0(n2)) {
+        return gcd(n2, bci_mod(n1, n2));
     }
     return n1;
 }
@@ -220,8 +286,8 @@ int main()
     typedef std::uniform_int_distribution<uint64_t> rand_dist;
 
     bitCapInt toFactor;
-    bitCapInt nodeCount = 1U;
-    bitCapInt nodeId = 0U;
+    uint64_t nodeCount = 1U;
+    uint64_t nodeId = 0U;
 
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
@@ -259,24 +325,24 @@ int main()
     isFinished = false;
 
 #if IS_RSA_SEMIPRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 65521U } },
-        { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
-        { 64U, { 9223372036854775837U, 1844674407370955143U } } };
+    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict;// = { { 16U, { 32771U, 65521U } },
+    //    { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
+    //    { 64U, { 9223372036854775837U, 1844674407370955143U } } };
 
     // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
     // The minimum value of this formula, for our input, without consideration of actual
     // primes in the interval, is as follows:
     // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt fullMin = ONE_BCI << (primeBits - 1U);
-    const bitCapInt fullMax = (ONE_BCI << primeBits) - 1U;
-    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : (fullMin + 1U);
+    const bitCapInt fullMin = bci_lshift(ONE_BCI, primeBits - 1U);
+    const bitCapInt fullMax = bci_sub(bci_lshift(ONE_BCI, primeBits), ONE_BCI);
+    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : bci_add(fullMin, ONE_BCI);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : fullMax;
-    const bitCapInt fullMinR = (minPrime - 1U) * (toFactor / minPrime - 1U);
-    const bitCapInt fullMaxR = (maxPrime - 1U) * (toFactor / maxPrime - 1U);
+    const bitCapInt fullMinR = bci_mul(bci_sub(minPrime, ONE_BCI), bci_sub(bci_div(toFactor, minPrime), ONE_BCI));
+    const bitCapInt fullMaxR = bci_mul(bci_sub(maxPrime, ONE_BCI), bci_sub(bci_div(toFactor, maxPrime), ONE_BCI));
 #else
     // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-    const bitCapInt fullMinR = floorSqrt(toFactor >> 1U);
+    const bitCapInt fullMinR = floorSqrt(bci_rshift(toFactor, 1U));
     // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
     // const bitCapInt fullMinR = pow(toFactor / 2, PHI_EXPONENT);
 
@@ -284,7 +350,7 @@ int main()
     // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
     // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
     // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-    const bitCapInt fullMaxR = toFactor - floorSqrt(toFactor);
+    const bitCapInt fullMaxR = bci_sub(toFactor, floorSqrt(toFactor));
 #endif
 
     const DeviceContextPtr deviceContext = OCLEngine::Instance().GetDeviceContextPtr(-1);
@@ -297,7 +363,7 @@ int main()
 
     const size_t batchSize = 1U << 9U;
     BufferPtr ulongArgsBufferPtr = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(uint64_t) * 4);
-    uint64_t ulongArgs[4] = { batchSize, nodeId, nodeCount, (bitCapInt)IS_RSA_SEMIPRIME };
+    uint64_t ulongArgs[4] = { batchSize, nodeId, nodeCount, (uint64_t)IS_RSA_SEMIPRIME };
     cl_int error = queue.enqueueWriteBuffer(*ulongArgsBufferPtr, CL_TRUE, 0U, sizeof(uint64_t) * 4, ulongArgs, NULL);
     if (error != CL_SUCCESS) {
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
@@ -341,8 +407,8 @@ int main()
     ocl.call.setArg(2, *rngSeedBufferPtr);
     ocl.call.setArg(3, *outputBufferPtr);
 
-    bitCapInt testFactor = 1U;
-    while (testFactor <= 1U) {
+    bitCapInt testFactor = ONE_BCI;
+    while (bci_leq(testFactor, ONE_BCI)) {
         cl::Event kernelEvent;
         error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
             cl::NDRange(groupCount), // global number of work items
@@ -358,13 +424,13 @@ int main()
         queue.enqueueReadBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
         for (size_t i = 0; i < itemCount; i++) {
             testFactor = outputArray.get()[i];
-            if ((testFactor > 1U) && (((toFactor / testFactor) * testFactor) == toFactor)) {
+            if (bci_geq(testFactor, ONE_BCI) && bci_eq(bci_mul(bci_div(toFactor, testFactor), testFactor), toFactor)) {
                 break;
             }
         }
     }
 
-    std::cout << "Success: " << testFactor << " * " << (toFactor / testFactor) << std::endl;
+    std::cout << "Success: " << testFactor << " * " << bci_div(toFactor, testFactor) << std::endl;
     const double clockFactor = 1.0 / 1000.0; // Report in ms
     auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
