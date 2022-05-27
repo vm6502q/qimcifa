@@ -310,8 +310,8 @@ int main()
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
     
-    BufferPtr rngSeedBufferPtr = MakeBuffer(context, CL_MEM_READ_WRITE, sizeof(bitCapInt) * itemCount * 4U);
-    std::unique_ptr<bitCapInt[]> rngSeeds(new bitCapInt[itemCount * 4]);
+    BufferPtr rngSeedBufferPtr = MakeBuffer(context, CL_MEM_READ_WRITE, sizeof(uint64_t) * itemCount * 4U);
+    std::unique_ptr<uint64_t[]> rngSeeds(new uint64_t[itemCount * 4]);
     rand_dist seedDist(0, 0xFFFFFFFFFFFFFFFF);
     rand_dist cSeedDist(0, 0x3FFFFFFFFFFFFFF);
     for (size_t i = 0U; i < itemCount; i++) {
@@ -320,7 +320,7 @@ int main()
         rngSeeds.get()[i * 4 + 2] = seedDist(rand_gen);
         rngSeeds.get()[i * 4 + 3] = seedDist(rand_gen);
     }
-    error = queue.enqueueWriteBuffer(*rngSeedBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount * 4U, rngSeeds.get(), NULL);
+    error = queue.enqueueWriteBuffer(*rngSeedBufferPtr, CL_TRUE, 0U, sizeof(uint64_t) * itemCount * 4U, rngSeeds.get(), NULL);
     if (error != CL_SUCCESS) {
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
