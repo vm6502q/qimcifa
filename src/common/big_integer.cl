@@ -228,11 +228,11 @@ BigInteger bi_rshift(const BigInteger left, const BIG_INTEGER_WORD right)
 
 BigInteger bi_mul(const BigInteger left, const BigInteger right)
 {
-    const unsigned long halfWordCount = BIG_INTEGER_WORD_SIZE >> 1;
     BigInteger result = bi_empty();
     for (unsigned i = 0; i < BIG_INTEGER_WORD_SIZE; i++) {
         BigInteger partResult = bi_empty();
-        for (unsigned j = 0; j < halfWordCount; j++) {
+        const unsigned maxJ = (BIG_INTEGER_WORD_SIZE - i) >> 1;
+        for (unsigned j = 0; j < maxJ; j++) {
             const unsigned long lLoHalfWord = BIG_INT_LO_HALF_WORD(left.bits[j]);
             const unsigned long lHiHalfWord = BIG_INT_HI_HALF_WORD(left.bits[j]);
             const unsigned long rLoHalfWord = BIG_INT_LO_HALF_WORD(right.bits[i]);
