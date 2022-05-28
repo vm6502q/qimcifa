@@ -37,7 +37,7 @@
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
-#define QBCAPPOW 7U
+#define QBCAPPOW 6U
 #define bitsInByte 8U
 
 #if QBCAPPOW < 8U
@@ -64,7 +64,7 @@
 
 #if QBCAPPOW < 7U
 #define bci_create(a) (a)
-#define bci_copy(a, o) o = *(a)
+#define bci_copy(a, o) *(o) = a
 #define bci_add(l, r, o) *(o) = ((l) + (r))
 #define bci_sub(l, r, o) *(o) = ((l) - (r))
 #define bci_mul(l, r, o) *(o) = ((l) * (r))
@@ -74,8 +74,8 @@
 #define bci_rshift(l, r, o) *(o) = ((l) >> (r))
 #define bci_or(l, r, o) *(o) = ((l) | (r))
 #define bci_and(l, r, o) *(o) = ((l) & (r))
-#define bci_eq(l, r, o) *(o) = ((l) == (r))
-#define bci_neq(l, r, o) *(o) = ((l) != (r))
+#define bci_eq(l, r) ((l) == (r))
+#define bci_neq(l, r) ((l) != (r))
 #define bci_lt(l, r) ((l) < (r))
 #define bci_gt(l, r) ((l) > (r))
 #define bci_geq(l, r) ((l) >= (r))
@@ -330,14 +330,14 @@ int main()
 
     bitCapInt minPrime;
     if (primeDict[primeBits].size()) {
-        bi_copy(primeDict[primeBits][0], &minPrime);
+        bci_copy(primeDict[primeBits][0], &minPrime);
     } else {
         bci_add(fullMin, ONE_BCI, &minPrime);
     }
 
     bitCapInt maxPrime;
     if (primeDict[primeBits].size()) {
-        bi_copy(primeDict[primeBits][1], &maxPrime);
+        bci_copy(primeDict[primeBits][1], &maxPrime);
     } else {
         bci_add(fullMin, ONE_BCI, &maxPrime);
     }
@@ -386,8 +386,10 @@ int main()
                 const unsigned threads = std::thread::hardware_concurrency();
 
                 const bitCapInt BIG_INT_1(1);
+#if QBCAPPOW > 6
                 const bitCapInt BIG_INT_2(2);
                 const bitCapInt BIG_INT_3(3);
+#endif
 
                 bitCapInt t1, t2, t3;
 
@@ -433,8 +435,8 @@ int main()
 
                 std::vector<rand_dist> baseDist;
                 std::vector<rand_dist> rDist;
-#if QBCAPPOW < 7U
-                baseDist.push_back(rand_dist(2U, toFactor - 1U);
+#if QBCAPPOW < 6U
+                baseDist.push_back(rand_dist(2U, toFactor - 1U));
                 rDist.push_back(rand_dist(rMin, rMax));
 #else
                 const bitLenInt wordSize = 64U;
