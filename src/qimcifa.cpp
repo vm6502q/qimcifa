@@ -81,6 +81,8 @@
 #define bci_geq(l, r) ((l) >= (r))
 #define bci_leq(l, r) ((l) <= (r))
 #define bci_and_1(l) ((l) & 1U)
+#define bci_compare(a, b) ((a > b) ? 1 : ((a < b) ? -1 : 0))
+#define bci_compare_0(a) ((a > 0) ? 1 : ((a < 0) ? -1 : 0))
 #define bci_eq_0(a) ((a) == 0)
 #define bci_neq_0(a) ((a) != 0)
 #define bci_eq_1(a) ((a) == 1)
@@ -105,6 +107,8 @@
 #define bci_geq(l, r) (bi_compare(l, r) >= 0)
 #define bci_leq(l, r) (bi_compare(l, r) <= 0)
 #define bci_and_1(l) bi_and_1(l)
+#define bci_compare(a, b) (bi_compare(a, b))
+#define bci_compare_0(a) (bi_compare_0(a))
 #define bci_eq_0(a) (bi_compare(a, bi_empty()) == 0)
 #define bci_neq_0(a) (bi_compare(a, bi_empty()) != 0)
 #define bci_eq_1(a) (bi_compare(a, ONE_BCI) == 0)
@@ -322,8 +326,8 @@ int main()
     const unsigned cpuCount = std::thread::hardware_concurrency();
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
-        futures[cpu] = std::async(std::launch::async,
-            [cpu, nodeId, nodeCount, toFactor, fullMinR, fullMaxR, &iterClock, &rand_gen, &isFinished] {
+        futures[cpu] = std::async(
+            std::launch::async, [cpu, nodeId, nodeCount, toFactor, fullMinR, fullMaxR, &iterClock, &rand_gen, &isFinished] {
                 // These constants are semi-redundant, but they're only defined once per thread,
                 // and compilers differ on lambda expression capture of constants.
 
@@ -338,41 +342,43 @@ int main()
                 const double clockFactor = 1.0 / 1000.0; // Report in ms
                 const unsigned threads = std::thread::hardware_concurrency();
 
-                const bitCapInt fullRange = bci_sub(bci_add(fullMaxR, ONE_BCI), fullMinR);
+                const BigInteger BIG_INT_1 = bci_create(1);
+                const BigInteger BIG_INT_2 = bci_create(2);
+
+                const bitCapInt fullRange = bci_sub(bci_add(fullMaxR, BIG_INT_1), fullMinR);
                 const bitCapInt nodeRange = bci_div(fullRange, bci_create(nodeCount));
                 const bitCapInt nodeMin = bci_add(fullMinR, bci_mul(nodeRange, bci_create(nodeId)));
                 const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount)
                     ? fullMaxR
-                    : bci_sub(bci_add(fullMinR, bci_mul(nodeRange, bci_create(nodeId + 1U))), ONE_BCI);
-                const bitCapInt threadRange = bci_div(bci_sub(bci_add(nodeMax, ONE_BCI), nodeMin), bci_create(threads));
+                    : bci_sub(bci_add(fullMinR, bci_mul(nodeRange, bci_create(nodeId + 1U))), BIG_INT_1);
+                const bitCapInt threadRange = bci_div(bci_sub(bci_add(nodeMax, BIG_INT_1), nodeMin), bci_create(threads));
                 const bitCapInt rMin = bci_add(nodeMin, bci_mul(threadRange, bci_create(cpu)));
                 const bitCapInt rMax = ((cpu + 1U) == threads)
                     ? nodeMax
-                    : bci_sub(bci_add(nodeMin, bci_mul(threadRange, bci_create(cpu + 1U))), ONE_BCI);
+                    : bci_sub(bci_add(nodeMin, bci_mul(threadRange, bci_create(cpu + 1U))), BIG_INT_1);
 
                 std::vector<rand_dist> baseDist;
                 std::vector<rand_dist> rDist;
 #if QBCAPPOW < 6U
-                baseDist.push_back(rand_dist(2U, toFactor - 1U));
+                baseDist.push_back(rand_dist(2U, bci_sub(toFactor, BIG_INT_1));
                 rDist.push_back(rand_dist(rMin, rMax));
 #else
-                const bitLenInt wordSize = 32U;
-                bitCapInt distPart = bci_sub(toFactor, bci_create(3U));
-                while (bci_neq_0(distPart)) {
-                    baseDist.push_back(rand_dist(0U, bci_first_word(distPart)));
-                    distPart = bci_rshift(distPart, wordSize);
+                const bitLenInt wordSize = 64U;
+                const uint64_t wordMask = 0xFFFFFFFFFFFFFFFF;
+                bitCapInt distPart = bci_sub(toFactor, bci_create(3));
+                while (bci_compare_0(distPart) != 0) {
+                    baseDist.push_back(rand_dist(0U, (uint64_t)(distPart.bits[0] & wordMask)));
+                    bci_rshift(distPart, wordSize);
                 }
                 std::reverse(rDist.begin(), rDist.end());
 
                 distPart = bci_sub(rMax, rMin);
-                while (bci_neq_0(distPart)) {
-                    rDist.push_back(rand_dist(0U, bci_first_word(distPart)));
+                while (bci_compare_0(distPart) != 0) {
+                    rDist.push_back(rand_dist(0U, (uint64_t)(distPart.bits[0] & wordMask)));
                     distPart = bci_rshift(distPart, wordSize);
                 }
                 std::reverse(rDist.begin(), rDist.end());
 #endif
-
-                const bitCapInt TWO_BCI = bci_create(2U);
 
                 for (;;) {
                     for (size_t batchItem = 0U; batchItem < BASE_TRIALS; batchItem++) {
@@ -381,13 +387,13 @@ int main()
 #if QBCAPPOW > 5U
                         for (size_t i = 1U; i < baseDist.size(); i++) {
                             base = bci_lshift(base, wordSize);
-                            base = bci_or(base, bci_create(baseDist[i](rand_gen)));
+                            base.bits[0] = baseDist[i](rand_gen);
                         }
-                        base = bci_add(base, TWO_BCI);
+                        base = bci_add(base, BIG_INT_2);
 #endif
 
                         const bitCapInt testFactor = gcd(toFactor, base);
-                        if (!bci_eq_1(testFactor)) {
+                        if (bci_compare(testFactor, BIG_INT_1) != 0) {
                             // Inform the other threads on this node that we've succeeded and are done:
                             isFinished = true;
 
@@ -433,7 +439,7 @@ int main()
 #if QBCAPPOW > 5U
                             for (size_t i = 1U; i < rDist.size(); i++) {
                                 r = bci_lshift(r, wordSize);
-                                r = bci_or(r, bci_create(baseDist[i](rand_gen)));
+                                r.bits[0] = rDist[i](rand_gen);
                             }
                             r = bci_add(r, rMin);
 #endif
@@ -455,7 +461,7 @@ int main()
 
                             // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                             // we first check if our guess for r is already a factor.
-                            if (bci_gt_1(RGUESS) && bci_eq(toFactor, bci_mul(bci_div(toFactor, RGUESS), RGUESS))) {
+                            if ((bci_compare(RGUESS, BIG_INT_1) > 0) && (bci_compare(toFactor, bci_mul(bci_div(toFactor, RGUESS), RGUESS)) == 0)) {
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
@@ -465,20 +471,21 @@ int main()
                             }
 
                             const bitCapInt apowrhalf = bci_mod(uipow(base, p), toFactor);
-                            bitCapInt f1 = gcd(bci_add(apowrhalf, ONE_BCI), toFactor);
-                            bitCapInt f2 = gcd(bci_sub(apowrhalf, ONE_BCI), toFactor);
+                            bitCapInt f1 = gcd(bci_add(apowrhalf, BIG_INT_1), toFactor);
+                            bitCapInt f2 = gcd(bci_sub(apowrhalf, BIG_INT_1), toFactor);
                             bitCapInt fmul = bci_mul(f1, f2);
-                            while (bci_gt_1(fmul) && bci_neq(fmul, toFactor) && bci_eq(toFactor, bci_mul(bci_div(toFactor, fmul), fmul))) {
-                                fmul = bci_copy(f1);
+                            while ((bci_compare(fmul, BIG_INT_1) > 0) && (bci_compare(fmul, toFactor) != 0) && (bci_compare(toFactor, bci_mul(bci_div(toFactor, fmul), fmul)) == 0)) {
+                                fmul = f1;
                                 f1 = bci_mul(fmul, f2);
                                 f2 = bci_div(toFactor, bci_mul(fmul, f2));
                                 fmul = bci_mul(f1, f2);
                             }
-                            if (bci_gt_1(fmul) && bci_eq(fmul, toFactor) && bci_gt_1(f1) && bci_gt_1(f2)) {
+                            if ((bci_compare(fmul, BIG_INT_1) > 0) && (bci_compare(fmul, toFactor) == 0) && (bci_compare(f1, BIG_INT_1) > 0) && (bci_compare(f2, BIG_INT_1) > 0)) {
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
-                                PRINT_SUCCESS(f1, f2, toFactor, "Success (on r difference of squares): Found ");
+                                PRINT_SUCCESS(f1, f2, toFactor,
+                                    "Success (on r difference of squares): Found ");
                                 return;
                             }
                         }
