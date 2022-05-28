@@ -263,11 +263,11 @@ BigInteger bi_not(const BigInteger left)
     return result;
 }
 
-#define BIG_INT_LO_HALF_WORD(a) ((a)&BIG_INTEGER_HALF_WORD_MASK)
-#define BIG_INT_HI_HALF_WORD(a) ((a) >> BIG_INTEGER_HALF_WORD_BITS)
-
 #if 0
 // Complexity - O(x^2)
+
+#define BIG_INT_LO_HALF_WORD(a) ((a)&BIG_INTEGER_HALF_WORD_MASK)
+#define BIG_INT_HI_HALF_WORD(a) ((a) >> BIG_INTEGER_HALF_WORD_BITS)
 BigInteger bi_mul(const BigInteger left, const BigInteger right)
 {
     BigInteger result = bi_empty();
@@ -318,7 +318,7 @@ BigInteger bi_div(const BigInteger left, const BigInteger right)
     const BigInteger BIG_INT_1 = bi_create(1);
     BigInteger result = bi_empty();
     BigInteger leftCopy = bi_copy(left);
-    for (unsigned i = 0U; i < BIG_INTEGER_BITS; i++) {
+    for (unsigned i = 0; i < BIG_INTEGER_BITS; i++) {
         const BigInteger partMul = bi_lshift(right, i);
         if (bi_compare(partMul, BIG_INT_0) == 0) {
             break;
@@ -328,6 +328,9 @@ BigInteger bi_div(const BigInteger left, const BigInteger right)
             result = bi_or(result, bi_lshift(BIG_INT_1, i));
         }
     }
+
+    // leftCopy contains the modulus.
+    result = bi_add(result, leftCopy);
 
     return result;
 }
