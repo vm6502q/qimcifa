@@ -225,6 +225,18 @@ BigInteger bi_rshift(const BigInteger left, const BIG_INTEGER_WORD right)
     return result;
 }
 
+int bi_log2(const BigInteger n)
+{
+    const BigInteger BIG_INT_0 = bi_empty();
+    int pow = 0;
+    BigInteger p = bi_rshift(n, 1U);
+    while (bi_compare(p, BIG_INT_0) != 0) {
+        p = bi_rshift(p, 1U);
+        pow++;
+    }
+    return pow;
+}
+
 int bi_and_1(const BigInteger left) { return left.bits[0] & 1; }
 
 BigInteger bi_and(const BigInteger left, const BigInteger right)
@@ -317,24 +329,16 @@ BigInteger bi_div(const BigInteger left, const BigInteger right)
     const BigInteger BIG_INT_1 = bi_create(1);
     BigInteger result = bi_empty();
     BigInteger leftCopy = bi_copy(left);
-    for (int i = BIG_INTEGER_BITS - 1U; i >= 0; --i) {
+    for (int i = bi_log2(right); i >= 0; --i) {
         const BigInteger partMul = bi_lshift(right, i);
-        if (bi_compare(bi_rshift(partMul, i), right) != 0) {
-            continue;
-        }
-
         const int c = bi_compare(leftCopy, partMul);
-
         if (c < 0) {
             continue;
         }
-
         result = bi_add(result, bi_lshift(BIG_INT_1, i));
-
         if (c == 0) {
             break;
         }
-
         leftCopy = bi_sub(leftCopy, partMul);
     }
 
