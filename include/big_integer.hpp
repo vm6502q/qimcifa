@@ -261,27 +261,27 @@ int bi_and_1(const BigInteger& left) { return left.bits[0] & 1; }
 
 BigInteger bi_and(const BigInteger& left, const BigInteger& right)
 {
-    BigInteger result;
+    BigInteger result(left);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = left.bits[i] & right.bits[i];
+        result.bits[i] &= right.bits[i];
     }
     return result;
 }
 
 BigInteger bi_or(const BigInteger& left, const BigInteger& right)
 {
-    BigInteger result;
+    BigInteger result(left);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = left.bits[i] | right.bits[i];
+        result.bits[i] |= right.bits[i];
     }
     return result;
 }
 
 BigInteger bi_xor(const BigInteger& left, const BigInteger& right)
 {
-    BigInteger result;
+    BigInteger result(left);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = left.bits[i] ^ right.bits[i];
+        result.bits[i] ^= right.bits[i];
     }
     return result;
 }
