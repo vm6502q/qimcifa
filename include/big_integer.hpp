@@ -172,9 +172,6 @@ BigInteger bi_lshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightM
     }
 
     BigInteger result;
-    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
-        result.bits[i] = 0;
-    }
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i] = left.bits[i - rightMult];
     }
@@ -196,9 +193,6 @@ BigInteger bi_rshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightM
     BigInteger result;
     for (int i = 0; i < maxLcv; ++i) {
         result.bits[i] = left.bits[i + rightMult];
-    }
-    for (int i = maxLcv; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = 0;
     }
 
     return result;
