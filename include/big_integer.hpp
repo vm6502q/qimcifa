@@ -42,6 +42,13 @@ typedef struct BigInteger {
         }
     }
 
+    BigInteger(const BIG_INTEGER_WORD& value) {
+        bits[0] = value;
+        for (int i = 1; i < BIG_INTEGER_WORD_SIZE; ++i) {
+            bits[i] = 0;
+        }
+    }
+
     BigInteger(const BigInteger& o) {
         for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
             bits[i] = o.bits[i];
@@ -57,10 +64,17 @@ typedef struct BigInteger {
     }
 } BigInteger;
 
-inline void bi_set_0(BigInteger* p)
+void bi_set_0(BigInteger* p)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         p->bits[i] = 0;
+    }
+}
+
+void bi_copy(const BigInteger& in, BigInteger* out)
+{
+    for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
+        out->bits[i] = in.bits[i];
     }
 }
 
@@ -89,37 +103,33 @@ int bi_compare_0(const BigInteger& left)
     return 0;
 }
 
-BigInteger bi_add(const BigInteger& left, const BigInteger& right)
+void bi_add(const BigInteger& left, const BigInteger& right, BigInteger* result)
 {
-    BigInteger result(left);
+    bi_copy(left, result);
 
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
-        result.bits[i] += right.bits[i];
-        if (result.bits[i] < left.bits[i]) {
-            ++result.bits[i + 1];
+        result->bits[i] += right.bits[i];
+        if (result->bits[i] < left.bits[i]) {
+            ++(result->bits[i + 1]);
         }
     }
-    result.bits[BIG_INTEGER_MAX_WORD_INDEX] += right.bits[BIG_INTEGER_MAX_WORD_INDEX];
-
-    return result;
+    result->bits[BIG_INTEGER_MAX_WORD_INDEX] += right.bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
-BigInteger bi_sub(const BigInteger& left, const BigInteger& right)
+void bi_sub(const BigInteger& left, const BigInteger& right, BigInteger* result)
 {
-    BigInteger result(left);
+    bi_copy(left, result);
 
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
-        result.bits[i] -= right.bits[i];
-        if (result.bits[i] > left.bits[i]) {
-            result.bits[i + 1]--;
+        result->bits[i] -= right.bits[i];
+        if (result->bits[i] > left.bits[i]) {
+            --(result->bits[i + 1]);
         }
     }
-    result.bits[BIG_INTEGER_MAX_WORD_INDEX] -= right.bits[BIG_INTEGER_MAX_WORD_INDEX];
-
-    return result;
+    result->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right.bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
-inline void bi_increment(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
+void bi_increment(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
 {
     int i = 0;
     BIG_INTEGER_WORD temp = pBigInt->bits[i];
@@ -131,7 +141,7 @@ inline void bi_increment(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
     }
 }
 
-inline void bi_decrement(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
+void bi_decrement(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
 {
     int i = 0;
     BIG_INTEGER_WORD temp = pBigInt->bits[i];
@@ -143,109 +153,96 @@ inline void bi_decrement(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
     }
 }
 
-BigInteger bi_create(const BIG_INTEGER_WORD& value)
+void bi_load(BIG_INTEGER_WORD* a, BigInteger* result)
 {
-    BigInteger bigInt;
-    bigInt.bits[0] = value;
-
-    return bigInt;
-}
-
-BigInteger bi_load(BIG_INTEGER_WORD* a)
-{
-    BigInteger result;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = a[i];
+        result->bits[i] = a[i];
     }
-
-    return result;
 }
 
-BigInteger bi_lshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightMult)
+void bi_lshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightMult, BigInteger* result)
 {
     if (!rightMult) {
-        return left;
+        bi_copy(left, result);
+        return;
     }
 
     if (rightMult >= BIG_INTEGER_WORD_SIZE) {
-        return BigInteger();
+        bi_set_0(result);
+        return;
     }
 
-    BigInteger result;
+    bi_set_0(result);
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = left.bits[i - rightMult];
+        result->bits[i] = left.bits[i - rightMult];
     }
-
-    return result;
 }
 
-BigInteger bi_rshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightMult)
+void bi_rshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightMult, BigInteger* result)
 {
     if (!rightMult) {
-        return left;
+        bi_copy(left, result);
+        return;
     }
 
     if (rightMult >= BIG_INTEGER_WORD_SIZE) {
-        return BigInteger();
+        bi_set_0(result);
+        return;
     }
 
-    const int maxLcv = BIG_INTEGER_WORD_SIZE - rightMult;
-    BigInteger result;
-    for (int i = 0; i < maxLcv; ++i) {
-        result.bits[i] = left.bits[i + rightMult];
+    bi_set_0(result);
+    for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
+        result->bits[i - rightMult] = left.bits[i];
     }
-
-    return result;
 }
 
-BigInteger bi_lshift(const BigInteger& left, const BIG_INTEGER_WORD& right)
+void bi_lshift(const BigInteger& left, const BIG_INTEGER_WORD& right, BigInteger* result)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
+    bi_set_0(result);
 
-    BigInteger result = bi_lshift_word(left, rShift64);
+    bi_lshift_word(left, rShift64, result);
     if (!rMod) {
-        return result;
+        return;
     }
 
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
-
     BIG_INTEGER_WORD carry = 0;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = carry | (left.bits[i] << rMod);
+        result->bits[i] = carry | (left.bits[i] << rMod);
         carry = left.bits[i] >> rModComp;
     }
-
-    return result;
 }
 
-BigInteger bi_rshift(const BigInteger& left, const BIG_INTEGER_WORD& right)
+void bi_rshift(const BigInteger& left, const BIG_INTEGER_WORD& right, BigInteger* result)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
+    bi_set_0(result);
 
-    BigInteger result = bi_rshift_word(left, rShift64);
+    bi_rshift_word(left, rShift64, result);
     if (!rMod) {
-        return result;
+        return;
     }
 
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
 
     BIG_INTEGER_WORD carry = 0;
     for (int i = BIG_INTEGER_MAX_WORD_INDEX; i >= 0; --i) {
-        result.bits[i] = carry | (left.bits[i] >> rMod);
+        result->bits[i] = carry | (left.bits[i] >> rMod);
         carry = left.bits[i] << rModComp;
     }
-
-    return result;
 }
 
 int bi_log2(const BigInteger& n)
 {
     int pow = 0;
-    BigInteger p = bi_rshift(n, 1U);
+    BigInteger p;
+    bi_rshift(n, 1U, &p);
     while (bi_compare_0(p) != 0) {
-        p = bi_rshift(p, 1U);
+        BigInteger temp(p);
+        bi_rshift(temp, 1U, &p);
         pow++;
     }
     return pow;
@@ -253,40 +250,35 @@ int bi_log2(const BigInteger& n)
 
 int bi_and_1(const BigInteger& left) { return left.bits[0] & 1; }
 
-BigInteger bi_and(const BigInteger& left, const BigInteger& right)
+void bi_and(const BigInteger& left, const BigInteger& right, BigInteger* result)
 {
-    BigInteger result(left);
+    bi_copy(left, result);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] &= right.bits[i];
+        result->bits[i] &= right.bits[i];
     }
-    return result;
 }
 
-BigInteger bi_or(const BigInteger& left, const BigInteger& right)
+void bi_or(const BigInteger& left, const BigInteger& right, BigInteger* result)
 {
-    BigInteger result(left);
+    bi_copy(left, result);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] |= right.bits[i];
+        result->bits[i] |= right.bits[i];
     }
-    return result;
 }
 
-BigInteger bi_xor(const BigInteger& left, const BigInteger& right)
+void bi_xor(const BigInteger& left, const BigInteger& right, BigInteger* result)
 {
-    BigInteger result(left);
+    bi_copy(left, result);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] ^= right.bits[i];
+        result->bits[i] ^= right.bits[i];
     }
-    return result;
 }
 
-BigInteger bi_not(const BigInteger& left)
+void bi_not(const BigInteger& left, BigInteger* result)
 {
-    BigInteger result;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i] = ~left.bits[i];
+        result->bits[i] = ~left.bits[i];
     }
-    return result;
 }
 
 #if 0
@@ -323,49 +315,66 @@ BigInteger bi_mul(const BigInteger& left, const BigInteger& right)
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
-BigInteger bi_mul(const BigInteger& left, const BigInteger& right)
+void bi_mul(const BigInteger& left, const BigInteger& right, BigInteger* result)
 {
-    BigInteger result;
+    bi_set_0(result);
     for (int i = 0; i < BIG_INTEGER_BITS; ++i) {
-        const BigInteger partMul = bi_lshift(right, i);
+        BigInteger partMul;
+        bi_lshift(right, i, &partMul);
         if (bi_compare_0(partMul) == 0) {
             break;
         }
         if (1 & (left.bits[i / BIG_INTEGER_WORD_BITS] >> (i % BIG_INTEGER_WORD_BITS))) {
-            result = bi_add(result, partMul);
+            BigInteger temp(*result);
+            bi_add(temp, partMul, result);
         }
     }
-
-    return result;
 }
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
-BigInteger bi_div(const BigInteger& left, const BigInteger& right)
+void bi_div(const BigInteger& left, const BigInteger& right, BigInteger* result)
 {
-    const BigInteger BIG_INT_1 = bi_create(1);
-    BigInteger result;
+    BigInteger BIG_INT_1(1);
+    bi_set_0(result);
     BigInteger leftCopy(left);
     for (int i = bi_log2(right); i >= 0; --i) {
-        const BigInteger partMul = bi_lshift(right, i);
+        BigInteger partMul;
+        bi_lshift(right, i, &partMul);
         const int c = bi_compare(leftCopy, partMul);
         if (c < 0) {
             continue;
         }
-        result = bi_add(result, bi_lshift(BIG_INT_1, i));
+        BigInteger temp1, temp2(*result);
+        bi_lshift(BIG_INT_1, i, &temp1);
+        bi_add(temp1, temp2, result);
         if (c == 0) {
             break;
         }
-        leftCopy = bi_sub(leftCopy, partMul);
+        bi_copy(leftCopy, &temp1);
+        bi_sub(temp1, partMul, &leftCopy);
     }
-
-    return result;
 }
 
-BigInteger bi_mod(const BigInteger& left, const BigInteger& right)
+void bi_mod(const BigInteger& left, const BigInteger& right, BigInteger* result)
 {
-    BigInteger temp = bi_div(left, right);
-    temp = bi_mul(temp, right);
-
-    return bi_sub(left, temp);
+    // This is division, but we don't need to save the result.
+    BigInteger BIG_INT_1(1);
+    bi_set_0(result);
+    BigInteger leftCopy(left);
+    for (int i = bi_log2(right); i >= 0; --i) {
+        BigInteger partMul;
+        bi_lshift(right, i, &partMul);
+        const int c = bi_compare(leftCopy, partMul);
+        if (c < 0) {
+            continue;
+        }
+        if (c == 0) {
+            break;
+        }
+        BigInteger temp1(leftCopy);
+        bi_sub(temp1, partMul, &leftCopy);
+    }
+    // The modulus is the remainder in leftCopy, after division.
+    bi_copy(leftCopy, result);
 }
