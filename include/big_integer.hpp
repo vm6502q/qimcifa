@@ -238,7 +238,6 @@ BigInteger bi_rshift(const BigInteger left, const BIG_INTEGER_WORD right)
 
 int bi_log2(const BigInteger n)
 {
-    const BigInteger BIG_INT_0 = bi_empty();
     int pow = 0;
     BigInteger p = bi_rshift(n, 1U);
     while (bi_compare_0(p) != 0) {
@@ -318,7 +317,6 @@ BigInteger bi_mul(const BigInteger left, const BigInteger right)
 // Complexity - O(log)
 BigInteger bi_mul(const BigInteger left, const BigInteger right)
 {
-    const BigInteger BIG_INT_0 = bi_empty();
     BigInteger result = bi_empty();
     for (int i = 0; i < BIG_INTEGER_BITS; ++i) {
         const BigInteger partMul = bi_lshift(right, i);
