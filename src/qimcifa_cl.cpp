@@ -86,7 +86,7 @@
 #define bci_geq(l, r) (l >= r)
 #define bci_leq(l, r) (l <= r)
 #else
-#define bci_copy(a) bi_copy(a)
+#define bci_copy(a) BigInteger(a)
 #define bci_create(a) bi_create(a)
 #define bci_add(l, r) bi_add(l, r)
 #define bci_sub(l, r) bi_sub(l, r)

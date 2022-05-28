@@ -88,8 +88,9 @@
 #define bci_eq_1(a) ((a) == 1)
 #define bci_gt_1(a) ((a) > 1)
 #define bci_first_word(a) (a)
+#define bci_low64(a) (a)
 #else
-#define bci_copy(a) bi_copy(a)
+#define bci_copy(a) BigInteger(a)
 #define bci_create(a) bi_create(a)
 #define bci_add(l, r) bi_add(l, r)
 #define bci_sub(l, r) bi_sub(l, r)
@@ -114,6 +115,7 @@
 #define bci_eq_1(a) (bi_compare(a, ONE_BCI) == 0)
 #define bci_gt_1(a) (bi_compare(a, ONE_BCI) > 0)
 #define bci_first_word(a) (a.bits[0])
+#define bci_low64(a) (a.bits[0])
 #endif
 namespace Qimcifa {
 
@@ -295,9 +297,9 @@ int main()
     isFinished = false;
 
 #if IS_RSA_SEMIPRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict;// = { { 16U, { 32771U, 65521U } },
-    //    { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
-    //    { 64U, { 9223372036854775837U, 1844674407370955143U } } };
+    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { bci_create(32771U), bci_create(65521U) } },
+        { 28U, { bci_create(134217757U), bci_create(268435399U) } }, { 32U, { bci_create(2147483659U), bci_create(4294967291U) } },
+        { 64U, { bci_create(9223372036854775837U), bci_create(1844674407370955143U) } } };
 
     // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
     // The minimum value of this formula, for our input, without consideration of actual
@@ -367,7 +369,7 @@ int main()
                 const uint64_t wordMask = 0xFFFFFFFFFFFFFFFF;
                 bitCapInt distPart = bci_sub(toFactor, bci_create(3));
                 while (bci_compare_0(distPart) != 0) {
-                    baseDist.push_back(rand_dist(0U, (uint64_t)(distPart.bits[0] & wordMask)));
+                    baseDist.push_back(rand_dist(0U, bci_low64(distPart)));
                     bci_rshift(distPart, wordSize);
                 }
                 std::reverse(rDist.begin(), rDist.end());
