@@ -72,6 +72,17 @@ int bi_compare(const BigInteger left, const BigInteger right)
     return 0;
 }
 
+int bi_compare_0(const BigInteger left)
+{
+    for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
+        if (left.bits[i]) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 BigInteger bi_add(const BigInteger left, const BigInteger right)
 {
     const int maxLcv = BIG_INTEGER_WORD_SIZE - 1;
@@ -230,7 +241,7 @@ int bi_log2(const BigInteger n)
     const BigInteger BIG_INT_0 = bi_empty();
     int pow = 0;
     BigInteger p = bi_rshift(n, 1U);
-    while (bi_compare(p, BIG_INT_0) != 0) {
+    while (bi_compare_0(p) != 0) {
         p = bi_rshift(p, 1U);
         pow++;
     }
@@ -311,7 +322,7 @@ BigInteger bi_mul(const BigInteger left, const BigInteger right)
     BigInteger result = bi_empty();
     for (int i = 0; i < BIG_INTEGER_BITS; ++i) {
         const BigInteger partMul = bi_lshift(right, i);
-        if (bi_compare(partMul, BIG_INT_0) == 0) {
+        if (bi_compare_0(partMul) == 0) {
             break;
         }
         if (1 & (left.bits[i / BIG_INTEGER_WORD_BITS] >> (i % BIG_INTEGER_WORD_BITS))) {
