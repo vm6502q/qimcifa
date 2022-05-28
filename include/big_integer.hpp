@@ -318,19 +318,18 @@ BigInteger bi_div(const BigInteger left, const BigInteger right)
     const BigInteger BIG_INT_1 = bi_create(1);
     BigInteger result = bi_empty();
     BigInteger leftCopy = bi_copy(left);
-    for (unsigned i = 0; i < BIG_INTEGER_BITS; i++) {
+    for (int i = BIG_INTEGER_BITS - 1; i >= 0; i--) {
         const BigInteger partMul = bi_lshift(right, i);
         if (bi_compare(partMul, BIG_INT_0) == 0) {
-            break;
+            continue;
         }
-        if (1 & (leftCopy.bits[i / BIG_INTEGER_WORD_BITS] >> (i % BIG_INTEGER_WORD_BITS))) {
+        if (bi_compare(leftCopy, partMul) >= 0) {
             leftCopy = bi_sub(leftCopy, partMul);
             result = bi_or(result, bi_lshift(BIG_INT_1, i));
         }
     }
 
-    // leftCopy contains the modulus.
-    result = bi_add(result, leftCopy);
+    // leftCopy contains the modulus, which we discard.
 
     return result;
 }
