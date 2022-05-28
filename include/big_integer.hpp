@@ -228,6 +228,8 @@ BigInteger bi_rshift(const BigInteger left, const BIG_INTEGER_WORD right)
 #define BIG_INT_LO_HALF_WORD(a) ((a)&BIG_INTEGER_HALF_WORD_MASK)
 #define BIG_INT_HI_HALF_WORD(a) ((a) >> BIG_INTEGER_HALF_WORD_BITS)
 
+#if 0
+// Complexity - O(x^2)
 BigInteger bi_mul(const BigInteger left, const BigInteger right)
 {
     BigInteger result = bi_empty();
@@ -249,8 +251,28 @@ BigInteger bi_mul(const BigInteger left, const BigInteger right)
 
     return result;
 }
+#endif
 
-// TODO: Arbitrary-precision division is open research, but we need something more efficient than this:
+// Adapted from Qrack! (The fundamental algorithm was discovered before.)
+// Complexity - O(log)
+BigInteger bi_mul(const BigInteger left, const BigInteger right)
+{
+    const BigInteger BIG_INT_0 = bi_empty();
+    BigInteger result = bi_empty();
+    for (unsigned i = 0U; i < BIG_INTEGER_BITS; i++) {
+        const BigInteger partMul = bi_lshift(right, i);
+        if (bi_compare(partMul, BIG_INT_0) == 0) {
+            break;
+        }
+        if (left.bits[i / BIG_INTEGER_WORD_BITS] & (1ULL << (i % BIG_INTEGER_WORD_BITS))) {
+            result = bi_add(result, partMul);
+        }
+    }
+
+    return result;
+}
+
+// TODO: Replace with an implementation with improved performance.
 BigInteger bi_div(const BigInteger left, const BigInteger right)
 {
     BigInteger result = bi_empty();
@@ -260,6 +282,27 @@ BigInteger bi_div(const BigInteger left, const BigInteger right)
 
     return result;
 }
+
+#if 0
+// TODO: Debug
+// Adapted from Qrack! (The fundamental algorithm was discovered before.)
+BigInteger bi_div(const BigInteger left, const BigInteger right)
+{
+    const BigInteger BIG_INT_0 = bi_empty();
+    BigInteger result = bi_copy(left);
+    for (unsigned i = 0U; i < BIG_INTEGER_BITS; i++) {
+        const BigInteger partMul = bi_lshift(right, i);
+        if (bi_compare(partMul, BIG_INT_0) == 0) {
+            break;
+        }
+        if (partMul.bits[i / BIG_INTEGER_WORD_BITS] & (1ULL << (i % BIG_INTEGER_WORD_BITS))) {
+            result = bi_sub(result, partMul);
+        }
+    }
+
+    return result;
+}
+#endif
 
 BigInteger bi_mod(const BigInteger left, const BigInteger right)
 {
