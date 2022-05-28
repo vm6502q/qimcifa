@@ -264,7 +264,7 @@ BigInteger bi_mul(const BigInteger left, const BigInteger right)
         if (bi_compare(partMul, BIG_INT_0) == 0) {
             break;
         }
-        if (left.bits[i / BIG_INTEGER_WORD_BITS] & (1ULL << (i % BIG_INTEGER_WORD_BITS))) {
+        if (1 & (left.bits[i / BIG_INTEGER_WORD_BITS] >> (i % BIG_INTEGER_WORD_BITS))) {
             result = bi_add(result, partMul);
         }
     }
@@ -295,7 +295,7 @@ BigInteger bi_div(const BigInteger left, const BigInteger right)
         if (bi_compare(partMul, BIG_INT_0) == 0) {
             break;
         }
-        if (partMul.bits[i / BIG_INTEGER_WORD_BITS] & (1ULL << (i % BIG_INTEGER_WORD_BITS))) {
+        if (1 & (partMul.bits[i / BIG_INTEGER_WORD_BITS] >> (i % BIG_INTEGER_WORD_BITS))) {
             result = bi_sub(result, partMul);
         }
     }
