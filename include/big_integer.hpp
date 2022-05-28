@@ -169,7 +169,7 @@ BigInteger bi_load(BIG_INTEGER_WORD* a)
 BigInteger bi_lshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightMult)
 {
     if (!rightMult) {
-        return BigInteger(left);
+        return left;
     }
 
     const int maxLcv = BIG_INTEGER_WORD_SIZE - rightMult;
@@ -188,7 +188,7 @@ BigInteger bi_lshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightM
 BigInteger bi_rshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightMult)
 {
     if (!rightMult) {
-        return BigInteger(left);
+        return left;
     }
 
     const int maxLcv = BIG_INTEGER_WORD_SIZE - rightMult;
