@@ -359,22 +359,19 @@ void bi_div(const BigInteger& left, const BigInteger& right, BigInteger* result)
 void bi_mod(const BigInteger& left, const BigInteger& right, BigInteger* result)
 {
     // This is division, but we don't need to save the result.
-    BigInteger BIG_INT_1(1);
-    bi_set_0(result);
-    BigInteger leftCopy(left);
+    bi_copy(left, result);
     for (int i = bi_log2(right); i >= 0; --i) {
         BigInteger partMul;
         bi_lshift(right, i, &partMul);
-        const int c = bi_compare(leftCopy, partMul);
+        const int c = bi_compare(*result, partMul);
         if (c < 0) {
             continue;
         }
         if (c == 0) {
             break;
         }
-        BigInteger temp1(leftCopy);
-        bi_sub(temp1, partMul, &leftCopy);
+        BigInteger temp1(*result);
+        bi_sub(temp1, partMul, result);
     }
     // The modulus is the remainder in leftCopy, after division.
-    bi_copy(leftCopy, result);
 }

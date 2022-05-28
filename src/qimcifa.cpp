@@ -253,11 +253,14 @@ bitCapInt floorSqrt(const bitCapInt& x)
 
 void gcd(const bitCapInt& n1, const bitCapInt& n2, bitCapInt* result)
 {
-    if (bci_neq_0(n2)) {
-        bitCapInt t;
-        bci_mod(n1, n2, &t);
-        gcd(n2, t, result);
+    bitCapInt n1c(n1), n2c(n2);
+
+    while (bci_neq_0(n2c)) {
+        bitCapInt t1(n1c), t2(n2c);
+        bci_copy(n2c, &n1c);
+        bci_mod(t1, t2, &n2c);
     }
+    bci_copy(n1c, result);
 }
 
 } // namespace Qimcifa
