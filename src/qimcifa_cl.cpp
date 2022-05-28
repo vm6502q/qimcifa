@@ -98,8 +98,8 @@
 #define bci_or(l, r) bi_or(l, r)
 #define bci_and(l, r) bi_and(l, r)
 #define bci_and_1(l) bi_and_1(l)
-#define bci_eq_0(a) (bi_compare(a, bi_empty()) == 0)
-#define bci_neq_0(a) (bi_compare(a, bi_empty()) != 0)
+#define bci_eq_0(a) (bi_compare(a, ZERO_BCI) == 0)
+#define bci_neq_0(a) (bi_compare(a, ZERO_BCI) != 0)
 #define bci_eq_1(a) (bi_compare(a, bi_create(1)))
 #define bci_eq(l, r) (bi_compare(l, r) == 0)
 #define bci_lt(l, r) (bi_compare(l, r) < 0)
@@ -110,6 +110,7 @@
 
 namespace Qimcifa {
 
+const bitCapInt ZERO_BCI = bci_create(0U);
 const bitCapInt ONE_BCI = bci_create(1U);
 
 std::ostream& operator<<(std::ostream& os, const bitCapInt& bci) {

@@ -36,7 +36,11 @@
 typedef struct BigInteger {
     BIG_INTEGER_WORD bits[BIG_INTEGER_WORD_SIZE];
 
-    BigInteger() {};
+    BigInteger() {
+        for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
+            bits[i] = 0;
+        }
+    }
 
     BigInteger(const BigInteger& o) {
         for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
@@ -52,15 +56,6 @@ typedef struct BigInteger {
         return *this;
     }
 } BigInteger;
-
-BigInteger bi_empty()
-{
-    BigInteger bigInt;
-    for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        bigInt.bits[i] = 0;
-    }
-    return bigInt;
-}
 
 inline void bi_set_0(BigInteger* p)
 {
@@ -150,7 +145,7 @@ inline void bi_decrement(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
 
 BigInteger bi_create(const BIG_INTEGER_WORD& value)
 {
-    BigInteger bigInt = bi_empty();
+    BigInteger bigInt;
     bigInt.bits[0] = value;
 
     return bigInt;
@@ -172,13 +167,15 @@ BigInteger bi_lshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightM
         return left;
     }
 
-    const int maxLcv = BIG_INTEGER_WORD_SIZE - rightMult;
+    if (rightMult >= BIG_INTEGER_WORD_SIZE) {
+        return BigInteger();
+    }
 
     BigInteger result;
-    for (unsigned i = 0; i < rightMult; ++i) {
+    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
         result.bits[i] = 0;
     }
-    for (int i = 0; i < maxLcv; ++i) {
+    for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i + rightMult] = left.bits[i];
     }
 
@@ -191,15 +188,17 @@ BigInteger bi_rshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightM
         return left;
     }
 
+    if (rightMult >= BIG_INTEGER_WORD_SIZE) {
+        return BigInteger();
+    }
+
     const int maxLcv = BIG_INTEGER_WORD_SIZE - rightMult;
-
-    BigInteger result = bi_empty();
-
+    BigInteger result;
     for (int i = 0; i < maxLcv; ++i) {
         result.bits[i] = left.bits[i + rightMult];
     }
-    for (unsigned i = 0; i < rightMult; ++i) {
-        result.bits[i + maxLcv] = 0;
+    for (int i = maxLcv; i < BIG_INTEGER_WORD_SIZE; ++i) {
+        result.bits[i] = 0;
     }
 
     return result;
@@ -306,7 +305,7 @@ BigInteger bi_not(const BigInteger& left)
 #define BIG_INT_HI_HALF_WORD(a) ((a) >> BIG_INTEGER_HALF_WORD_BITS)
 BigInteger bi_mul(const BigInteger& left, const BigInteger& right)
 {
-    BigInteger result = bi_empty();
+    BigInteger result;
     BigInteger partResult;
     for (int i = 0; i < BIG_INTEGER_HALF_WORD_SIZE; ++i) {
         bi_set_0(partResult);
@@ -332,7 +331,7 @@ BigInteger bi_mul(const BigInteger& left, const BigInteger& right)
 // Complexity - O(log)
 BigInteger bi_mul(const BigInteger& left, const BigInteger& right)
 {
-    BigInteger result = bi_empty();
+    BigInteger result;
     for (int i = 0; i < BIG_INTEGER_BITS; ++i) {
         const BigInteger partMul = bi_lshift(right, i);
         if (bi_compare_0(partMul) == 0) {
@@ -351,7 +350,7 @@ BigInteger bi_mul(const BigInteger& left, const BigInteger& right)
 BigInteger bi_div(const BigInteger& left, const BigInteger& right)
 {
     const BigInteger BIG_INT_1 = bi_create(1);
-    BigInteger result = bi_empty();
+    BigInteger result;
     BigInteger leftCopy(left);
     for (int i = bi_log2(right); i >= 0; --i) {
         const BigInteger partMul = bi_lshift(right, i);
