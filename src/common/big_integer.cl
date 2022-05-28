@@ -176,7 +176,7 @@ BigInteger bi_lshift_word(const BigInteger& left, const BIG_INTEGER_WORD& rightM
         result.bits[i] = 0;
     }
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result.bits[i + rightMult] = left.bits[i];
+        result.bits[i] = left.bits[i - rightMult];
     }
 
     return result;
