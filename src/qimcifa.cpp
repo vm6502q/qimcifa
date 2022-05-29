@@ -221,7 +221,8 @@ void floorSqrt(const bitCapInt& x, bitCapInt* ans)
 {
     // Base cases
     if (bci_eq_0(x) || bci_eq_1(x)) {
-        return x;
+        bci_copy(x, ans);
+        return;
     }
 
     // Binary search for floor(sqrt(x))
@@ -237,7 +238,8 @@ void floorSqrt(const bitCapInt& x, bitCapInt* ans)
         // If x is a perfect square
         bci_mul(mid, mid, &t);
         if (bci_eq(t, x)) {
-            return mid;
+            bci_copy(mid, ans);
+            return;
         }
 
         if (bci_lt(t, x)) {
@@ -249,7 +251,6 @@ void floorSqrt(const bitCapInt& x, bitCapInt* ans)
             bci_sub(mid, ONE_BCI, &end);
         }
     }
-    return ans;
 }
 
 void gcd(bitCapInt n1, bitCapInt n2, bitCapInt* result)
