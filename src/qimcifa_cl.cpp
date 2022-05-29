@@ -163,10 +163,12 @@ bitCapInt floorSqrt(const bitCapInt& x)
     return ans;
 }
 
-bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
+bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
-    if (n2) {
-        return gcd(n2, n1 % n2);
+    while (n2) {
+        bitCapInt t = n1;
+        n1 = n2;
+        n2 = t % n2;
     }
     return n1;
 }
