@@ -486,7 +486,7 @@ int main()
                             std::cout << "(Waiting to join other threads...)" << std::endl;
                             return;
                         }
-#if 0
+
                         // This would be where we perform the quantum period finding algorithm.
                         // However, we don't have a quantum computer!
                         // Instead, we "throw dice" for a guess to the output of the quantum subroutine.
@@ -561,6 +561,7 @@ int main()
                                 return;
                             }
 
+#if 0
                             bitCapInt f1, f2, fmul;
                             uipow(base, t1, &t2);
                             bci_mod(t2, toFactor, &t1);
@@ -594,8 +595,8 @@ int main()
                                     "Success (on r difference of squares): Found ");
                                 return;
                             }
-                        }
 #endif
+                        }
                     }
 
                     // Check if finished, between batches.
