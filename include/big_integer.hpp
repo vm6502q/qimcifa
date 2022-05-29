@@ -335,12 +335,58 @@ void bi_mul(const BigInteger& left, const BigInteger& right, BigInteger* result)
 // Complexity - O(log)
 void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quotient, BigInteger* remainder)
 {
+    const int lrCompare = bi_compare(left, right);
+
+    if (lrCompare < 0) {
+        // left < right
+        if (quotient) {
+            // quotient = 0
+            bi_set_0(quotient);
+        }
+        if (remainder) {
+            // remainder = left
+            bi_copy(left, remainder);
+        }
+        return;
+    }
+
     BigInteger BIG_INT_1(1);
+    if (lrCompare == 0) {
+        // left == right
+        if (quotient) {
+            // quotient = 1
+            bi_copy(BIG_INT_1, quotient);
+        }
+        if (remainder) {
+            // remainder = 0
+            bi_set_0(remainder);
+        }
+        return;
+    }
+
+    // Otherwise, past this point, left > right.
+
+    int rightLog2 = bi_log2(right);
+    if (rightLog2 == 0) {
+        // right == 1
+        if (quotient) {
+            // quotient = left
+            bi_copy(left, quotient);
+        }
+        if (remainder) {
+            // remainder = 0
+            bi_set_0(remainder);
+        }
+        return;
+    }
+
+    // Past this point, left > right > 1.
+
     if (quotient) {
         bi_set_0(quotient);
     }
     BigInteger leftCopy(left);
-    for (int i = (BIG_INTEGER_BITS - 1) - bi_log2(right); i >= 0; --i) {
+    for (int i = ((BIG_INTEGER_BITS - 1) - rightLog2); i >= 0; --i) {
         BigInteger partMul;
         bi_lshift(right, i, &partMul);
 
