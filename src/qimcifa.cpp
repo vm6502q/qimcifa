@@ -37,7 +37,7 @@
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
-#define QBCAPPOW 6U
+#define QBCAPPOW 7U
 
 #define ONE_BCI ((bitCapInt)1UL)
 #define bitsInByte 8U
@@ -75,6 +75,44 @@
 #endif
 
 namespace Qimcifa {
+
+#if QBCAPPOW == 7U
+std::ostream& operator<<(std::ostream& os, bitCapInt b) {
+    // Calculate the base-10 digits, from lowest to highest.
+    std::vector<std::string> digits;
+    while (b) {
+        digits.push_back(std::to_string((unsigned char)(b % 10U)));
+        b /= 10U;
+    }
+
+    // Reversing order, print the digits from highest to lowest.
+    for (size_t i = digits.size() - 1U; i > 0; i--) {
+        os << digits[i];
+    }
+    // Avoid the need for a signed comparison.
+    os << digits[0];
+
+    return os;
+}
+
+std::istream &operator>>(std::istream &is, bitCapInt& b)
+{
+    // Get the whole input string at once.
+    std::string input;
+    is >> input;
+
+    // Start the output address value at 0.
+    b = 0;
+    for (size_t i = 0; i < input.size(); i++) {
+        // Left shift by 1 base-10 digit.
+        b *= 10;
+        // Add the next lowest base-10 digit.
+        b += (input[i] - 48U);
+    }
+
+    return is;
+}
+#endif
 
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
 inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
