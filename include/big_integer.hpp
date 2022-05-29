@@ -395,6 +395,8 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
             continue;
         }
 
+        // Past this point, leftCopy >= partMul.
+
         if (quotient) {
             BigInteger temp1, temp2(*quotient);
             bi_lshift(BIG_INT_1, i, &temp1);
@@ -402,11 +404,14 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
         }
 
         if (c == 0) {
+            // leftCopy == partMul
             if (remainder) {
                 bi_set_0(remainder);
             }
             return;
         }
+
+        // Otherwise, c > 1, meaning leftCopy > partMul.
 
         BigInteger temp1(leftCopy);
         bi_sub(temp1, partMul, &leftCopy);
