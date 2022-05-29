@@ -82,7 +82,7 @@
 #define bci_leq(l, r) ((l) <= (r))
 #define bci_and_1(l) ((l) & 1U)
 #define bci_compare(a, b) ((a > b) ? 1 : ((a < b) ? -1 : 0))
-#define bci_compare_0(a) ((a > 0) ? 1 : ((a < 0) ? -1 : 0))
+#define bci_compare_0(a) (a ? 1 : 0)
 #define bci_eq_0(a) ((a) == 0)
 #define bci_neq_0(a) ((a) != 0)
 #define bci_eq_1(a) ((a) == 1)
@@ -386,10 +386,6 @@ int main()
                 const unsigned threads = std::thread::hardware_concurrency();
 
                 const bitCapInt BIG_INT_1(1);
-#if QBCAPPOW > 6
-                const bitCapInt BIG_INT_2(2);
-                const bitCapInt BIG_INT_3(3);
-#endif
 
                 bitCapInt t1, t2, t3;
 
@@ -435,13 +431,14 @@ int main()
 
                 std::vector<rand_dist> baseDist;
                 std::vector<rand_dist> rDist;
-#if QBCAPPOW < 6U
+#if QBCAPPOW < 7U
                 baseDist.push_back(rand_dist(2U, toFactor - 1U));
                 rDist.push_back(rand_dist(rMin, rMax));
 #else
                 const bitLenInt wordSize = 64U;
                 const uint64_t wordMask = 0xFFFFFFFFFFFFFFFF;
                 bitCapInt distPart;
+                const bitCapInt BIG_INT_3(3);
                 bci_sub(toFactor, BIG_INT_3, &distPart);
                 while (bci_compare_0(distPart) != 0) {
                     baseDist.push_back(rand_dist(0U, bci_low64(distPart)));
@@ -470,6 +467,7 @@ int main()
                             base.bits[0] = baseDist[i](rand_gen);
                         }
                         bi_copy(base, &t1);
+                        const bitCapInt BIG_INT_2(2);
                         bci_add(t1, BIG_INT_2, &base);
 #endif
 
