@@ -82,7 +82,6 @@
 #define bci_leq(l, r) ((l) <= (r))
 #define bci_and_1(l) ((l) & 1U)
 #define bci_compare(a, b) ((a > b) ? 1 : ((a < b) ? -1 : 0))
-#define bci_compare_0(a) (a ? 1 : 0)
 #define bci_eq_0(a) ((a) == 0)
 #define bci_neq_0(a) ((a) != 0)
 #define bci_eq_1(a) ((a) == 1)
@@ -109,8 +108,7 @@
 #define bci_leq(l, r) (bi_compare(l, r) <= 0)
 #define bci_and_1(l) bi_and_1(l)
 #define bci_compare(a, b) (bi_compare(a, b))
-#define bci_compare_0(a) (bi_compare_0(a))
-#define bci_eq_0(a) (bi_compare(a, ZERO_BCI) == 0)
+#define bci_eq_0(a) (bi_compare_0(a) == 0)
 #define bci_neq_0(a) (bi_compare(a, ZERO_BCI) != 0)
 #define bci_eq_1(a) (bi_compare(a, ONE_BCI) == 0)
 #define bci_gt_1(a) (bi_compare(a, ONE_BCI) > 0)
@@ -187,8 +185,8 @@ inline bitLenInt log2(const bitCapInt& n)
 void uipow(const bitCapInt& base, const bitCapInt& exp, bitCapInt* result)
 {
     *result = ONE_BCI;
-    bitCapInt b = base;
-    bitCapInt e = exp;
+    bitCapInt b(base);
+    bitCapInt e(exp);
     for (;;) {
         if (bci_and_1(b)) {
             bitCapInt t(*result);
@@ -437,7 +435,7 @@ int main()
                 const bitCapInt BIG_INT_3(3);
                 bitCapInt distPart;
                 bci_sub(toFactor, BIG_INT_3, &distPart);
-                while (bci_compare_0(distPart) != 0) {
+                while (bci_neq_0(distPart)) {
                     baseDist.push_back(rand_dist(0U, bci_low64(distPart)));
                     bci_copy(distPart, &t1);
                     bci_rshift(t1, wordSize, &distPart);
@@ -445,7 +443,7 @@ int main()
                 std::reverse(rDist.begin(), rDist.end());
 
                 bci_sub(rMax, rMin, &distPart);
-                while (bci_compare_0(distPart) != 0) {
+                while (bci_neq_0(distPart)) {
                     rDist.push_back(rand_dist(0U, (uint64_t)(distPart.bits[0] & wordMask)));
                     bci_copy(distPart, &t1);
                     bci_rshift(t1, wordSize, &distPart);
@@ -548,9 +546,8 @@ int main()
 
                             // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                             // we first check if our guess for r is already a factor.
-                            bci_div(toFactor, RGUESS, &t2);
-                            bci_mul(t2, RGUESS, &t3);
-                            if ((bci_compare(RGUESS, BIG_INT_1) > 0) && (bci_compare(toFactor, t3) == 0)) {
+                            bci_mod(toFactor, RGUESS, &t2);
+                            if (bci_gt_1(RGUESS) && bci_eq_0(t2)) {
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
@@ -577,7 +574,7 @@ int main()
                             bci_div(toFactor, fmul, &t1);
                             bci_mul(t1, fmul, &t2);
 
-                            while ((bci_compare(fmul, BIG_INT_1) > 0) && (bci_compare(fmul, toFactor) != 0) && (bci_compare(toFactor, t2) == 0)) {
+                            while (bci_gt_1(fmul) && bci_neq(fmul, toFactor) && bci_eq(toFactor, t2)) {
                                 bci_copy(f1, &fmul);
                                 bci_mul(fmul, f2, &f1);
 
@@ -585,9 +582,12 @@ int main()
                                 bci_div(toFactor, t1, &f2);
 
                                 bci_mul(f1, f2, &fmul);
+
+                                bci_div(toFactor, fmul, &t1);
+                                bci_mul(t1, fmul, &t2);
                             }
 
-                            if ((bci_compare(fmul, BIG_INT_1) > 0) && (bci_compare(fmul, toFactor) == 0) && (bci_compare(f1, BIG_INT_1) > 0) && (bci_compare(f2, BIG_INT_1) > 0)) {
+                            if (bci_gt_1(fmul) && bci_eq(fmul, toFactor) && bci_gt_1(f1) && bci_gt_1(f2)) {
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
