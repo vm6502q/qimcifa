@@ -478,6 +478,8 @@ int main()
         }
 
         kernelEvent.wait();
+        // std::cout << "Finished batch." << std::endl;
+
         queue.enqueueReadBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
         for (size_t i = 0; i < itemCount; i++) {
             testFactor = outputArray.get()[i];
