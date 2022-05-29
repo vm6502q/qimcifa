@@ -563,11 +563,11 @@ int main()
                             bci_mod(t2, toFactor, &t1);
 
                             bci_add(t1, BIG_INT_1, &t2);
-                            //gcd(t2, toFactor, &f1);
+                            gcd(t2, toFactor, &f1);
 
                             bci_sub(t1, BIG_INT_1, &t2);
-                            //gcd(t2, toFactor, &f2);
-#if 0
+                            gcd(t2, toFactor, &f2);
+
                             bci_mul(f1, f2, &fmul);
 
                             bci_mod(toFactor, fmul, &t1);
@@ -592,7 +592,6 @@ int main()
                                     "Success (on r difference of squares): Found ");
                                 return;
                             }
-#endif
                         }
                     }
 

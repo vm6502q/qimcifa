@@ -207,11 +207,12 @@ void bi_lshift(const BigInteger& left, const BIG_INTEGER_WORD& right, BigInteger
         return;
     }
 
+    BigInteger lWord(*result);
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
     BIG_INTEGER_WORD carry = 0;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result->bits[i] = carry | (left.bits[i] << rMod);
-        carry = left.bits[i] >> rModComp;
+        result->bits[i] = carry | (lWord.bits[i] << rMod);
+        carry = lWord.bits[i] >> rModComp;
     }
 }
 
@@ -226,12 +227,12 @@ void bi_rshift(const BigInteger& left, const BIG_INTEGER_WORD& right, BigInteger
         return;
     }
 
+    BigInteger lWord(*result);
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
-
     BIG_INTEGER_WORD carry = 0;
     for (int i = BIG_INTEGER_MAX_WORD_INDEX; i >= 0; --i) {
-        result->bits[i] = carry | (left.bits[i] >> rMod);
-        carry = left.bits[i] << rModComp;
+        result->bits[i] = carry | (lWord.bits[i] >> rMod);
+        carry = lWord.bits[i] << rModComp;
     }
 }
 
