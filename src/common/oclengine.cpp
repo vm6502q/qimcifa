@@ -13,9 +13,7 @@
 #include "common/oclengine.hpp"
 
 #include "kiss09cl.hpp"
-#include "big_integercl.hpp"
-// #include "qimcifa_uint64cl.hpp"
-#include "qimcifa_arbitrarycl.hpp"
+#include "qimcifa_uint64cl.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -104,8 +102,7 @@ cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
     sources.push_back({ (const char*)kiss09_cl, (long unsigned int)kiss09_cl_len });
-    sources.push_back({ (const char*)big_integer_cl, (long unsigned int)big_integer_cl_len });
-    sources.push_back({ (const char*)qimcifa_arbitrary_cl, (long unsigned int)qimcifa_arbitrary_cl_len });
+    sources.push_back({ (const char*)qimcifa_uint64_cl, (long unsigned int)qimcifa_uint64_cl_len });
 
     program = cl::Program(devCntxt->context, sources);
     std::cout << "Built JIT." << std::endl;
