@@ -333,7 +333,7 @@ void bi_mul(const BigInteger& left, const BigInteger& right, BigInteger* result)
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
-void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quotient, BigInteger* modulus)
+void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quotient, BigInteger* remainder)
 {
     BigInteger BIG_INT_1(1);
     if (quotient) {
@@ -356,8 +356,8 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
         }
 
         if (c == 0) {
-            if (modulus) {
-                bi_set_0(modulus);
+            if (remainder) {
+                bi_set_0(remainder);
             }
             return;
         }
@@ -366,7 +366,7 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
         bi_sub(temp1, partMul, &leftCopy);
     }
 
-    if (modulus) {
-        bi_copy(leftCopy, modulus);
+    if (remainder) {
+        bi_copy(leftCopy, remainder);
     }
 }
