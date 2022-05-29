@@ -61,7 +61,7 @@
 #define bitCapInt uint64_t
 #else
 #define bitsInCap (8U * (((bitLenInt)1U) << QBCAPPOW))
-#include "big_integer.hpp"
+#include "big_integer.h"
 #define bitCapInt BigInteger
 #endif
 
@@ -90,45 +90,41 @@
 #define bci_eq_1(a) ((a) == 1)
 #define bci_neq_1(a) ((a) != 1)
 #define bci_gt_1(a) ((a) > 1)
-#define bci_first_word(a) (a)
-#define bci_low64(a) (a)
 #else
-#define bci_create(a) BigInteger(a)
-#define bci_copy(a, o) bi_copy(a, o)
-#define bci_add(l, r, o) bi_add(l, r, o)
-#define bci_sub(l, r, o) bi_sub(l, r, o)
-#define bci_mul(l, r, o) bi_mul(l, r, o)
-#define bci_div(l, r, o) bi_div_mod(l, r, o, NULL)
-#define bci_mod(l, r, o) bi_div_mod(l, r, NULL, o)
-#define bci_lshift(l, r, o) bi_lshift(l, r, o)
-#define bci_rshift(l, r, o) bi_rshift(l, r, o)
-#define bci_or(l, r, o) bi_or(l, r, o)
-#define bci_and(l, r, o) bi_and(l, r, o)
-#define bci_eq(l, r) (bi_compare(l, r) == 0)
-#define bci_neq(l, r) (bi_compare(l, r) != 0)
-#define bci_lt(l, r) (bi_compare(l, r) < 0)
-#define bci_gt(l, r) (bi_compare(l, r) > 0)
-#define bci_geq(l, r) (bi_compare(l, r) >= 0)
-#define bci_leq(l, r) (bi_compare(l, r) <= 0)
+#define bci_create(a) bi_create(a)
+#define bci_copy(a, o) bi_copy(&(a), o)
+#define bci_add(l, r, o) bi_add(&(l), &(r), o)
+#define bci_sub(l, r, o) bi_sub(&(l), &(r), o)
+#define bci_mul(l, r, o) bi_mul(&(l), &(r), o)
+#define bci_div(l, r, o) bi_div_mod(&(l), &(r), o, NULL)
+#define bci_mod(l, r, o) bi_div_mod(&(l), &(r), NULL, o)
+#define bci_lshift(l, r, o) bi_lshift(&(l), r, o)
+#define bci_rshift(l, r, o) bi_rshift(&(l), r, o)
+#define bci_or(l, r, o) bi_or(&(l), &(r), o)
+#define bci_and(l, r, o) bi_and(&(l), &(r), o)
+#define bci_eq(l, r) (bi_compare(&(l), &(r)) == 0)
+#define bci_neq(l, r) (bi_compare(&(l), &(r)) != 0)
+#define bci_lt(l, r) (bi_compare(&(l), &(r)) < 0)
+#define bci_gt(l, r) (bi_compare(&(l), &(r)) > 0)
+#define bci_geq(l, r) (bi_compare(&(l), &(r)) >= 0)
+#define bci_leq(l, r) (bi_compare(&(l), &(r)) <= 0)
 #define bci_and_1(l) bi_and_1(l)
-#define bci_compare(a, b) (bi_compare(a, b))
-#define bci_eq_0(a) (bi_compare_0(a) == 0)
-#define bci_neq_0(a) (bi_compare(a, ZERO_BCI) != 0)
-#define bci_eq_1(a) (bi_compare(a, ONE_BCI) == 0)
-#define bci_neq_1(a) (bi_compare(a, ONE_BCI) != 0)
-#define bci_gt_1(a) (bi_compare(a, ONE_BCI) > 0)
-#define bci_first_word(a) (a.bits[0])
-#define bci_low64(a) (a.bits[0])
+#define bci_compare(a, b) (bi_compare(&(a), &(b)))
+#define bci_eq_0(a) (bi_compare_0(&(a)) == 0)
+#define bci_neq_0(a) (bi_compare(&(a), &ZERO_BCI) != 0)
+#define bci_eq_1(a) (bi_compare(&(a), &ONE_BCI) == 0)
+#define bci_neq_1(a) (bi_compare(&(a), &ONE_BCI) != 0)
+#define bci_gt_1(a) (bi_compare(&(a), &ONE_BCI) > 0)
 #endif
 
 namespace Qimcifa {
 
-const bitCapInt ZERO_BCI(0U);
-const bitCapInt ONE_BCI(1U);
+const bitCapInt ZERO_BCI = bci_create(0U);
+const bitCapInt ONE_BCI = bci_create(1U);
 
 #if QBCAPPOW > 6U
 std::ostream& operator<<(std::ostream& os, bitCapInt b) {
-    const bitCapInt bci_10(10);
+    const bitCapInt bci_10 = bci_create(10);
 
     std::vector<std::string> digits;
     while (bci_neq_0(b)) {
@@ -145,7 +141,7 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b) {
 
 std::istream &operator>>(std::istream &is, bitCapInt& b)
 {
-    const bitCapInt bci_10(10);
+    const bitCapInt bci_10 = bci_create(10);
 
     std::string input;
     is >> input;
@@ -155,7 +151,8 @@ std::istream &operator>>(std::istream &is, bitCapInt& b)
         bitCapInt t(b);
         bci_mul(t, bci_10, &b);
         bci_copy(b, &t);
-        bci_add(t, bci_create(input[i] - 48), &b);
+        bitCapInt c = bci_create(input[i] - 48);
+        bci_add(t, c, &b);
     }
 
     return is;
@@ -182,23 +179,22 @@ bitLenInt log2(const bitCapInt& n)
     return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
 #endif
 #else
-    return bi_log2(n);
+    return bi_log2(&n);
 #endif
 }
 
 // Source:
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
-void uipow(const bitCapInt& base, const bitCapInt& exp, bitCapInt* result)
+void uipow(bitCapInt b, bitCapInt e, bitCapInt* result)
 {
     bci_copy(ONE_BCI, result);
-    bitCapInt b(base);
-    bitCapInt e(exp);
     for (;;) {
-        if (bci_and_1(b)) {
+        if (bci_and_1(&b)) {
             bitCapInt t(*result);
             bci_mul(t, b, result);
         }
-        bitCapInt t(e);
+        bitCapInt t;
+        bci_copy(e, &t);
         bci_rshift(t, 1U, &e);
         if (bci_eq_0(e)) {
             break;
@@ -437,8 +433,8 @@ int main()
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
     
-    BufferPtr rngSeedBufferPtr = MakeBuffer(context, CL_MEM_READ_WRITE, sizeof(bitCapInt) * itemCount * 4U);
-    std::unique_ptr<bitCapInt[]> rngSeeds(new bitCapInt[itemCount * 4]);
+    BufferPtr rngSeedBufferPtr = MakeBuffer(context, CL_MEM_READ_WRITE, sizeof(uint64_t) * itemCount * 4U);
+    std::unique_ptr<uint64_t[]> rngSeeds(new uint64_t[itemCount * 4]);
     rand_dist seedDist(0, 0xFFFFFFFFFFFFFFFF);
     rand_dist cSeedDist(0, 0x3FFFFFFFFFFFFFF);
     for (size_t i = 0U; i < itemCount; i++) {
@@ -447,7 +443,7 @@ int main()
         rngSeeds.get()[i * 4 + 2] = seedDist(rand_gen);
         rngSeeds.get()[i * 4 + 3] = seedDist(rand_gen);
     }
-    error = queue.enqueueWriteBuffer(*rngSeedBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount * 4U, rngSeeds.get(), NULL);
+    error = queue.enqueueWriteBuffer(*rngSeedBufferPtr, CL_TRUE, 0U, sizeof(uint64_t) * itemCount * 4U, rngSeeds.get(), NULL);
     if (error != CL_SUCCESS) {
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
@@ -468,7 +464,7 @@ int main()
     ocl.call.setArg(2, *rngSeedBufferPtr);
     ocl.call.setArg(3, *outputBufferPtr);
 
-    bitCapInt testFactor = 1U;
+    bitCapInt testFactor = bci_create(1U);
     while (bci_leq(testFactor, ONE_BCI)) {
         cl::Event kernelEvent;
         error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
@@ -483,7 +479,7 @@ int main()
 
         kernelEvent.wait();
         // std::cout << "Finished batch." << std::endl;
-        
+
         queue.enqueueReadBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
         for (size_t i = 0; i < itemCount; i++) {
             testFactor = outputArray.get()[i];

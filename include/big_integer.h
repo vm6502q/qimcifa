@@ -144,7 +144,7 @@ BigInteger bi_create(BIG_INTEGER_WORD val) {
     return result;
 }
 
-BigInteger bi_load(global BIG_INTEGER_WORD* a)
+BigInteger bi_load(BIG_INTEGER_WORD* a)
 {
     BigInteger result;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
