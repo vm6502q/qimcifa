@@ -159,7 +159,7 @@ std::istream &operator>>(std::istream &is, bitCapInt& b)
 #endif
 
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-inline bool isPowerOfTwo(const bitCapInt& x) {
+bool isPowerOfTwo(const bitCapInt& x) {
     bitCapInt t1;
     bci_sub(x, ONE_BCI, &t1);
     bitCapInt t2;
@@ -168,7 +168,7 @@ inline bool isPowerOfTwo(const bitCapInt& x) {
     return bci_neq_0(x) && bci_eq_0(t2);
 }
 
-inline bitLenInt log2(const bitCapInt& n)
+bitLenInt log2(const bitCapInt& n)
 {
 #if __GNUC__ && QBCAPPOW < 7
 // Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
@@ -205,7 +205,7 @@ void uipow(const bitCapInt& base, const bitCapInt& exp, bitCapInt* result)
 }
 
 // It's fine if this is not exact for the whole bitCapInt domain, so long as it is <= the exact result.
-inline bitLenInt intLog(const bitCapInt& base, const bitCapInt& arg)
+bitLenInt intLog(const bitCapInt& base, const bitCapInt& arg)
 {
     bitLenInt result = 0U;
     bitCapInt t;
@@ -217,7 +217,7 @@ inline bitLenInt intLog(const bitCapInt& base, const bitCapInt& arg)
 }
 
 // Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
-bitCapInt floorSqrt(const bitCapInt& x)
+void floorSqrt(const bitCapInt& x, bitCapInt* ans)
 {
     // Base cases
     if (bci_eq_0(x) || bci_eq_1(x)) {
@@ -225,7 +225,8 @@ bitCapInt floorSqrt(const bitCapInt& x)
     }
 
     // Binary search for floor(sqrt(x))
-    bitCapInt ans = ZERO_BCI, start = ONE_BCI;
+    bitCapInt start = ONE_BCI;
+    bi_set_0(ans);
     bitCapInt end;
     bci_rshift(x, 1U, &end);
     while (bci_leq(start, end)) {
@@ -242,7 +243,7 @@ bitCapInt floorSqrt(const bitCapInt& x)
         if (bci_lt(t, x)) {
             // Since we need floor, we update answer when mid*mid is smaller than x, and move closer to sqrt(x).
             bci_add(mid, ONE_BCI, &start);
-            bci_copy(mid, &ans);
+            bci_copy(mid, ans);
         } else {
             // If mid*mid is greater than x
             bci_sub(mid, ONE_BCI, &end);
@@ -353,7 +354,9 @@ int main()
     bci_mul(t1, t3, &fullMaxR);
 #else
     // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-    const bitCapInt fullMinR = floorSqrt(bci_rshift(toFactor, 1U));
+    bitCapInt fullMinR;
+    bci_rshift(toFactor, 1U, &t1);
+    floorSqrt(t1, &fullMinR);
     // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
     // const bitCapInt fullMinR = pow(toFactor / 2, PHI_EXPONENT);
 
@@ -361,7 +364,9 @@ int main()
     // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
     // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
     // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-    const bitCapInt fullMaxR = bci_sub(toFactor, floorSqrt(toFactor));
+    bitCapInt fullMaxR;
+    floorSqrt(toFactor, &t1);
+    bci_sub(toFactor, t1, &fullMaxR);
 #endif
 
     const unsigned cpuCount = std::thread::hardware_concurrency();
