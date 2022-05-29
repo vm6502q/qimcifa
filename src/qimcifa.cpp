@@ -85,6 +85,7 @@
 #define bci_eq_0(a) ((a) == 0)
 #define bci_neq_0(a) ((a) != 0)
 #define bci_eq_1(a) ((a) == 1)
+#define bci_neq_1(a) ((a) != 1)
 #define bci_gt_1(a) ((a) > 1)
 #define bci_first_word(a) (a)
 #define bci_low64(a) (a)
@@ -111,6 +112,7 @@
 #define bci_eq_0(a) (bi_compare_0(a) == 0)
 #define bci_neq_0(a) (bi_compare(a, ZERO_BCI) != 0)
 #define bci_eq_1(a) (bi_compare(a, ONE_BCI) == 0)
+#define bci_neq_1(a) (bi_compare(a, ONE_BCI) != 0)
 #define bci_gt_1(a) (bi_compare(a, ONE_BCI) > 0)
 #define bci_first_word(a) (a.bits[0])
 #define bci_low64(a) (a.bits[0])
@@ -184,7 +186,7 @@ inline bitLenInt log2(const bitCapInt& n)
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
 void uipow(const bitCapInt& base, const bitCapInt& exp, bitCapInt* result)
 {
-    *result = ONE_BCI;
+    bi_copy(ONE_BCI, result);
     bitCapInt b(base);
     bitCapInt e(exp);
     for (;;) {
@@ -470,7 +472,7 @@ int main()
 #endif
 
                         gcd(toFactor, base, &t1);
-                        if (bci_compare(t1, BIG_INT_1) != 0) {
+                        if (bci_neq_1(t1)) {
                             // Inform the other threads on this node that we've succeeded and are done:
                             isFinished = true;
 
@@ -558,23 +560,21 @@ int main()
                                 return;
                             }
 
-#if 0
                             bitCapInt f1, f2, fmul;
                             uipow(base, t1, &t2);
                             bci_mod(t2, toFactor, &t1);
 
                             bci_add(t1, BIG_INT_1, &t2);
-                            gcd(t2, toFactor, &f1);
+                            //gcd(t2, toFactor, &f1);
 
                             bci_sub(t1, BIG_INT_1, &t2);
-                            gcd(t2, toFactor, &f2);
-
+                            //gcd(t2, toFactor, &f2);
+#if 0
                             bci_mul(f1, f2, &fmul);
 
-                            bci_div(toFactor, fmul, &t1);
-                            bci_mul(t1, fmul, &t2);
+                            bci_mod(toFactor, fmul, &t1);
 
-                            while (bci_gt_1(fmul) && bci_neq(fmul, toFactor) && bci_eq(toFactor, t2)) {
+                            while (bci_gt_1(fmul) && bci_neq(fmul, toFactor) && bci_eq_0(t1)) {
                                 bci_copy(f1, &fmul);
                                 bci_mul(fmul, f2, &f1);
 
@@ -583,8 +583,7 @@ int main()
 
                                 bci_mul(f1, f2, &fmul);
 
-                                bci_div(toFactor, fmul, &t1);
-                                bci_mul(t1, fmul, &t2);
+                                bci_mod(toFactor, fmul, &t1);
                             }
 
                             if (bci_gt_1(fmul) && bci_eq(fmul, toFactor) && bci_gt_1(f1) && bci_gt_1(f2)) {
