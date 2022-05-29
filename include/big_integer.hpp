@@ -333,45 +333,40 @@ void bi_mul(const BigInteger& left, const BigInteger& right, BigInteger* result)
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
-void bi_div(const BigInteger& left, const BigInteger& right, BigInteger* result)
+void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quotient, BigInteger* modulus)
 {
     BigInteger BIG_INT_1(1);
-    bi_set_0(result);
+    if (quotient) {
+        bi_set_0(quotient);
+    }
     BigInteger leftCopy(left);
-    for (int i = bi_log2(right); i >= 0; --i) {
+    for (int i = (BIG_INTEGER_BITS - 1) - bi_log2(right); i >= 0; --i) {
         BigInteger partMul;
         bi_lshift(right, i, &partMul);
+
         const int c = bi_compare(leftCopy, partMul);
         if (c < 0) {
             continue;
         }
-        BigInteger temp1, temp2(*result);
-        bi_lshift(BIG_INT_1, i, &temp1);
-        bi_add(temp1, temp2, result);
-        if (c == 0) {
-            break;
+
+        if (quotient) {
+            BigInteger temp1, temp2(*quotient);
+            bi_lshift(BIG_INT_1, i, &temp1);
+            bi_add(temp1, temp2, quotient);
         }
-        bi_copy(leftCopy, &temp1);
+
+        if (c == 0) {
+            if (modulus) {
+                bi_set_0(modulus);
+            }
+            return;
+        }
+
+        BigInteger temp1(leftCopy);
         bi_sub(temp1, partMul, &leftCopy);
     }
-}
 
-void bi_mod(const BigInteger& left, const BigInteger& right, BigInteger* result)
-{
-    // This is division, but we don't need to save the result.
-    bi_copy(left, result);
-    for (int i = bi_log2(right); i >= 0; --i) {
-        BigInteger partMul;
-        bi_lshift(right, i, &partMul);
-        const int c = bi_compare(*result, partMul);
-        if (c < 0) {
-            continue;
-        }
-        if (c == 0) {
-            break;
-        }
-        BigInteger temp1(*result);
-        bi_sub(temp1, partMul, result);
+    if (modulus) {
+        bi_copy(leftCopy, modulus);
     }
-    // The modulus is the remainder in leftCopy, after division.
 }

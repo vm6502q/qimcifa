@@ -37,7 +37,7 @@
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
-#define QBCAPPOW 6U
+#define QBCAPPOW 7U
 #define bitsInByte 8U
 
 #if QBCAPPOW < 8U
@@ -95,8 +95,8 @@
 #define bci_add(l, r, o) bi_add(l, r, o)
 #define bci_sub(l, r, o) bi_sub(l, r, o)
 #define bci_mul(l, r, o) bi_mul(l, r, o)
-#define bci_div(l, r, o) bi_div(l, r, o)
-#define bci_mod(l, r, o) bi_mod(l, r, o)
+#define bci_div(l, r, o) bi_div_mod(l, r, o, NULL)
+#define bci_mod(l, r, o) bi_div_mod(l, r, NULL, o)
 #define bci_lshift(l, r, o) bi_lshift(l, r, o)
 #define bci_rshift(l, r, o) bi_rshift(l, r, o)
 #define bci_or(l, r, o) bi_or(l, r, o)
@@ -431,14 +431,11 @@ int main()
 
                 std::vector<rand_dist> baseDist;
                 std::vector<rand_dist> rDist;
-#if QBCAPPOW < 7U
-                baseDist.push_back(rand_dist(2U, toFactor - 1U));
-                rDist.push_back(rand_dist(rMin, rMax));
-#else
+#if QBCAPPOW > 6U
                 const bitLenInt wordSize = 64U;
                 const uint64_t wordMask = 0xFFFFFFFFFFFFFFFF;
-                bitCapInt distPart;
                 const bitCapInt BIG_INT_3(3);
+                bitCapInt distPart;
                 bci_sub(toFactor, BIG_INT_3, &distPart);
                 while (bci_compare_0(distPart) != 0) {
                     baseDist.push_back(rand_dist(0U, bci_low64(distPart)));
@@ -454,6 +451,9 @@ int main()
                     bci_rshift(t1, wordSize, &distPart);
                 }
                 std::reverse(rDist.begin(), rDist.end());
+#else
+                baseDist.push_back(rand_dist(2U, toFactor.bits[0]));
+                rDist.push_back(rand_dist(rMin.bits[0], rMax.bits[0]));
 #endif
 
                 for (;;) {
@@ -486,7 +486,7 @@ int main()
                             std::cout << "(Waiting to join other threads...)" << std::endl;
                             return;
                         }
-
+#if 0
                         // This would be where we perform the quantum period finding algorithm.
                         // However, we don't have a quantum computer!
                         // Instead, we "throw dice" for a guess to the output of the quantum subroutine.
@@ -595,6 +595,7 @@ int main()
                                 return;
                             }
                         }
+#endif
                     }
 
                     // Check if finished, between batches.
