@@ -108,7 +108,7 @@
 #define bci_gt(l, r) (bi_compare(&(l), &(r)) > 0)
 #define bci_geq(l, r) (bi_compare(&(l), &(r)) >= 0)
 #define bci_leq(l, r) (bi_compare(&(l), &(r)) <= 0)
-#define bci_and_1(l) bi_and_1(l)
+#define bci_and_1(l) bi_and_1(&(l))
 #define bci_compare(a, b) (bi_compare(&(a), &(b)))
 #define bci_eq_0(a) (bi_compare_0(&(a)) == 0)
 #define bci_neq_0(a) (bi_compare(&(a), &ZERO_BCI) != 0)
@@ -189,7 +189,7 @@ void uipow(bitCapInt b, bitCapInt e, bitCapInt* result)
 {
     bci_copy(ONE_BCI, result);
     for (;;) {
-        if (bci_and_1(&b)) {
+        if (bci_and_1(b)) {
             bitCapInt t(*result);
             bci_mul(t, b, result);
         }

@@ -85,7 +85,7 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global BigInteger* BigInteger
     const BigInteger BIG_INT_2 = bi_create(2);
     const BigInteger BIG_INT_3 = bi_create(3);
 
-    BigInteger t1, t2, t3;
+    BigInteger t1, t2;
 
     BigInteger fullRange;
     bi_add(&fullMaxR, &BIG_INT_1, &t1);
