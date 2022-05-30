@@ -315,8 +315,15 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
 // Complexity - O(log)
 void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
+    int rightLog2 = bi_log2(right);
+    if (rightLog2 == 0) {
+        // right == 1
+        bi_copy(left, result);
+        return;
+    }
+
     bi_set_0(result);
-    for (int i = 0; i < BIG_INTEGER_BITS; ++i) {
+    for (int i = 0; i < rightLog2; ++i) {
         BigInteger partMul;
         bi_lshift(right, i, &partMul);
         if (bi_compare_0(&partMul) == 0) {

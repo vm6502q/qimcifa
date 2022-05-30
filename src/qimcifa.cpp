@@ -95,7 +95,7 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b) {
     return os;
 }
 
-std::istream &operator>>(std::istream &is, bitCapInt& b)
+std::istream& operator>>(std::istream& is, bitCapInt& b)
 {
     // Get the whole input string at once.
     std::string input;
