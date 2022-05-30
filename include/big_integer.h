@@ -321,9 +321,10 @@ void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
         bi_copy(left, result);
         return;
     }
+    int maxI = BIG_INTEGER_BITS - rightLog2;
 
     bi_set_0(result);
-    for (int i = 0; i < rightLog2; ++i) {
+    for (int i = 0; i < maxI; ++i) {
         BigInteger partMul;
         bi_lshift(right, i, &partMul);
         if (bi_compare_0(&partMul) == 0) {
