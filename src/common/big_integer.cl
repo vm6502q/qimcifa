@@ -245,13 +245,12 @@ void bi_lshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* resul
         return;
     }
 
-    BigInteger lWord;
-    bi_copy(result, &lWord);
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
     BIG_INTEGER_WORD carry = 0;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        result->bits[i] = carry | (lWord.bits[i] << rMod);
-        carry = lWord.bits[i] >> rModComp;
+        right = result->bits[i];
+        result->bits[i] = carry | (right << rMod);
+        carry = right >> rModComp;
     }
 }
 
@@ -265,13 +264,12 @@ void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
         return;
     }
 
-    BigInteger lWord;
-    bi_copy(left, &lWord);
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
     BIG_INTEGER_WORD carry = 0;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
-        left->bits[i] = carry | (lWord.bits[i] << rMod);
-        carry = lWord.bits[i] >> rModComp;
+        right = left->bits[i];
+        left->bits[i] = carry | (right << rMod);
+        carry = right >> rModComp;
     }
 }
 
@@ -286,13 +284,12 @@ void bi_rshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* resul
         return;
     }
 
-    BigInteger lWord;
-    bi_copy(result, &lWord);
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
     BIG_INTEGER_WORD carry = 0;
     for (int i = BIG_INTEGER_MAX_WORD_INDEX; i >= 0; --i) {
-        result->bits[i] = carry | (lWord.bits[i] >> rMod);
-        carry = lWord.bits[i] << rModComp;
+        right = result->bits[i];
+        result->bits[i] = carry | (right >> rMod);
+        carry = right << rModComp;
     }
 }
 
@@ -311,8 +308,9 @@ void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
     BIG_INTEGER_WORD carry = 0;
     for (int i = BIG_INTEGER_MAX_WORD_INDEX; i >= 0; --i) {
-        left->bits[i] = carry | (lWord.bits[i] >> rMod);
-        carry = lWord.bits[i] << rModComp;
+        right = left->bits[i];
+        left->bits[i] = carry | (right >> rMod);
+        carry = right << rModComp;
     }
 }
 
