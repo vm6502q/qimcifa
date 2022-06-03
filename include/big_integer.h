@@ -169,11 +169,6 @@ void bi_lshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteg
         return;
     }
 
-    if (rightMult >= BIG_INTEGER_WORD_SIZE) {
-        bi_set_0(result);
-        return;
-    }
-
     bi_set_0(result);
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result->bits[i] = left->bits[i - rightMult];
@@ -184,11 +179,6 @@ void bi_rshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteg
 {
     if (!rightMult) {
         bi_copy(left, result);
-        return;
-    }
-
-    if (rightMult >= BIG_INTEGER_WORD_SIZE) {
-        bi_set_0(result);
         return;
     }
 
