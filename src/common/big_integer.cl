@@ -301,38 +301,34 @@ void bi_not(const BigInteger* left, BigInteger* result)
     }
 }
 
-#if 0
 // Complexity - O(x^2)
-
 #define BIG_INTEGER_HALF_WORD_SIZE 1
 #define BIG_INTEGER_HALF_WORD_BITS 32
 #define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFF
-#define BIG_INT_LO_HALF_WORD(a) ((a)&BIG_INTEGER_HALF_WORD_MASK)
+#define BIG_INT_LO_HALF_WORD(a) ((a) & BIG_INTEGER_HALF_WORD_MASK)
 #define BIG_INT_HI_HALF_WORD(a) ((a) >> BIG_INTEGER_HALF_WORD_BITS)
-BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
+void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
-    BigInteger result;
-    BigInteger partResult;
     for (int i = 0; i < BIG_INTEGER_HALF_WORD_SIZE; ++i) {
-        bi_set_0(partResult);
+        BigInteger partResult = bi_create(0);
         const int maxJ = BIG_INTEGER_HALF_WORD_SIZE - i;
         for (int j = 0; j < maxJ; ++j) {
-            const unsigned long lLoHalfWord = BIG_INT_LO_HALF_WORD(left->bits[j]);
-            const unsigned long lHiHalfWord = BIG_INT_HI_HALF_WORD(left->bits[j]);
-            const unsigned long rLoHalfWord = BIG_INT_LO_HALF_WORD(right->bits[i]);
-            const unsigned long rHiHalfWord = BIG_INT_HI_HALF_WORD(right->bits[i]);
+            const BIG_INTEGER_WORD lLoHalfWord = BIG_INT_LO_HALF_WORD(left->bits[j]);
+            const BIG_INTEGER_WORD lHiHalfWord = BIG_INT_HI_HALF_WORD(left->bits[j]);
+            const BIG_INTEGER_WORD rLoHalfWord = BIG_INT_LO_HALF_WORD(right->bits[i]);
+            const BIG_INTEGER_WORD rHiHalfWord = BIG_INT_HI_HALF_WORD(right->bits[i]);
 
             partResult.bits[2 * j] += (lLoHalfWord * rLoHalfWord) |
                 ((lHiHalfWord * rLoHalfWord + lLoHalfWord * rHiHalfWord) << BIG_INTEGER_HALF_WORD_BITS);
             partResult.bits[2 * j + 1] += lHiHalfWord * rHiHalfWord;
         }
-        result = bi_add(result, bi_lshift_word(partResult, i));
+        BigInteger temp;
+        bi_lshift_word(&partResult, i, &temp);
+        bi_add_ip(result, &temp);
     }
-
-    return result;
 }
-#endif
 
+#if 0
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
 void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
@@ -357,6 +353,7 @@ void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
         }
     }
 }
+#endif
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
