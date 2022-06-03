@@ -359,7 +359,7 @@ void bi_not(const BigInteger* left, BigInteger* result)
     }
 }
 
-#if BIG_INTEGER_WORD_SIZE < 13
+#if 0
 // Complexity - O(x^2)
 #define BIG_INTEGER_HALF_WORD_SIZE 1
 #define BIG_INTEGER_HALF_WORD_BITS 32
@@ -385,7 +385,8 @@ void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
         bi_add_ip(result, &partResult);
     }
 }
-#else
+#endif
+
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
 void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
@@ -410,7 +411,6 @@ void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
         }
     }
 }
-#endif
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
