@@ -426,10 +426,9 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
         // Past this point, leftCopy >= partMul.
 
         if (quotient) {
-            BigInteger temp1, temp2;
-            bi_copy(quotient, &temp2);
-            bi_lshift(&BIG_INT_1, i, &temp1);
-            bi_add(&temp1, &temp2, quotient);
+            BigInteger temp;
+            bi_lshift(&BIG_INT_1, i, &temp);
+            bi_add_ip(quotient, &temp);
         }
 
         if (c == 0) {
