@@ -65,6 +65,7 @@
 #if QBCAPPOW < 7U
 #define bci_create(a) (a)
 #define bci_copy(a, o) *(o) = a
+#define bci_add_i[(l, r) l += (r)
 #define bci_add(l, r, o) *(o) = ((l) + (r))
 #define bci_sub(l, r, o) *(o) = ((l) - (r))
 #define bci_mul(l, r, o) *(o) = ((l) * (r))
@@ -91,6 +92,7 @@
 #else
 #define bci_create(a) bi_create(a)
 #define bci_copy(a, o) bi_copy(&(a), o)
+#define bci_add_ip(l, r) bi_add_ip(l, &(r))
 #define bci_add(l, r, o) bi_add(&(l), &(r), o)
 #define bci_sub(l, r, o) bi_sub(&(l), &(r), o)
 #define bci_mul(l, r, o) bi_mul(&(l), &(r), o)
@@ -149,9 +151,8 @@ std::istream &operator>>(std::istream &is, bitCapInt& b)
     for (unsigned i = 0; i < input.size(); i++) {
         bitCapInt t(b);
         bci_mul(t, bci_10, &b);
-        bci_copy(b, &t);
         bitCapInt c = bci_create(input[i] - 48);
-        bci_add(t, c, &b);
+        bci_add_ip(&b, c);
     }
 
     return is;
@@ -467,9 +468,8 @@ int main()
                             bci_lshift(t1, wordSize, &base);
                             base.bits[0] = baseDist[i](rand_gen);
                         }
-                        bci_copy(base, &t1);
                         const bitCapInt BIG_INT_2 = bci_create(2);
-                        bci_add(t1, BIG_INT_2, &base);
+                        bci_add_ip(&base, BIG_INT_2);
 #endif
 
                         gcd(toFactor, base, &t1);
@@ -524,8 +524,7 @@ int main()
                                 bci_lshift(t1, wordSize, &r);
                                 r.bits[0] = rDist[i](rand_gen);
                             }
-                            bci_copy(r, &t1);
-                            bci_add(t1, rMin, &r);
+                            bci_add_ip(&r, rMin);
 #endif
                             // Since our output is r rather than y, we can skip the continued fractions step.
                             if (bci_and_1(r)) {

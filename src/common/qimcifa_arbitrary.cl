@@ -142,7 +142,7 @@ void kernel qimcifa_batch(global ulong* ulongArgs, global BigInteger* BigInteger
             base.bits[i] = kiss09_ulong(rngState);
         }
         bi_div_mod(&base, &toFactorMin3, 0, &t1);
-        bi_add(&t1, &BIG_INT_2, &base);
+        bi_add_ip(&base, &BIG_INT_2);
 
         gcd(toFactor, base, &t1);
         if (bi_compare(&t1, &BIG_INT_1) != 0) {

@@ -99,6 +99,18 @@ void bi_add(const BigInteger* left, const BigInteger* right, BigInteger* result)
     result->bits[BIG_INTEGER_MAX_WORD_INDEX] += right->bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
+void bi_add_ip(BigInteger* left, const BigInteger* right)
+{
+    for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
+        BIG_INTEGER_WORD temp = left->bits[i];
+        left->bits[i] += right->bits[i];
+        if (left->bits[i] < temp) {
+            ++(left->bits[i + 1]);
+        }
+    }
+    left->bits[BIG_INTEGER_MAX_WORD_INDEX] += right->bits[BIG_INTEGER_MAX_WORD_INDEX];
+}
+
 void bi_sub(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
     bi_copy(left, result);
@@ -110,6 +122,18 @@ void bi_sub(const BigInteger* left, const BigInteger* right, BigInteger* result)
         }
     }
     result->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right->bits[BIG_INTEGER_MAX_WORD_INDEX];
+}
+
+void bi_sub_ip(BigInteger* left, const BigInteger* right)
+{
+    for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
+        BIG_INTEGER_WORD temp = left->bits[i];
+        left->bits[i] -= right->bits[i];
+        if (left->bits[i] > temp) {
+            --(left->bits[i + 1]);
+        }
+    }
+    left->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right->bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
 void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
@@ -232,16 +256,16 @@ void bi_rshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* resul
 
 int bi_log2(const BigInteger* n)
 {
-    int pow = 0;
+    int pw = 0;
     BigInteger p;
     bi_rshift(n, 1U, &p);
     while (bi_compare_0(&p) != 0) {
         BigInteger temp;
         bi_copy(&p, &temp);
         bi_rshift(&temp, 1U, &p);
-        pow++;
+        pw++;
     }
-    return pow;
+    return pw;
 }
 
 int bi_and_1(const BigInteger* left) { return left->bits[0] & 1; }
