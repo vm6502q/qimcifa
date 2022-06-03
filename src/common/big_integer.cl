@@ -120,7 +120,7 @@ void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
         return;
     }
     for (int i = 1; i < BIG_INTEGER_WORD_SIZE; i++) {
-        BIG_INTEGER_WORD temp = pBigInt->bits[i]++;
+        temp = pBigInt->bits[i]++;
         if (temp <= pBigInt->bits[i]) {
             break;
         }
@@ -135,7 +135,7 @@ void bi_decrement(BigInteger* pBigInt, BIG_INTEGER_WORD value)
         return;
     }
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; i++) {
-        BIG_INTEGER_WORD temp = pBigInt->bits[i]--;
+        temp = pBigInt->bits[i]--;
         if (temp >= pBigInt->bits[i]) {
             break;
         }
