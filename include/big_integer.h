@@ -353,9 +353,7 @@ void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
             break;
         }
         if (1 & (left->bits[i / BIG_INTEGER_WORD_BITS] >> (i % BIG_INTEGER_WORD_BITS))) {
-            BigInteger temp;
-            bi_copy(result, &temp);
-            bi_add(&temp, &partMul, result);
+            bi_add_ip(result, &partMul);
         }
     }
 }
@@ -443,10 +441,7 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
         }
 
         // Otherwise, c > 1, meaning leftCopy > partMul.
-
-        BigInteger temp1;
-        bi_copy(&leftCopy, &temp1);
-        bi_sub(&temp1, &partMul, &leftCopy);
+        bi_sub_ip(&leftCopy, &partMul);
     }
 
     if (rmndr) {
