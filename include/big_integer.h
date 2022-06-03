@@ -199,6 +199,17 @@ void bi_lshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteg
     }
 }
 
+void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
+{
+    if (!rightMult) {
+        return;
+    }
+    for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
+        left->bits[i] = left->bits[i - rightMult];
+        left->bits[i - rightMult] = 0;
+    }
+}
+
 void bi_rshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteger* result)
 {
     if (!rightMult) {
@@ -209,6 +220,17 @@ void bi_rshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteg
     bi_set_0(result);
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result->bits[i - rightMult] = left->bits[i];
+    }
+}
+
+void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
+{
+    if (!rightMult) {
+        return;
+    }
+    for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
+        left->bits[i - rightMult] = left->bits[i];
+        left->bits[i] = 0;
     }
 }
 
@@ -229,6 +251,26 @@ void bi_lshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* resul
     BIG_INTEGER_WORD carry = 0;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result->bits[i] = carry | (lWord.bits[i] << rMod);
+        carry = lWord.bits[i] >> rModComp;
+    }
+}
+
+void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
+{
+    const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
+    const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
+
+    bi_lshift_word_ip(left, rShift64);
+    if (!rMod) {
+        return;
+    }
+
+    BigInteger lWord;
+    bi_copy(left, &lWord);
+    const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
+    BIG_INTEGER_WORD carry = 0;
+    for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
+        left->bits[i] = carry | (lWord.bits[i] << rMod);
         carry = lWord.bits[i] >> rModComp;
     }
 }
@@ -254,15 +296,33 @@ void bi_rshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* resul
     }
 }
 
+void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
+{
+    const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
+    const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
+
+    bi_rshift_word_ip(left, rShift64);
+    if (!rMod) {
+        return;
+    }
+
+    BigInteger lWord;
+    bi_copy(left, &lWord);
+    const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
+    BIG_INTEGER_WORD carry = 0;
+    for (int i = BIG_INTEGER_MAX_WORD_INDEX; i >= 0; --i) {
+        left->bits[i] = carry | (lWord.bits[i] >> rMod);
+        carry = lWord.bits[i] << rModComp;
+    }
+}
+
 int bi_log2(const BigInteger* n)
 {
     int pw = 0;
     BigInteger p;
     bi_rshift(n, 1U, &p);
     while (bi_compare_0(&p) != 0) {
-        BigInteger temp;
-        bi_copy(&p, &temp);
-        bi_rshift(&temp, 1U, &p);
+        bi_rshift_ip(&p, 1U);
         pw++;
     }
     return pw;
@@ -323,9 +383,8 @@ void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
                 ((lHiHalfWord * rLoHalfWord + lLoHalfWord * rHiHalfWord) << BIG_INTEGER_HALF_WORD_BITS);
             partResult.bits[2 * j + 1] += lHiHalfWord * rHiHalfWord;
         }
-        BigInteger temp;
-        bi_lshift_word(&partResult, i, &temp);
-        bi_add_ip(result, &temp);
+        bi_lshift_word_ip(&partResult, i);
+        bi_add_ip(result, &partResult);
     }
 }
 #else
@@ -423,8 +482,8 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
         // Past this point, leftCopy >= partMul.
 
         if (quotient) {
-            BigInteger temp;
-            bi_lshift(&BIG_INT_1, i, &temp);
+            BigInteger temp = bi_create(1);
+            bi_lshift_ip(&temp, i);
             bi_add_ip(quotient, &temp);
         }
 
