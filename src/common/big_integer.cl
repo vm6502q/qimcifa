@@ -117,10 +117,8 @@ void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
     int i = 0;
     BIG_INTEGER_WORD temp = pBigInt->bits[i];
     pBigInt->bits[i] += value;
-    while ((i < BIG_INTEGER_MAX_WORD_INDEX) && (temp > pBigInt->bits[i])) {
-        ++i;
-        temp = pBigInt->bits[i];
-        ++(pBigInt->bits[i]);
+    for (int i = 0; (i < BIG_INTEGER_WORD_SIZE) && (temp > pBigInt->bits[i]); i++) {
+        temp = pBigInt->bits[i]++;
     }
 }
 
@@ -129,17 +127,17 @@ void bi_decrement(BigInteger* pBigInt, BIG_INTEGER_WORD value)
     int i = 0;
     BIG_INTEGER_WORD temp = pBigInt->bits[i];
     pBigInt->bits[i] -= value;
-    while ((i < BIG_INTEGER_MAX_WORD_INDEX) && (temp < pBigInt->bits[i])) {
-        ++i;
-        temp = pBigInt->bits[i];
-        pBigInt->bits[i]--;
+    for (int i = 0; (i < BIG_INTEGER_WORD_SIZE) && (temp < pBigInt->bits[i]); i++) {
+        temp = pBigInt->bits[i]++;
     }
 }
 
 BigInteger bi_create(BIG_INTEGER_WORD val) {
     BigInteger result;
-    bi_set_0(&result);
-    bi_increment(&result, val);
+    result.bits[0] = val;
+    for (int i = 1; i < BIG_INTEGER_WORD_SIZE; ++i) {
+        result.bits[i] = 0;
+    }
 
     return result;
 }
