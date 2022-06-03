@@ -114,21 +114,31 @@ void bi_sub(const BigInteger* left, const BigInteger* right, BigInteger* result)
 
 void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
 {
-    int i = 0;
-    BIG_INTEGER_WORD temp = pBigInt->bits[i];
-    pBigInt->bits[i] += value;
-    for (int i = 0; (i < BIG_INTEGER_WORD_SIZE) && (temp > pBigInt->bits[i]); i++) {
-        temp = pBigInt->bits[i]++;
+    BIG_INTEGER_WORD temp = pBigInt->bits[0];
+    pBigInt->bits[0] += value;
+    if (temp <= pBigInt->bits[0]) {
+        return;
+    }
+    for (int i = 1; i < BIG_INTEGER_WORD_SIZE; i++) {
+        BIG_INTEGER_WORD temp = pBigInt->bits[i]++;
+        if (temp <= pBigInt->bits[i]) {
+            break;
+        }
     }
 }
 
 void bi_decrement(BigInteger* pBigInt, BIG_INTEGER_WORD value)
 {
-    int i = 0;
-    BIG_INTEGER_WORD temp = pBigInt->bits[i];
-    pBigInt->bits[i] -= value;
-    for (int i = 0; (i < BIG_INTEGER_WORD_SIZE) && (temp < pBigInt->bits[i]); i++) {
-        temp = pBigInt->bits[i]++;
+    BIG_INTEGER_WORD temp = pBigInt->bits[0];
+    pBigInt->bits[0] -= value;
+    if (temp >= pBigInt->bits[0]) {
+        return;
+    }
+    for (int i = 0; i < BIG_INTEGER_WORD_SIZE; i++) {
+        BIG_INTEGER_WORD temp = pBigInt->bits[i]--;
+        if (temp >= pBigInt->bits[i]) {
+            break;
+        }
     }
 }
 
