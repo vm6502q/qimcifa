@@ -424,7 +424,7 @@ int main()
                             bitCapInt fmul = f1 * f2;
                             while ((fmul > 1U) && (fmul != toFactor) && (((toFactor / fmul) * fmul) == toFactor)) {
                                 fmul = f1;
-                                f1 = fmul * f2;
+                                f1 *= f2;
                                 f2 = toFactor / (fmul * f2);
                                 fmul = f1 * f2;
                             }
