@@ -271,12 +271,18 @@ int main()
     const bitLenInt wordSize = 64U;
     const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
 
+#if IS_RSA_SEMIPRIME
+    bitCapInt distPart = fullMaxR - fullMinR;
+#else
     bitCapInt distPart = toFactor - 3U;
+#endif
     while (distPart) {
         baseDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
         distPart >>= wordSize;
     }
     std::reverse(baseDist.begin(), baseDist.end());
+#elif IS_RSA_SEMIPRIME
+    baseDist.push_back(rand_dist(fullMinR, fullMaxR);
 #else
     baseDist.push_back(rand_dist(2U, toFactor - 1U));
 #endif
@@ -339,7 +345,11 @@ int main()
                     base <<= wordSize;
                     base |= baseDist[i](rand_gen);
                 }
+#if IS_RSA_SEMIPRIME
+                base += rMin;
+#else
                 base += 2U;
+#endif
 #endif
 
                 const bitCapInt testFactor = gcd(toFactor, base);
