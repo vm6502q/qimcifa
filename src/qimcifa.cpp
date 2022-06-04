@@ -325,14 +325,24 @@ int main()
                 const bitLenInt wordSize = 64U;
                 const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
 
+#if IS_RSA_SEMIPRIME
+                // Euler's totient is the product of 2 even numbers.
+                bitCapInt distPart = (rMax - rMin) >> 1U;
+#else
                 bitCapInt distPart = rMax - rMin;
+#endif
                 while (distPart) {
                     rDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
                     distPart >>= wordSize;
                 }
                 std::reverse(rDist.begin(), rDist.end());
 #else
+#if IS_RSA_SEMIPRIME
+                // Euler's totient is the product of 2 even numbers.
+                rDist.push_back(rand_dist(rMin >> 1U, rMax >> 1U));
+#else
                 rDist.push_back(rand_dist(rMin, rMax));
+#endif
 #endif
 
                 for (;;) {
@@ -396,7 +406,19 @@ int main()
                                 r <<= wordSize;
                                 r |= rDist[i](rand_gen);
                             }
+
+#if IS_RSA_SEMIPRIME
+                            // Euler's totient is the product of 2 even numbers.
+                            r += rMin >> 1U;
+#else
                             r += rMin;
+#endif
+
+#endif
+
+#if IS_RSA_SEMIPRIME
+                            // Euler's totient is the product of 2 even numbers.
+                            r >>= 1U;
 #endif
                             // Since our output is r rather than y, we can skip the continued fractions step.
                             const bitCapInt p = (r & 1U) ? r : (r >> 1U);
