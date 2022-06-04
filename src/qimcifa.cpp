@@ -421,7 +421,7 @@ int main()
 
                     // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                     // we first check if our guess for r is already a factor.
-                    if ((RGUESS > 1U) && ((toFactor % RGUESS) == 0)) {
+                    if ((toFactor % RGUESS) == 0) {
                         // Inform the other threads on this node that we've succeeded and are done:
                         isFinished = true;
 
