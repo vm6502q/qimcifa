@@ -447,17 +447,20 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
         bi_set_0(quotient);
     }
     BigInteger leftCopy;
-    bi_copy(left, &leftCopy);
+    if (!rmndr) {
+        rmndr = &leftCopy;
+    }
+    bi_copy(left, rmndr);
     for (int i = ((BIG_INTEGER_BITS - 1) - rightLog2); i >= 0; --i) {
         BigInteger partMul;
         bi_lshift(right, i, &partMul);
 
-        const int c = bi_compare(&leftCopy, &partMul);
+        const int c = bi_compare(rmndr, &partMul);
         if (c < 0) {
             continue;
         }
 
-        // Past this point, leftCopy >= partMul.
+        // Past this point, rmndr >= partMul.
 
         if (quotient) {
             int iWord = i / BIG_INTEGER_WORD_BITS;
@@ -470,25 +473,19 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
         }
 
         if (c == 0) {
-            // leftCopy == partMul
-            if (rmndr) {
-                bi_set_0(rmndr);
-            }
+            // rmndr == partMul
+            bi_set_0(rmndr);
             return;
         }
 
-        // Otherwise, c > 1, meaning leftCopy > partMul.
+        // Otherwise, c > 1, meaning rmndr > partMul.
         for (int j = i / BIG_INTEGER_WORD_BITS; j < BIG_INTEGER_MAX_WORD_INDEX; ++j) {
-            BIG_INTEGER_WORD temp = leftCopy.bits[j];
-            leftCopy.bits[j] -= partMul.bits[j];
-            if (leftCopy.bits[j] > temp) {
-                --(leftCopy.bits[j + 1]);
+            BIG_INTEGER_WORD temp = rmndr->bits[j];
+            rmndr->bits[j] -= partMul.bits[j];
+            if (rmndr->bits[j] > temp) {
+                --(rmndr->bits[j + 1]);
             }
         }
-        leftCopy.bits[BIG_INTEGER_MAX_WORD_INDEX] -= partMul.bits[BIG_INTEGER_MAX_WORD_INDEX];
-    }
-
-    if (rmndr) {
-        bi_copy(&leftCopy, rmndr);
+        rmndr->bits[BIG_INTEGER_MAX_WORD_INDEX] -= partMul.bits[BIG_INTEGER_MAX_WORD_INDEX];
     }
 }
