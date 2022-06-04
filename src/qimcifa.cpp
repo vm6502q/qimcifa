@@ -271,18 +271,12 @@ int main()
 
     std::vector<rand_dist> baseDist;
 #if QBCAPPOW > 6U
-#if IS_RSA_SEMIPRIME
-    bitCapInt distPart = (fullMaxR - fullMinR) >> 1U;
-#else
     bitCapInt distPart = toFactor - 3U;
-#endif
     while (distPart) {
         baseDist.push_back(rand_dist(0U, (WORD)distPart));
         distPart >>= WORD_SIZE;
     }
     std::reverse(baseDist.begin(), baseDist.end());
-#elif IS_RSA_SEMIPRIME
-    baseDist.push_back(rand_dist(fullMinR >> 1U, fullMaxR >> 1U);
 #else
     baseDist.push_back(rand_dist(2U, toFactor - 1U));
 #endif
@@ -297,8 +291,6 @@ int main()
 
         // Number of times to reuse a random base:
         const size_t BASE_TRIALS = 1U << 9U;
-        // Number of random period guesses per random base:
-        const size_t PERIOD_TRIALS = 1U;
 
         const double clockFactor = 1.0 / 1000.0; // Report in ms
         const unsigned threads = std::thread::hardware_concurrency();
@@ -340,11 +332,7 @@ int main()
                     base <<= WORD_SIZE;
                     base |= baseDist[i](rand_gen);
                 }
-#if IS_RSA_SEMIPRIME
-                base = ((base + (fullMinR >> 1U)) << 1U) | 1U;
-#else
                 base += 2U;
-#endif
 #endif
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
@@ -388,68 +376,57 @@ int main()
                 // However, results are better with uniformity over r, rather than y.
 
                 // So, we guess r, between fullMinR and fullMaxR.
-                for (size_t rTrial = 0U; rTrial < PERIOD_TRIALS; ++rTrial) {
-                    // Choose a base at random, >1 and <toFactor.
-                    bitCapInt r = rDist[0U](rand_gen);
+                // Since our output is r rather than y, we can skip the continued fractions step.
+                bitCapInt r = rDist[0U](rand_gen);
 #if QBCAPPOW > 6U
-                    for (size_t i = 1U; i < rDist.size(); ++i) {
-                        r <<= WORD_SIZE;
-                        r |= rDist[i](rand_gen);
-                    }
+                for (size_t i = 1U; i < rDist.size(); ++i) {
+                    r <<= WORD_SIZE;
+                    r |= rDist[i](rand_gen);
+                }
 #if IS_RSA_SEMIPRIME
-                    // Euler's totient is the product of 2 even numbers.
-                    r += rMin >> 1U;
+                // Euler's totient is the product of 2 even numbers.
+                r += rMin >> 1U;
 #else
-                    r += rMin;
+                r += rMin;
 #endif
 #endif
 
 #if IS_RSA_SEMIPRIME
-                    // Euler's totient is the product of 2 even numbers.
-                    r >>= 1U;
-
-                    // Since our output is r rather than y, we can skip the continued fractions step.
-                    // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
-                    // we first check if our guess for r is already a factor.
-                    if ((toFactor % (r | 1)) == 0) {
-                        // Inform the other threads on this node that we've succeeded and are done:
-                        isFinished = true;
-
-                        PRINT_SUCCESS((r | 1), toFactor / (r | 1), toFactor, "Success (on r trial division): Found ");
-                        return;
-                    }
+                // Euler's totient is the product of 2 even numbers.
+                r >>= 1U;
 #else
-                    if (r & 1U) {
-                        r <<= 1U;
-                    }
+                if (r & 1U) {
+                    r <<= 1U;
+                }
 
-                    const bitCapInt testFactor = gcd(toFactor, r);
-                    if (testFactor != 1U) {
-                        // Inform the other threads on this node that we've succeeded and are done:
-                        isFinished = true;
+                // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
+                // we first check if our guess for r is already a factor.
+                const bitCapInt testFactor = gcd(toFactor, r);
+                if (testFactor != 1U) {
+                    // Inform the other threads on this node that we've succeeded and are done:
+                    isFinished = true;
 
-                        PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
-                        return;
-                    }
+                    PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
+                    return;
+                }
 #endif
 
-                    const bitCapInt apowrhalf = uipow(base, r) % toFactor;
-                    bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
-                    bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
-                    bitCapInt fmul = f1 * f2;
-                    while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
-                        fmul = f1;
-                        f1 *= f2;
-                        f2 = toFactor / (fmul * f2);
-                        fmul = f1 * f2;
-                    }
-                    if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
-                        // Inform the other threads on this node that we've succeeded and are done:
-                        isFinished = true;
+                const bitCapInt apowrhalf = uipow(base, r) % toFactor;
+                bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
+                bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
+                bitCapInt fmul = f1 * f2;
+                while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
+                    fmul = f1;
+                    f1 *= f2;
+                    f2 = toFactor / (fmul * f2);
+                    fmul = f1 * f2;
+                }
+                if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+                    // Inform the other threads on this node that we've succeeded and are done:
+                    isFinished = true;
 
-                        PRINT_SUCCESS(f1, f2, toFactor, "Success (on r difference of squares): Found ");
-                        return;
-                    }
+                    PRINT_SUCCESS(f1, f2, toFactor, "Success (on r difference of squares): Found ");
+                    return;
                 }
             }
 
