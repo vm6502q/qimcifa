@@ -65,14 +65,17 @@
 #if QBCAPPOW < 7U
 #define bci_create(a) (a)
 #define bci_copy(a, o) *(o) = a
-#define bci_add_i[(l, r) l += (r)
+#define bci_add_i(l, r) *(l) += (r)
 #define bci_add(l, r, o) *(o) = ((l) + (r))
+#define bci_sub_i(l, r) *(l) -= (r)
 #define bci_sub(l, r, o) *(o) = ((l) - (r))
 #define bci_mul(l, r, o) *(o) = ((l) * (r))
 #define bci_div(l, r, o) *(o) = ((l) / (r))
 #define bci_mod(l, r, o) *(o) = ((l) % (r))
 #define bci_lshift(l, r, o) *(o) = ((l) << (r))
+#define bci_lshift_ip(l, r) *(l) <<= (r)
 #define bci_rshift(l, r, o) *(o) = ((l) >> (r))
+#define bci_rshift_ip(l, r) *(l) >>= (r)
 #define bci_or(l, r, o) *(o) = ((l) | (r))
 #define bci_and(l, r, o) *(o) = ((l) & (r))
 #define bci_eq(l, r) ((l) == (r))
@@ -95,11 +98,14 @@
 #define bci_add_ip(l, r) bi_add_ip(l, &(r))
 #define bci_add(l, r, o) bi_add(&(l), &(r), o)
 #define bci_sub(l, r, o) bi_sub(&(l), &(r), o)
+#define bci_sub_ip(l, r) bi_sub_ip(l, &(r))
 #define bci_mul(l, r, o) bi_mul(&(l), &(r), o)
 #define bci_div(l, r, o) bi_div_mod(&(l), &(r), o, NULL)
 #define bci_mod(l, r, o) bi_div_mod(&(l), &(r), NULL, o)
 #define bci_lshift(l, r, o) bi_lshift(&(l), r, o)
+#define bci_lshift_ip(l, r) bi_lshift_ip(l, r)
 #define bci_rshift(l, r, o) bi_rshift(&(l), r, o)
+#define bci_rshift_ip(l, r) bi_rshift_ip(l, r)
 #define bci_or(l, r, o) bi_or(&(l), &(r), o)
 #define bci_and(l, r, o) bi_and(&(l), &(r), o)
 #define bci_eq(l, r) (bi_compare(&(l), &(r)) == 0)
@@ -230,8 +236,8 @@ bitCapInt floorSqrt(const bitCapInt& x)
     bci_rshift(x, 1U, &end);
     while (bci_leq(start, end)) {
         bitCapInt t, mid;
-        bci_add(start, end, &t);
-        bci_rshift(t, 1U, &mid);
+        bci_add(start, end, &mid);
+        bci_rshift_ip(&mid, 1U);
 
         // If x is a perfect square
         bci_mul(mid, mid, &t);
@@ -322,9 +328,9 @@ int main()
     bitCapInt fullMin;
     bci_lshift(ONE_BCI, primeBits - 1U, &fullMin);
 
-    bitCapInt fullMax, t1;
-    bci_lshift(ONE_BCI, primeBits, &t1);
-    bci_sub(t1, ONE_BCI, &fullMax);
+    bitCapInt fullMax;
+    bci_lshift(ONE_BCI, primeBits, &fullMax);
+    bci_sub_ip(&fullMax, ONE_BCI);
 
     bitCapInt minPrime;
     if (primeDict[primeBits].size()) {
@@ -340,17 +346,17 @@ int main()
         bci_add(fullMin, ONE_BCI, &maxPrime);
     }
 
-    bitCapInt fullMinR, t2, t3;
+    bitCapInt fullMinR, t1, t2;
     bci_sub(minPrime, ONE_BCI, &t1);
     bci_div(toFactor, minPrime, &t2);
-    bci_sub(t2, ONE_BCI, &t3);
-    bci_mul(t1, t3, &fullMinR);
+    bci_sub_ip(&t2, ONE_BCI);
+    bci_mul(t1, t2, &fullMinR);
 
     bitCapInt fullMaxR;
     bci_sub(maxPrime, ONE_BCI, &t1);
     bci_div(toFactor, maxPrime, &t2);
-    bci_sub(t2, ONE_BCI, &t3);
-    bci_mul(t1, t3, &fullMaxR);
+    bci_sub_ip(&t2, ONE_BCI);
+    bci_mul(t1, t2, &fullMaxR);
 #else
     // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
     bitCapInt fullMinR;
