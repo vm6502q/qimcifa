@@ -437,7 +437,7 @@ int main()
                             bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
                             bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
                             bitCapInt fmul = f1 * f2;
-                            while ((fmul > 1U) && (fmul != toFactor) && (((toFactor / fmul) * fmul) == toFactor)) {
+                            while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
                                 fmul = f1;
                                 f1 *= f2;
                                 f2 = toFactor / (fmul * f2);
