@@ -352,17 +352,19 @@ int main()
 #endif
 #endif
 
+#define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
+    std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
+    auto tClock =                                                                                                      \
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);  \
+    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
+    std::cout << "(Waiting to join other threads...)" << std::endl;
+
                 const bitCapInt testFactor = gcd(toFactor, base);
                 if (testFactor != 1U) {
                     // Inform the other threads on this node that we've succeeded and are done:
                     isFinished = true;
 
-                    std::cout << "Chose non-relative prime: " << testFactor << " * " << (toFactor / testFactor)
-                              << std::endl;
-                    auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
-                        std::chrono::high_resolution_clock::now() - iterClock);
-                    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
-                    std::cout << "(Waiting to join other threads...)" << std::endl;
+                    PRINT_SUCCESS(testFactor, (toFactor / testFactor), toFactor, "Chose non-relative prime: Found ");
                     return;
                 }
 
@@ -399,31 +401,42 @@ int main()
                         r <<= wordSize;
                         r |= rDist[i](rand_gen);
                     }
-
 #if IS_RSA_SEMIPRIME
                     // Euler's totient is the product of 2 even numbers.
                     r += rMin >> 1U;
 #else
                     r += rMin;
 #endif
-
 #endif
 
 #if IS_RSA_SEMIPRIME
                     // Euler's totient is the product of 2 even numbers.
                     r >>= 1U;
+
+                    // Since our output is r rather than y, we can skip the continued fractions step.
+                    // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
+                    // we first check if our guess for r is already a factor.
+                    if ((toFactor % (r + 1)) == 0) {
+                        // Inform the other threads on this node that we've succeeded and are done:
+                        isFinished = true;
+
+                        PRINT_SUCCESS((r + 1), toFactor / (r + 1), toFactor, "Success (on r trial division): Found ");
+                        return;
+                    }
 #else
                     if (r & 1U) {
                         r <<= 1U;
                     }
-#endif
 
-#define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
-    std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
-    auto tClock =                                                                                                      \
-        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);  \
-    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
-    std::cout << "(Waiting to join other threads...)" << std::endl;
+                    const bitCapInt testFactor = gcd(toFactor, r);
+                    if (testFactor != 1U) {
+                        // Inform the other threads on this node that we've succeeded and are done:
+                        isFinished = true;
+
+                        PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
+                        return;
+                    }
+#endif
 
                     // Since our output is r rather than y, we can skip the continued fractions step.
                     // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
