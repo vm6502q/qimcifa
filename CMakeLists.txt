@@ -48,7 +48,7 @@ foreach (INPUT_FILE ${COMPILABLE_RESOURCES})
     list (APPEND COMPILED_RESOURCES ${OUTPUT_FILE})
 endforeach ()
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -O3")
 
 add_executable (qimcifa
     src/qimcifa.cpp
