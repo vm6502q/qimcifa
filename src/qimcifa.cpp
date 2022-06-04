@@ -393,7 +393,7 @@ int main()
 
 #if IS_RSA_SEMIPRIME
                 // Euler's totient is the product of 2 even numbers.
-                r >>= 1U;
+                r <<= 1U;
 #else
                 if (r & 1U) {
                     r <<= 1U;
