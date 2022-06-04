@@ -65,8 +65,10 @@
 #if QBCAPPOW < 7U
 #define bci_create(a) (a)
 #define bci_copy(a, o) *(o) = a
+#define bci_increment(l, r) *(l) += r
 #define bci_add_i(l, r) *(l) += (r)
 #define bci_add(l, r, o) *(o) = ((l) + (r))
+#define bci_decrement(l, r) *(l) -= r
 #define bci_sub_i(l, r) *(l) -= (r)
 #define bci_sub(l, r, o) *(o) = ((l) - (r))
 #define bci_mul(l, r, o) *(o) = ((l) * (r))
@@ -94,8 +96,10 @@
 #else
 #define bci_create(a) bi_create(a)
 #define bci_copy(a, o) bi_copy(&(a), o)
+#define bci_increment(l, r) bi_increment(l, r)
 #define bci_add_ip(l, r) bi_add_ip(l, &(r))
 #define bci_add(l, r, o) bi_add(&(l), &(r), o)
+#define bci_decrement(l, r) bi_decrement(l, r)
 #define bci_sub(l, r, o) bi_sub(&(l), &(r), o)
 #define bci_sub_ip(l, r) bi_sub_ip(l, &(r))
 #define bci_mul(l, r, o) bi_mul(&(l), &(r), o)
@@ -568,11 +572,11 @@ int main()
                             uipow(base, t1, &t2);
                             bci_mod(t2, toFactor, &t1);
 
-                            bci_add(t1, BIG_INT_1, &t2);
-                            gcd(t2, toFactor, &f1);
+                            bci_increment(&t1, 1);
+                            gcd(t1, toFactor, &f1);
 
-                            bci_sub(t1, BIG_INT_1, &t2);
-                            gcd(t2, toFactor, &f2);
+                            bci_decrement(&t1, 2);
+                            gcd(t1, toFactor, &f2);
 
                             bci_mul(f1, f2, &fmul);
 
