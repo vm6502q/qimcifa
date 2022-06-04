@@ -39,8 +39,6 @@
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
 
-#define bitsInByte 8U
-
 #if QBCAPPOW < 32U
 #define bitLenInt uint32_t
 #else
@@ -113,9 +111,9 @@ inline bitLenInt log2(const bitCapInt& n)
 #if __GNUC__ && QBCAPPOW < 7
 // Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
 #if QBCAPPOW < 6
-    return (bitLenInt)(bitsInByte * sizeof(unsigned int) - __builtin_clz((unsigned int)n) - 1U);
+    return (bitLenInt)((sizeof(unsigned int) << 3U) - __builtin_clz((unsigned int)n) - 1U);
 #else
-    return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
+    return (bitLenInt)((sizeof(unsigned long long) << 3U) - __builtin_clzll((unsigned long long)n) - 1U);
 #endif
 #else
     bitLenInt pow = 0U;
