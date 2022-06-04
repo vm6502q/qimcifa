@@ -310,19 +310,19 @@ int main()
                 baseDist.push_back(rand_dist(2U, toFactor - 1U));
                 rDist.push_back(rand_dist(rMin, rMax));
 #else
-                const bitLenInt wordSize = 32U;
-                const bitCapInt wordMask = 0xFFFFFFFF;
+                const bitLenInt wordSize = 64U;
+                const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
 
                 bitCapInt distPart = toFactor - 3U;
                 while (distPart) {
-                    baseDist.push_back(rand_dist(0U, (uint32_t)(distPart & wordMask)));
+                    baseDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
                     distPart >>= wordSize;
                 }
                 std::reverse(rDist.begin(), rDist.end());
 
                 distPart = rMax - rMin;
                 while (distPart) {
-                    rDist.push_back(rand_dist(0U, (uint32_t)(distPart & wordMask)));
+                    rDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
                     distPart >>= wordSize;
                 }
                 std::reverse(rDist.begin(), rDist.end());
