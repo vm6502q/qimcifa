@@ -290,7 +290,7 @@ int main()
         // Batch size is BASE_TRIALS * PERIOD_TRIALS.
 
         // Number of times to reuse a random base:
-        const size_t BASE_TRIALS = 1U << 5U;
+        const size_t BASE_TRIALS = 1U << 4U;
 
         const double clockFactor = 1.0 / 1000.0; // Report in ms
         const unsigned threads = std::thread::hardware_concurrency();
