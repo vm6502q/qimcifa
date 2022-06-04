@@ -128,7 +128,7 @@ inline bitLenInt log2(const bitCapInt& n)
 
 // Source:
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
-inline bitCapInt uipow(bitCapInt base, bitCapInt exp)
+bitCapInt uipow(bitCapInt base, bitCapInt exp)
 {
     bitCapInt result = 1U;
     for (;;) {
@@ -142,16 +142,6 @@ inline bitCapInt uipow(bitCapInt base, bitCapInt exp)
         base *= base;
     }
 
-    return result;
-}
-
-// It's fine if this is not exact for the whole bitCapInt domain, so long as it is <= the exact result.
-inline bitLenInt intLog(const bitCapInt& base, const bitCapInt& arg)
-{
-    bitLenInt result = 0U;
-    for (bitCapInt x = arg; x >= base; x /= base) {
-        result++;
-    }
     return result;
 }
 
@@ -382,10 +372,8 @@ int main()
 
                         // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                         // (Also, toFactor is definitely NOT an exact multiple of base.)
-                        // const bitCapInt logBaseToFactor = (bitCapInt)intLog(base, toFactor) + 1U;
                         // Euler's Theorem tells us, if gcd(a, n) = 1, then a^\phi(n) = 1 MOD n,
                         // where \phi(n) is Euler's totient for n.
-                        // const bitCapInt fullMinR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
 
                         // c is basically a harmonic degeneracy factor, and there might be no value in testing
                         // any case except c = 1, without loss of generality.
@@ -446,8 +434,8 @@ int main()
                             }
 
                             const bitCapInt apowrhalf = uipow(base, p) % toFactor;
-                            bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
-                            bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
+                            bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
+                            bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
                             bitCapInt fmul = f1 * f2;
                             while ((fmul > 1U) && (fmul != toFactor) && (((toFactor / fmul) * fmul) == toFactor)) {
                                 fmul = f1;
