@@ -63,6 +63,9 @@
 #define ONE_BCI 1ULL
 #endif
 
+#define WORD uint64_t
+#define WORD_SIZE 64U
+
 namespace Qimcifa {
 
 #if QBCAPPOW == 7U
@@ -195,7 +198,7 @@ using namespace Qimcifa;
 
 int main()
 {
-    typedef std::uniform_int_distribution<uint64_t> rand_dist;
+    typedef std::uniform_int_distribution<WORD> rand_dist;
 
     bitCapInt toFactor;
     bitCapInt nodeCount = 1U;
@@ -268,17 +271,14 @@ int main()
 
     std::vector<rand_dist> baseDist;
 #if QBCAPPOW > 6U
-    const bitLenInt wordSize = 64U;
-    const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
-
 #if IS_RSA_SEMIPRIME
     bitCapInt distPart = fullMaxR - fullMinR;
 #else
     bitCapInt distPart = toFactor - 3U;
 #endif
     while (distPart) {
-        baseDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
-        distPart >>= wordSize;
+        baseDist.push_back(rand_dist(0U, (WORD)distPart));
+        distPart >>= WORD_SIZE;
     }
     std::reverse(baseDist.begin(), baseDist.end());
 #elif IS_RSA_SEMIPRIME
@@ -313,9 +313,6 @@ int main()
 
         std::vector<rand_dist> rDist;
 #if QBCAPPOW > 6U
-        const bitLenInt wordSize = 64U;
-        const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
-
 #if IS_RSA_SEMIPRIME
         // Euler's totient is the product of 2 even numbers.
         bitCapInt distPart = (rMax - rMin) >> 1U;
@@ -323,8 +320,8 @@ int main()
         bitCapInt distPart = rMax - rMin;
 #endif
         while (distPart) {
-            rDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
-            distPart >>= wordSize;
+            rDist.push_back(rand_dist(0U, (WORD)distPart));
+            distPart >>= WORD_SIZE;
         }
         std::reverse(rDist.begin(), rDist.end());
 #else
@@ -342,7 +339,7 @@ int main()
                 bitCapInt base = baseDist[0U](rand_gen);
 #if QBCAPPOW > 6U
                 for (size_t i = 1U; i < baseDist.size(); ++i) {
-                    base <<= wordSize;
+                    base <<= WORD_SIZE;
                     base |= baseDist[i](rand_gen);
                 }
 #if IS_RSA_SEMIPRIME
@@ -398,7 +395,7 @@ int main()
                     bitCapInt r = rDist[0U](rand_gen);
 #if QBCAPPOW > 6U
                     for (size_t i = 1U; i < rDist.size(); ++i) {
-                        r <<= wordSize;
+                        r <<= WORD_SIZE;
                         r |= rDist[i](rand_gen);
                     }
 #if IS_RSA_SEMIPRIME
