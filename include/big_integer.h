@@ -192,8 +192,9 @@ void bi_lshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteg
         bi_copy(left, result);
         return;
     }
-
-    bi_set_0(result);
+    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
+        result->bits[i] = 0;
+    }
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result->bits[i] = left->bits[i - rightMult];
     }
@@ -204,9 +205,11 @@ void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     if (!rightMult) {
         return;
     }
+    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
+        left->bits[i] = 0;
+    }
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         left->bits[i] = left->bits[i - rightMult];
-        left->bits[i - rightMult] = 0;
     }
 }
 
@@ -216,8 +219,9 @@ void bi_rshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteg
         bi_copy(left, result);
         return;
     }
-
-    bi_set_0(result);
+    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
+        result->bits[BIG_INTEGER_WORD_SIZE - (i + 1)] = 0;
+    }
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result->bits[i - rightMult] = left->bits[i];
     }
@@ -228,9 +232,11 @@ void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     if (!rightMult) {
         return;
     }
+    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
+        left->bits[BIG_INTEGER_WORD_SIZE - (i + 1)] = 0;
+    }
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         left->bits[i - rightMult] = left->bits[i];
-        left->bits[i] = 0;
     }
 }
 
@@ -238,7 +244,6 @@ void bi_lshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* resul
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
-    bi_set_0(result);
 
     bi_lshift_word(left, rShift64, result);
     if (!rMod) {
@@ -277,7 +282,6 @@ void bi_rshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* resul
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
-    bi_set_0(result);
 
     bi_rshift_word(left, rShift64, result);
     if (!rMod) {
@@ -358,34 +362,6 @@ void bi_not(const BigInteger* left, BigInteger* result)
         result->bits[i] = ~(left->bits[i]);
     }
 }
-
-#if 0
-// Complexity - O(x^2)
-#define BIG_INTEGER_HALF_WORD_SIZE 1
-#define BIG_INTEGER_HALF_WORD_BITS 32
-#define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFF
-#define BIG_INT_LO_HALF_WORD(a) ((a) & BIG_INTEGER_HALF_WORD_MASK)
-#define BIG_INT_HI_HALF_WORD(a) ((a) >> BIG_INTEGER_HALF_WORD_BITS)
-void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
-{
-    for (int i = 0; i < BIG_INTEGER_HALF_WORD_SIZE; ++i) {
-        BigInteger partResult = bi_create(0);
-        const int maxJ = BIG_INTEGER_HALF_WORD_SIZE - i;
-        for (int j = 0; j < maxJ; ++j) {
-            const BIG_INTEGER_WORD lLoHalfWord = BIG_INT_LO_HALF_WORD(left->bits[j]);
-            const BIG_INTEGER_WORD lHiHalfWord = BIG_INT_HI_HALF_WORD(left->bits[j]);
-            const BIG_INTEGER_WORD rLoHalfWord = BIG_INT_LO_HALF_WORD(right->bits[i]);
-            const BIG_INTEGER_WORD rHiHalfWord = BIG_INT_HI_HALF_WORD(right->bits[i]);
-
-            partResult.bits[2 * j] += (lLoHalfWord * rLoHalfWord) |
-                ((lHiHalfWord * rLoHalfWord + lLoHalfWord * rHiHalfWord) << BIG_INTEGER_HALF_WORD_BITS);
-            partResult.bits[2 * j + 1] += lHiHalfWord * rHiHalfWord;
-        }
-        bi_lshift_word_ip(&partResult, i);
-        bi_add_ip(result, &partResult);
-    }
-}
-#endif
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
