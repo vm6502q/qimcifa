@@ -402,9 +402,11 @@ int main()
 #if IS_RSA_SEMIPRIME
                     // Euler's totient is the product of 2 even numbers.
                     r >>= 1U;
+#else
+                    if (r & 1U) {
+                        r <<= 1U;
+                    }
 #endif
-                    // Since our output is r rather than y, we can skip the continued fractions step.
-                    const bitCapInt p = (r & 1U) ? r : (r >> 1U);
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
@@ -413,23 +415,18 @@ int main()
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
     std::cout << "(Waiting to join other threads...)" << std::endl;
 
-#if IS_RSA_SEMIPRIME
-#define RGUESS p
-#else
-#define RGUESS r
-#endif
-
+                    // Since our output is r rather than y, we can skip the continued fractions step.
                     // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                     // we first check if our guess for r is already a factor.
-                    if ((toFactor % RGUESS) == 0) {
+                    if ((toFactor % (r + 1)) == 0) {
                         // Inform the other threads on this node that we've succeeded and are done:
                         isFinished = true;
 
-                        PRINT_SUCCESS(RGUESS, toFactor / RGUESS, toFactor, "Success (on r trial division): Found ");
+                        PRINT_SUCCESS((r + 1), toFactor / (r + 1), toFactor, "Success (on r trial division): Found ");
                         return;
                     }
 
-                    const bitCapInt apowrhalf = uipow(base, p) % toFactor;
+                    const bitCapInt apowrhalf = uipow(base, r) % toFactor;
                     bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
                     bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
                     bitCapInt fmul = f1 * f2;
