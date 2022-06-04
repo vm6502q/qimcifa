@@ -411,12 +411,12 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
         return;
     }
 
-    BigInteger BIG_INT_1 = bi_create(1);
     if (lrCompare == 0) {
         // left == right
         if (quotient) {
             // quotient = 1
-            bi_copy(&BIG_INT_1, quotient);
+            bi_set_0(quotient);
+            quotient->bits[0] = 1;
         }
         if (rmndr) {
             // rmndr = 0
