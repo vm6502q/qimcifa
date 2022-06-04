@@ -215,7 +215,6 @@ int main()
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
-    auto iterClock = std::chrono::high_resolution_clock::now();
 
     const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
     // const bitCapInt qubitPower = ONE_BCI << qubitCount;
@@ -240,6 +239,8 @@ int main()
         } while (nodeId >= nodeCount);
     }
 #endif
+
+    auto iterClock = std::chrono::high_resolution_clock::now();
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
