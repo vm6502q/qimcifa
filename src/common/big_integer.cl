@@ -88,13 +88,10 @@ int bi_compare_0(const BigInteger* left)
 
 void bi_add(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
-    bi_copy(left, result);
-
+    result->bits[0] = 0;
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
-        result->bits[i] += right->bits[i];
-        if (result->bits[i] < left->bits[i]) {
-            ++(result->bits[i + 1]);
-        }
+        result->bits[i] += left->bits[i] + right->bits[i];
+        result->bits[i + 1] = (result->bits[i] < left->bits[i]) ? 1 : 0;
     }
     result->bits[BIG_INTEGER_MAX_WORD_INDEX] += right->bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
@@ -104,8 +101,9 @@ void bi_add_ip(BigInteger* left, const BigInteger* right)
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
         BIG_INTEGER_WORD temp = left->bits[i];
         left->bits[i] += right->bits[i];
-        if (left->bits[i] < temp) {
-            ++(left->bits[i + 1]);
+        int j = i;
+        while (left->bits[j] < temp) {
+            ++(left->bits[++j]);
         }
     }
     left->bits[BIG_INTEGER_MAX_WORD_INDEX] += right->bits[BIG_INTEGER_MAX_WORD_INDEX];
@@ -113,13 +111,10 @@ void bi_add_ip(BigInteger* left, const BigInteger* right)
 
 void bi_sub(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
-    bi_copy(left, result);
-
+    result->bits[0] = 0;
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
-        result->bits[i] -= right->bits[i];
-        if (result->bits[i] > left->bits[i]) {
-            --(result->bits[i + 1]);
-        }
+        result->bits[i] += left->bits[i] - right->bits[i];
+        result->bits[i + 1] = (result->bits[i] > left->bits[i]) ? -1 : 0;
     }
     result->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right->bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
@@ -129,8 +124,9 @@ void bi_sub_ip(BigInteger* left, const BigInteger* right)
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
         BIG_INTEGER_WORD temp = left->bits[i];
         left->bits[i] -= right->bits[i];
-        if (left->bits[i] > temp) {
-            --(left->bits[i + 1]);
+        int j = i;
+        while (left->bits[j] > temp) {
+            --(left->bits[++j]);
         }
     }
     left->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right->bits[BIG_INTEGER_MAX_WORD_INDEX];
