@@ -201,11 +201,11 @@ void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     if (!rightMult) {
         return;
     }
-    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
-        left->bits[i] = 0;
-    }
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         left->bits[i] = left->bits[i - rightMult];
+    }
+    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
+        left->bits[i] = 0;
     }
 }
 
@@ -228,11 +228,11 @@ void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     if (!rightMult) {
         return;
     }
-    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
-        left->bits[BIG_INTEGER_WORD_SIZE - (i + 1)] = 0;
-    }
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         left->bits[i - rightMult] = left->bits[i];
+    }
+    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
+        left->bits[BIG_INTEGER_WORD_SIZE - (i + 1)] = 0;
     }
 }
 
