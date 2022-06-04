@@ -130,20 +130,18 @@ inline bitLenInt log2(const bitCapInt& n)
 
 // Source:
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
-inline bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
+inline bitCapInt uipow(bitCapInt base, bitCapInt exp)
 {
     bitCapInt result = 1U;
-    bitCapInt b = base;
-    bitCapInt e = exp;
     for (;;) {
-        if (b & 1U) {
-            result *= b;
+        if (base & 1U) {
+            result *= base;
         }
-        e >>= 1U;
-        if (!e) {
+        exp >>= 1U;
+        if (!exp) {
             break;
         }
-        b *= b;
+        base *= base;
     }
 
     return result;
@@ -169,11 +167,11 @@ bitCapInt floorSqrt(const bitCapInt& x)
 
     // Binary search for floor(sqrt(x))
     bitCapInt start = 1U, end = x >> 1U, ans = 0U;
-    while (start <= end) {
-        bitCapInt mid = (start + end) >> 1U;
+    do {
+        const bitCapInt mid = (start + end) >> 1U;
 
         // If x is a perfect square
-        bitCapInt sqr = mid * mid;
+        const bitCapInt sqr = mid * mid;
         if (sqr == x) {
             return mid;
         }
@@ -186,17 +184,19 @@ bitCapInt floorSqrt(const bitCapInt& x)
             // If mid*mid is greater than x
             end = mid - 1U;
         }
-    }
+    } while (start <= end);
+
     return ans;
 }
 
 bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
     while (n2) {
-        bitCapInt t = n1;
+        const bitCapInt t = n1;
         n1 = n2;
         n2 = t % n2;
     }
+
     return n1;
 }
 
