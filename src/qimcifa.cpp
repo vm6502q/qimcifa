@@ -398,8 +398,8 @@ int main()
                 bitCapInt t1, t2;
 
                 bitCapInt fullRange;
-                bci_add(fullMaxR, BIG_INT_1, &t1);
-                bci_sub(t1, fullMinR, &fullRange);
+                bci_add(fullMaxR, BIG_INT_1, &fullRange);
+                bci_sub_ip(&fullRange, fullMinR);
 
                 bitCapInt nodeRange, nodeCountBci = bci_create(nodeCount);
                 bci_div(fullRange, nodeCountBci, &nodeRange);
@@ -413,9 +413,9 @@ int main()
                     bci_copy(fullMaxR, &nodeMax);
                 } else {
                     bitCapInt nodeIdPlus1Bci = bci_create(nodeId + 1U);
-                    bci_mul(nodeRange, nodeIdPlus1Bci, &t1);
-                    bci_add(fullMinR, t1, &t2);
-                    bci_sub(t2, BIG_INT_1, &nodeMax);
+                    bci_mul(nodeRange, nodeIdPlus1Bci, &nodeMax);
+                    bci_add_ip(&nodeMax, fullMinR);
+                    bci_sub_ip(&nodeMax, BIG_INT_1);
                 }
 
                 bitCapInt threadRange, threadsBci = bci_create(threads);
@@ -432,9 +432,9 @@ int main()
                     bci_copy(nodeMax, &rMax);
                 } else {
                     bitCapInt cpuPlus1Bci = bci_create(cpu + 1U);
-                    bci_mul(threadRange, cpuPlus1Bci, &t1);
-                    bci_add(nodeMin, t1, &t2);
-                    bci_sub(t2, BIG_INT_1, &rMax);
+                    bci_mul(threadRange, cpuPlus1Bci, &rMax);
+                    bci_add_ip(&rMax, nodeMin);
+                    bci_sub_ip(&rMax, BIG_INT_1);
                 }
 
                 std::vector<rand_dist> baseDist;
