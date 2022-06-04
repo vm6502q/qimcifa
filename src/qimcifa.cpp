@@ -272,7 +272,7 @@ int main()
     std::vector<rand_dist> baseDist;
 #if QBCAPPOW > 6U
 #if IS_RSA_SEMIPRIME
-    bitCapInt distPart = fullMaxR - fullMinR;
+    bitCapInt distPart = (fullMaxR - fullMinR) >> 1U;
 #else
     bitCapInt distPart = toFactor - 3U;
 #endif
@@ -282,7 +282,7 @@ int main()
     }
     std::reverse(baseDist.begin(), baseDist.end());
 #elif IS_RSA_SEMIPRIME
-    baseDist.push_back(rand_dist(fullMinR, fullMaxR);
+    baseDist.push_back(rand_dist(fullMinR >> 1U, fullMaxR >> 1U);
 #else
     baseDist.push_back(rand_dist(2U, toFactor - 1U));
 #endif
@@ -343,7 +343,7 @@ int main()
                     base |= baseDist[i](rand_gen);
                 }
 #if IS_RSA_SEMIPRIME
-                base += rMin;
+                base = (base + (fullMinR >> 1U)) << 1U + 1U;
 #else
                 base += 2U;
 #endif
