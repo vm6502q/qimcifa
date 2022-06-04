@@ -47,21 +47,21 @@ typedef struct BigInteger {
     BIG_INTEGER_WORD bits[BIG_INTEGER_WORD_SIZE];
 } BigInteger;
 
-void bi_set_0(BigInteger* p)
+inline void bi_set_0(BigInteger* p)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         p->bits[i] = 0;
     }
 }
 
-void bi_copy(const BigInteger* in, BigInteger* out)
+inline void bi_copy(const BigInteger* in, BigInteger* out)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         out->bits[i] = in->bits[i];
     }
 }
 
-int bi_compare(const BigInteger* left, const BigInteger* right)
+inline int bi_compare(const BigInteger* left, const BigInteger* right)
 {
     for (int i = BIG_INTEGER_MAX_WORD_INDEX; i >= 0; --i) {
         if (left->bits[i] > right->bits[i]) {
@@ -75,7 +75,7 @@ int bi_compare(const BigInteger* left, const BigInteger* right)
     return 0;
 }
 
-int bi_compare_0(const BigInteger* left)
+inline int bi_compare_0(const BigInteger* left)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         if (left->bits[i]) {
@@ -86,7 +86,7 @@ int bi_compare_0(const BigInteger* left)
     return 0;
 }
 
-void bi_add(const BigInteger* left, const BigInteger* right, BigInteger* result)
+inline void bi_add(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
     result->bits[0] = 0;
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
@@ -96,7 +96,7 @@ void bi_add(const BigInteger* left, const BigInteger* right, BigInteger* result)
     result->bits[BIG_INTEGER_MAX_WORD_INDEX] += right->bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
-void bi_add_ip(BigInteger* left, const BigInteger* right)
+inline void bi_add_ip(BigInteger* left, const BigInteger* right)
 {
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
         BIG_INTEGER_WORD temp = left->bits[i];
@@ -109,7 +109,7 @@ void bi_add_ip(BigInteger* left, const BigInteger* right)
     left->bits[BIG_INTEGER_MAX_WORD_INDEX] += right->bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
-void bi_sub(const BigInteger* left, const BigInteger* right, BigInteger* result)
+inline void bi_sub(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
     result->bits[0] = 0;
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
@@ -119,7 +119,7 @@ void bi_sub(const BigInteger* left, const BigInteger* right, BigInteger* result)
     result->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right->bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
-void bi_sub_ip(BigInteger* left, const BigInteger* right)
+inline void bi_sub_ip(BigInteger* left, const BigInteger* right)
 {
     for (int i = 0; i < BIG_INTEGER_MAX_WORD_INDEX; ++i) {
         BIG_INTEGER_WORD temp = left->bits[i];
@@ -132,7 +132,7 @@ void bi_sub_ip(BigInteger* left, const BigInteger* right)
     left->bits[BIG_INTEGER_MAX_WORD_INDEX] -= right->bits[BIG_INTEGER_MAX_WORD_INDEX];
 }
 
-void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
+inline void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
 {
     BIG_INTEGER_WORD temp = pBigInt->bits[0];
     pBigInt->bits[0] += value;
@@ -147,7 +147,7 @@ void bi_increment(BigInteger* pBigInt, BIG_INTEGER_WORD value)
     }
 }
 
-void bi_decrement(BigInteger* pBigInt, BIG_INTEGER_WORD value)
+inline void bi_decrement(BigInteger* pBigInt, BIG_INTEGER_WORD value)
 {
     BIG_INTEGER_WORD temp = pBigInt->bits[0];
     pBigInt->bits[0] -= value;
@@ -162,7 +162,7 @@ void bi_decrement(BigInteger* pBigInt, BIG_INTEGER_WORD value)
     }
 }
 
-BigInteger bi_create(BIG_INTEGER_WORD val) {
+inline BigInteger bi_create(BIG_INTEGER_WORD val) {
     BigInteger result;
     result.bits[0] = val;
     for (int i = 1; i < BIG_INTEGER_WORD_SIZE; ++i) {
@@ -172,7 +172,7 @@ BigInteger bi_create(BIG_INTEGER_WORD val) {
     return result;
 }
 
-BigInteger bi_load(global BIG_INTEGER_WORD* a)
+inline BigInteger bi_load(global BIG_INTEGER_WORD* a)
 {
     BigInteger result;
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
@@ -182,7 +182,7 @@ BigInteger bi_load(global BIG_INTEGER_WORD* a)
     return result;
 }
 
-void bi_lshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteger* result)
+inline void bi_lshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteger* result)
 {
     if (!rightMult) {
         bi_copy(left, result);
@@ -196,7 +196,7 @@ void bi_lshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteg
     }
 }
 
-void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
+inline void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
 {
     if (!rightMult) {
         return;
@@ -209,7 +209,7 @@ void bi_lshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     }
 }
 
-void bi_rshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteger* result)
+inline void bi_rshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteger* result)
 {
     if (!rightMult) {
         bi_copy(left, result);
@@ -223,7 +223,7 @@ void bi_rshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, BigInteg
     }
 }
 
-void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
+inline void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
 {
     if (!rightMult) {
         return;
@@ -236,7 +236,7 @@ void bi_rshift_word_ip(BigInteger* left, BIG_INTEGER_WORD rightMult)
     }
 }
 
-void bi_lshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* result)
+inline void bi_lshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* result)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -255,7 +255,7 @@ void bi_lshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* resul
     }
 }
 
-void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
+inline void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -274,7 +274,7 @@ void bi_lshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
     }
 }
 
-void bi_rshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* result)
+inline void bi_rshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* result)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -293,7 +293,7 @@ void bi_rshift(const BigInteger* left, BIG_INTEGER_WORD right, BigInteger* resul
     }
 }
 
-void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
+inline void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
 {
     const int rShift64 = right >> BIG_INTEGER_WORD_POWER;
     const int rMod = right - (rShift64 << BIG_INTEGER_WORD_POWER);
@@ -314,7 +314,7 @@ void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
     }
 }
 
-int bi_log2(const BigInteger* n)
+inline int bi_log2(const BigInteger* n)
 {
     int pw = 0;
     BigInteger p;
@@ -326,9 +326,9 @@ int bi_log2(const BigInteger* n)
     return pw;
 }
 
-int bi_and_1(const BigInteger* left) { return left->bits[0] & 1; }
+inline int bi_and_1(const BigInteger* left) { return left->bits[0] & 1; }
 
-void bi_and(const BigInteger* left, const BigInteger* right, BigInteger* result)
+inline void bi_and(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
     bi_copy(left, result);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
@@ -336,7 +336,7 @@ void bi_and(const BigInteger* left, const BigInteger* right, BigInteger* result)
     }
 }
 
-void bi_or(const BigInteger* left, const BigInteger* right, BigInteger* result)
+inline void bi_or(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
     bi_copy(left, result);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
@@ -344,7 +344,7 @@ void bi_or(const BigInteger* left, const BigInteger* right, BigInteger* result)
     }
 }
 
-void bi_xor(const BigInteger* left, const BigInteger* right, BigInteger* result)
+inline void bi_xor(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
     bi_copy(left, result);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
@@ -352,7 +352,7 @@ void bi_xor(const BigInteger* left, const BigInteger* right, BigInteger* result)
     }
 }
 
-void bi_not(const BigInteger* left, BigInteger* result)
+inline void bi_not(const BigInteger* left, BigInteger* result)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result->bits[i] = ~(left->bits[i]);
