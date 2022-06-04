@@ -278,10 +278,25 @@ int main()
     const bitCapInt fullMaxR = toFactor - floorSqrt(toFactor);
 #endif
 
+    std::vector<rand_dist> baseDist;
+#if QBCAPPOW > 6U
+    const bitLenInt wordSize = 64U;
+    const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
+
+    bitCapInt distPart = toFactor - 3U;
+    while (distPart) {
+        baseDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
+        distPart >>= wordSize;
+   }
+   std::reverse(baseDist.begin(), baseDist.end());
+#else
+   baseDist.push_back(rand_dist(2U, toFactor - 1U));
+#endif
+
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
         futures[cpu] = std::async(std::launch::async,
-            [cpu, nodeId, nodeCount, toFactor, fullMinR, fullMaxR, &iterClock, &rand_gen, &isFinished] {
+            [cpu, nodeId, nodeCount, toFactor, fullMinR, fullMaxR, &baseDist, &iterClock, &rand_gen, &isFinished] {
                 // These constants are semi-redundant, but they're only defined once per thread,
                 // and compilers differ on lambda expression capture of constants.
 
@@ -305,27 +320,18 @@ int main()
                 const bitCapInt rMin = nodeMin + threadRange * cpu;
                 const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
 
-                std::vector<rand_dist> baseDist;
                 std::vector<rand_dist> rDist;
 #if QBCAPPOW > 6U
                 const bitLenInt wordSize = 64U;
                 const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
 
-                bitCapInt distPart = toFactor - 3U;
-                while (distPart) {
-                    baseDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
-                    distPart >>= wordSize;
-                }
-                std::reverse(baseDist.begin(), baseDist.end());
-
-                distPart = rMax - rMin;
+                bitCapInt distPart = rMax - rMin;
                 while (distPart) {
                     rDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
                     distPart >>= wordSize;
                 }
                 std::reverse(rDist.begin(), rDist.end());
 #else
-                baseDist.push_back(rand_dist(2U, toFactor - 1U));
                 rDist.push_back(rand_dist(rMin, rMax));
 #endif
 
