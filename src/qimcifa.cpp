@@ -39,7 +39,6 @@
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
 
-#define ONE_BCI ((bitCapInt)1UL)
 #define bitsInByte 8U
 
 #if QBCAPPOW < 32U
@@ -50,16 +49,20 @@
 
 #if QBCAPPOW < 6U
 #define bitCapInt uint32_t
+#define ONE_BCI 1UL
 #elif QBCAPPOW < 7U
 #define bitCapInt uint64_t
+#define ONE_BCI 1ULL
 #elif QBCAPPOW < 8U
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapInt boost::multiprecision::uint128_t
+#define ONE_BCI 1ULL
 #else
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapInt                                                                                                      \
     boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1ULL << QBCAPPOW, 1ULL << QBCAPPOW,           \
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+#define ONE_BCI 1ULL
 #endif
 
 namespace Qimcifa {
