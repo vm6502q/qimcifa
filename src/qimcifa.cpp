@@ -318,7 +318,7 @@ int main()
                     baseDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
                     distPart >>= wordSize;
                 }
-                std::reverse(rDist.begin(), rDist.end());
+                std::reverse(baseDist.begin(), baseDist.end());
 
                 distPart = rMax - rMin;
                 while (distPart) {
