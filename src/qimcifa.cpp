@@ -150,7 +150,7 @@ bitCapInt uipow(bitCapInt base, bitCapInt exp)
 bitCapInt floorSqrt(const bitCapInt& x)
 {
     // Base cases
-    if ((x == 0) || (x == 1)) {
+    if ((x == 0U) || (x == 1U)) {
         return x;
     }
 
@@ -421,7 +421,7 @@ int main()
 
                     // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                     // we first check if our guess for r is already a factor.
-                    if ((RGUESS > 1U) && ((toFactor / RGUESS) * RGUESS) == toFactor) {
+                    if ((RGUESS > 1U) && ((toFactor % RGUESS) == 0)) {
                         // Inform the other threads on this node that we've succeeded and are done:
                         isFinished = true;
 
