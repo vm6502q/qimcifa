@@ -226,10 +226,9 @@ int main()
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
-
-    const bitCapInt minPhi = ((minPrime - 1U) * (toFactor / minPrime - 1U)) >> 2U;
-    const bitCapInt maxPhi = ((maxPrime - 1U) * (toFactor / maxPrime - 1U)) >> 2U;
-    std::vector<rand_dist> phiDist(rangeRange(maxPhi - minPhi));
+    const bitCapInt minP = ((toFactor / maxPrime) < minPrime) ? minPrime : (toFactor / maxPrime);
+    const bitCapInt maxP = ((toFactor / minPrime) > maxPrime) ? maxPrime : (toFactor / minPrime);
+    std::vector<rand_dist> pDist(rangeRange((maxP - minP) >> 1U));
 
     const bitCapInt fullMinR = minPrime;
 #else
@@ -241,7 +240,7 @@ int main()
     const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
 
 #if IS_RSA_SEMIPRIME
-    auto workerFn = [&toFactor, &nodeMin, &nodeMax, &minPhi, &phiDist, &iterClock, &rand_gen, &isFinished](int cpu) {
+    auto workerFn = [&toFactor, &nodeMin, &nodeMax, &minP, &pDist, &iterClock, &rand_gen, &isFinished](int cpu) {
 #else
     auto workerFn = [&toFactor, &nodeMin, &nodeMax, &iterClock, &rand_gen, &isFinished](int cpu) {
 #endif
@@ -286,6 +285,12 @@ int main()
         return;                                                                                                        \
     }
 
+#define TEST_DIVIDE(testFactor, toFactor, message)                                                                        \
+    if (((toFactor) % (testFactor)) == 0U) {                                                                                          \
+        isFinished = true;                                                                                             \
+        PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, message);                                           \
+        return;                                                                                                        \
+    }
                 bitCapInt testFactor = gcd(toFactor, base);
                 TEST_GCD(testFactor, toFactor, "Base has common factor: Found ");
 
@@ -298,21 +303,33 @@ int main()
                 // Then, \lambda(toFactor) is the period.
 
 #if IS_RSA_SEMIPRIME
-                // For semiprime numbers, \phi(toFactor) = (p - 1) * (q - 1) for primes "p" and "q".
+                // For semiprime numbers, \phi(toFactor) = (p - 1) * (q - 1) for primes "p" and "q",
+                // and \lambda(toFactor) = lcm(p - 1, q - 1), where "lcm()" is "least common multiple."
                 // "p" and "q" each have half the bit width of toFactor.
                 // Assuming p and q are odd primes, \phi(toFactor) is divisible by 4.
-                bitCapInt phi = phiDist[0U](rand_gen);
-                for (size_t i = 1U; i < phiDist.size(); ++i) {
-                    phi <<= WORD_SIZE;
-                    phi |= phiDist[i](rand_gen);
-                }
-                phi = ((phi + minPhi) << 2U);
 
-                bitCapInt apowrhalf;
-                do {
-                    phi >>= 1U;
-                    apowrhalf = uipow(base, phi) % toFactor;
-                } while ((apowrhalf == 1) && ((phi & 1U) == 0));
+                // Guess "p".
+                bitCapInt p = pDist[0U](rand_gen);
+                for (size_t i = 1U; i < pDist.size(); ++i) {
+                    p <<= WORD_SIZE;
+                    p |= pDist[i](rand_gen);
+                }
+                p = (p << 1U) + minP;
+                TEST_DIVIDE(p, toFactor, "Guessed p: Found");
+
+                // At this point, p is not a factor, and p is probably not prime.
+                // However, p is "relatively close" to one of our two factors.
+
+                const bitCapInt q = toFactor / p;
+                TEST_DIVIDE(q, toFactor, "Guessed q: Found");
+
+                // At this point, similarly, q is not a factor, and q is probably not prime.
+                // However, q is "relatively close" to one of our two factors.
+
+                // This guess for lambda might be chaotic.
+                const bitCapInt lambda = (p - 1) * (q - 1) / gcd(p - 1, q - 2);
+
+                const bitCapInt apowrhalf = uipow(base, lambda) % toFactor;
                 if ((apowrhalf == 1) || (apowrhalf == (toFactor - 1))) {
                     continue;
                 }
