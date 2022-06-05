@@ -32,7 +32,7 @@
 #include <mutex>
 
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
-#define IS_RSA_SEMIPRIME 0
+#define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
@@ -279,10 +279,13 @@ int main()
     // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
     const bitCapInt fullMaxR = toFactor - floorSqrt(toFactor);
 #endif
+    const bitCapInt nodeRange = (fullMaxR + 1U - fullMinR) / nodeCount;
+    const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
+    const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
 
     std::vector<rand_dist> baseDist = rangeRange(toFactor - 3U);
 
-    auto workerFn = [&nodeId, &nodeCount, &toFactor, &fullMinR, &fullMaxR, &baseDist, &iterClock, &rand_gen,
+    auto workerFn = [&nodeId, &nodeCount, &toFactor, &nodeMin, &nodeMax, &baseDist, &iterClock, &rand_gen,
                         &isFinished](int cpu) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
@@ -296,21 +299,10 @@ int main()
         const double clockFactor = 1.0 / 1000.0; // Report in ms
         const unsigned threads = std::thread::hardware_concurrency();
 
-        const bitCapInt fullRange = fullMaxR + 1U - fullMinR;
-        const bitCapInt nodeRange = fullRange / nodeCount;
-        const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
-        const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
         const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
         const bitCapInt rMin = nodeMin + threadRange * cpu;
         const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
-
-#if IS_RSA_SEMIPRIME
-        // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
-        const bitCapInt rMinShift = rMin >> 2U;
-        std::vector<rand_dist> rDist(rangeRange((rMax >> 2U) - rMinShift));
-#else
         std::vector<rand_dist> rDist(rangeRange(rMax - rMin));
-#endif
 
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -377,18 +369,7 @@ int main()
                     r <<= WORD_SIZE;
                     r |= rDist[i](rand_gen);
                 }
-#if IS_RSA_SEMIPRIME
-                // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
-                r = (r + rMinShift) << 2U;
 
-                // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
-                // we first check if our guess for r is already a factor.
-                testFactor = (r | 1);
-                TEST_DIVISION(testFactor, toFactor, "Success (on r trial division): Found ");
-
-                testFactor = (r - 1);
-                TEST_DIVISION(testFactor, toFactor, "Success (on r trial division): Found ");
-#else
                 r += rMin;
                 if (r & 1U) {
                     r <<= 1U;
@@ -398,7 +379,6 @@ int main()
                 // we first check if our guess for r is already a factor.
                 testFactor = gcd(toFactor, r);
                 TEST_GCD(testFactor, toFactor, "Success (on r trial division): Found ");
-#endif
 
                 const bitCapInt apowrhalf = uipow(base, r) % toFactor;
                 bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
