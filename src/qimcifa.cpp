@@ -308,7 +308,15 @@ int main()
                 }
                 phi = ((phi + minPhi) << 2U);
 
-                const bitCapInt apowrhalf = uipow(base, phi >> 1U) % toFactor;
+                bitCapInt apowrhalf;
+                do {
+                    phi >>= 1U;
+                    apowrhalf = uipow(base, phi) % toFactor;
+                } while ((apowrhalf == 1) && (phi > 2U));
+                if (phi < 2U) {
+                    continue;
+                }
+
                 const bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
                 const bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
                 if (((f1 * f2) == toFactor) && (f1 > 1U) && (f2 > 1U)) {
