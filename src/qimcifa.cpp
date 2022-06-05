@@ -264,9 +264,9 @@ int main()
     // primes in the interval, is as follows:
     // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt fullMin = ONE_BCI << (primeBits - 1U);
+    const bitCapInt fullMin = (ONE_BCI << (primeBits - 1U)) + 1;
     const bitCapInt fullMax = (ONE_BCI << primeBits) - 1U;
-    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : (fullMin + 1U);
+    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : fullMin;
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : fullMax;
     const bitCapInt fullMinR = (minPrime - 1U) * (toFactor / minPrime - 1U);
     const bitCapInt fullMaxR = (maxPrime - 1U) * (toFactor / maxPrime - 1U);
@@ -402,7 +402,7 @@ int main()
                     // Inform the other threads on this node that we've succeeded and are done:
                     isFinished = true;
 
-                    const bitCapInt testFactor = gcd(toFactor, base);
+                    const bitCapInt testFactor = gcd(toFactor, r);
 
                     PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
                     return;
