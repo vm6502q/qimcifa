@@ -314,23 +314,14 @@ int main()
                     p <<= WORD_SIZE;
                     p |= pDist[i](rand_gen);
                 }
-                p = (p << 1U) + minP;
-                TEST_DIVIDE(p, toFactor, "Guessed p: Found");
-
-                // At this point, p is not a factor, and p is probably not prime.
-                // However, p is "relatively close" to one of our two factors.
-
+                p = ((p << 1U) + minP);
                 bitCapInt q = toFactor / p;
-                if ((q & 1U) == 0) {
-                    q |= 1U;
-                    TEST_DIVIDE(q, toFactor, "Guessed q: Found");
-                }
 
-                // At this point, similarly, q is not a factor, and q is probably not prime.
-                // However, q is "relatively close" to one of our two factors.
-
+                // (p - 1) and (q - 1) are both even.
+                p = p >> 1U;
+                q = q >> 1U;
                 // This guess for lambda might be chaotic.
-                const bitCapInt lambda = (p - 1) * (q - 1) / gcd(p - 1, q - 1);
+                const bitCapInt lambda = p * q / gcd(p, q);
 
                 const bitCapInt apowrhalf = uipow(base, lambda) % toFactor;
                 if ((apowrhalf == 1) || (apowrhalf == (toFactor - 1))) {
