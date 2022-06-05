@@ -226,21 +226,19 @@ int main()
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
-    const bitCapInt minP = ((toFactor / maxPrime) < minPrime) ? minPrime : (toFactor / maxPrime);
-    const bitCapInt maxP = ((toFactor / minPrime) > maxPrime) ? maxPrime : (toFactor / minPrime);
-    std::vector<rand_dist> pDist(rangeRange((maxP - minP) >> 1U));
-
-    const bitCapInt fullMinR = minPrime;
+    const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
+    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
+    std::vector<rand_dist> pDist(rangeRange((fullMaxBase - fullMinBase) >> 1U));
 #else
-    const bitCapInt fullMinR = 2U;
+    const bitCapInt fullMinBase = 2U;
+    const bitCapInt fullMaxBase = toFactor / 2;
 #endif
-    const bitCapInt fullMaxR = toFactor / 2;
-    const bitCapInt nodeRange = (fullMaxR + 1U - fullMinR) / nodeCount;
-    const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
-    const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
+    const bitCapInt nodeRange = (fullMaxBase + 1U - fullMinBase) / nodeCount;
+    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
+    const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxBase : (fullMinBase + nodeRange * (nodeId + 1U) - 1U);
 
 #if IS_RSA_SEMIPRIME
-    auto workerFn = [&toFactor, &nodeMin, &nodeMax, &minP, &pDist, &iterClock, &rand_gen, &isFinished](int cpu) {
+    auto workerFn = [&toFactor, &nodeMin, &nodeMax, &fullMinBase, &pDist, &iterClock, &rand_gen, &isFinished](int cpu) {
 #else
     auto workerFn = [&toFactor, &nodeMin, &nodeMax, &iterClock, &rand_gen, &isFinished](int cpu) {
 #endif
@@ -314,7 +312,7 @@ int main()
                     p <<= WORD_SIZE;
                     p |= pDist[i](rand_gen);
                 }
-                p = ((p << 1U) + minP);
+                p = ((p << 1U) + fullMinBase);
                 bitCapInt q = toFactor / p;
 
                 // (p - 1) and (q - 1) are both even.
