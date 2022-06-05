@@ -329,15 +329,22 @@ int main()
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
     std::cout << "(Waiting to join other threads...)" << std::endl
 
-#define TEST_SUCCESS(testFactor, toFactor, message)                                                                    \
+#define TEST_GCD(testFactor, toFactor, message)                                                                        \
     if ((testFactor) != 1U) {                                                                                          \
         isFinished = true;                                                                                             \
         PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, message);                                           \
         return;                                                                                                        \
     }
 
+#define TEST_DIVISION(testFactor, toFactor, message)                                                                   \
+    if (((toFactor) % (testFactor)) == 0) {                                                                              \
+        isFinished = true;                                                                                             \
+        PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, message);                                           \
+        return;                                                                                                        \
+    }
+
                 bitCapInt testFactor = gcd(toFactor, base);
-                TEST_SUCCESS(testFactor, toFactor, "Chose non-relative prime: Found ");
+                TEST_GCD(testFactor, toFactor, "Chose non-relative prime: Found ");
 
                 // This would be where we perform the quantum period finding algorithm.
                 // However, we don't have a quantum computer!
@@ -376,11 +383,11 @@ int main()
 
                 // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                 // we first check if our guess for r is already a factor.
-                testFactor = gcd(toFactor, r | 1);
-                TEST_SUCCESS(testFactor, toFactor, "Success (on r trial division): Found ");
+                testFactor = (r | 1);
+                TEST_DIVISION(testFactor, toFactor, "Success (on r trial division): Found ");
 
-                testFactor = gcd(toFactor, r - 1);
-                TEST_SUCCESS(testFactor, toFactor, "Success (on r trial division): Found ");
+                testFactor = (r - 1);
+                TEST_DIVISION(testFactor, toFactor, "Success (on r trial division): Found ");
 #else
                 r += rMin;
                 if (r & 1U) {
@@ -390,7 +397,7 @@ int main()
                 // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                 // we first check if our guess for r is already a factor.
                 testFactor = gcd(toFactor, r);
-                TEST_SUCCESS(testFactor, toFactor, "Success (on r trial division): Found ");
+                TEST_GCD(testFactor, toFactor, "Success (on r trial division): Found ");
 #endif
 
                 const bitCapInt apowrhalf = uipow(base, r) % toFactor;
