@@ -63,8 +63,13 @@
 #define ONE_BCI 1ULL
 #endif
 
+#if (QBCAPPOW < 6U) || (IS_RSA_SEMIPRIME && (QBCAPPOW < 7U))
+#define WORD uint32_t
+#define WORD_SIZE 32U
+#else
 #define WORD uint64_t
 #define WORD_SIZE 64U
+#endif
 
 namespace Qimcifa {
 
