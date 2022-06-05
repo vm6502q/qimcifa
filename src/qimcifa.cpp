@@ -307,9 +307,8 @@ int main()
                     phi |= phiDist[i](rand_gen);
                 }
                 phi = ((phi + minPhi) << 2U);
-                // TODO: We have guessed for \phi(toFactor). How do reduce this to \lambda(toFactor)?
 
-                const bitCapInt apowrhalf = uipow(base, phi) % toFactor;
+                const bitCapInt apowrhalf = uipow(base, phi >> 1U) % toFactor;
                 const bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
                 const bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
                 if (((f1 * f2) == toFactor) && (f1 > 1U) && (f2 > 1U)) {
