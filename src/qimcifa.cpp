@@ -413,12 +413,15 @@ int main()
                 bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
                 bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
                 bitCapInt fmul = f1 * f2;
+#if !IS_RSA_SEMIPRIME
+                // There's no chance that (f1 * f2) divides toFactor if f1 > 1 and f2 > 1 unless f1 and f2 are prime.
                 while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
                     fmul = f1;
                     f1 *= f2;
                     f2 = toFactor / (fmul * f2);
                     fmul = f1 * f2;
                 }
+#endif
                 if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
                     // Inform the other threads on this node that we've succeeded and are done:
                     isFinished = true;
