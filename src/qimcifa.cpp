@@ -283,13 +283,10 @@ int main()
     const bitCapInt fullMaxR = toFactor - floorSqrt(toFactor);
 #endif
 
-    std::vector<rand_dist> baseDist;
-    std::vector<rand_dist> phiSpreadDist;
 #if QBCAPPOW > 6U
-    baseDist = rangeRange(3U, toFactor);
-    phiSpreadDist = rangeRange(minPrime, maxPrime);
+    std::vector<rand_dist> baseDist = rangeRange(3U, toFactor);
 #else
-    baseDist.push_back(rand_dist(2U, toFactor - 1U));
+    std::vector<rand_dist> baseDist = { rand_dist(2U, toFactor - 1U) };
 #endif
 
     auto workerFn = [&nodeId, &nodeCount, &toFactor, &fullMinR, &fullMaxR, &baseDist, &iterClock, &rand_gen,
@@ -341,10 +338,11 @@ int main()
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
     std::cout << "(Waiting to join other threads...)" << std::endl;
 
-                const bitCapInt testFactor = gcd(toFactor, base);
-                if (testFactor != 1U) {
+                if (gcd(toFactor, base) != 1U) {
                     // Inform the other threads on this node that we've succeeded and are done:
                     isFinished = true;
+
+                    const bitCapInt testFactor = gcd(toFactor, base);
 
                     PRINT_SUCCESS(testFactor, (toFactor / testFactor), toFactor, "Chose non-relative prime: Found ");
                     return;
@@ -400,10 +398,11 @@ int main()
 
                 // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                 // we first check if our guess for r is already a factor.
-                const bitCapInt testFactor = gcd(toFactor, r);
-                if (testFactor != 1U) {
+                if (gcd(toFactor, r) != 1U) {
                     // Inform the other threads on this node that we've succeeded and are done:
                     isFinished = true;
+
+                    const bitCapInt testFactor = gcd(toFactor, base);
 
                     PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
                     return;
