@@ -31,8 +31,6 @@
 #include <map>
 #include <mutex>
 
-// Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
-#define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
@@ -251,42 +249,13 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
-#if IS_RSA_SEMIPRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 65521U } },
-        { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
-        { 64U, { 9223372036854775837U, 1844674407370955143U } } };
-
-    // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
-    // The minimum value of this formula, for our input, without consideration of actual
-    // primes in the interval, is as follows:
-    // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
-    const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt fullMin = (ONE_BCI << (primeBits - 1U)) + 1;
-    const bitCapInt fullMax = (ONE_BCI << primeBits) - 1U;
-    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : fullMin;
-    const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : fullMax;
-    const bitCapInt fullMinR = (minPrime - 1U) * (toFactor / minPrime - 1U);
-    const bitCapInt fullMaxR = (maxPrime - 1U) * (toFactor / maxPrime - 1U);
-#else
-    // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-    const bitCapInt fullMinR = floorSqrt(toFactor >> 1U);
-    // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
-    // const bitCapInt fullMinR = pow(toFactor / 2, PHI_EXPONENT);
-
-    // It can be shown that the period of this modular exponentiation can be no higher than 1
-    // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
-    // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
-    // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-    const bitCapInt fullMaxR = toFactor - floorSqrt(toFactor);
-#endif
+    const bitCapInt fullMinR = 2U;
+    const bitCapInt fullMaxR = toFactor / 2;
     const bitCapInt nodeRange = (fullMaxR + 1U - fullMinR) / nodeCount;
     const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
 
-    std::vector<rand_dist> baseDist = rangeRange(toFactor - 3U);
-
-    auto workerFn = [&nodeId, &nodeCount, &toFactor, &nodeMin, &nodeMax, &baseDist, &iterClock, &rand_gen,
-                        &isFinished](int cpu) {
+    auto workerFn = [&toFactor, &nodeMin, &nodeMax, &iterClock, &rand_gen, &isFinished](int cpu) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
@@ -294,7 +263,7 @@ int main()
         // Batch size is BASE_TRIALS * PERIOD_TRIALS.
 
         // Number of times to reuse a random base:
-        const size_t BASE_TRIALS = 1U << 4U;
+        const size_t BASE_TRIALS = 1U << 6U;
 
         const double clockFactor = 1.0 / 1000.0; // Report in ms
         const unsigned threads = std::thread::hardware_concurrency();
@@ -307,12 +276,12 @@ int main()
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
                 // Choose a base at random, >1 and <toFactor.
-                bitCapInt base = baseDist[0U](rand_gen);
-                for (size_t i = 1U; i < baseDist.size(); ++i) {
+                bitCapInt base = rDist[0U](rand_gen);
+                for (size_t i = 1U; i < rDist.size(); ++i) {
                     base <<= WORD_SIZE;
-                    base |= baseDist[i](rand_gen);
+                    base |= rDist[i](rand_gen);
                 }
-                base += 2U;
+                base += rMin;
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
@@ -330,69 +299,6 @@ int main()
 
                 bitCapInt testFactor = gcd(toFactor, base);
                 TEST_GCD(testFactor, toFactor, "Chose non-relative prime: Found ");
-
-                // This would be where we perform the quantum period finding algorithm.
-                // However, we don't have a quantum computer!
-                // Instead, we "throw dice" for a guess to the output of the quantum subroutine.
-                // This guess will usually be wrong, at least for semi-prime inputs.
-                // If we try many times, though, this can be a practically valuable factoring method.
-
-                // y is meant to be close to some number c * qubitPower / r, where r is the period.
-                // c is a positive integer or 0, and we don't want the 0 case.
-                // y is truncated by the number of qubits in the register, at most.
-                // The maximum value of c before truncation is no higher than r.
-
-                // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
-                // (Also, toFactor is definitely NOT an exact multiple of base.)
-                // Euler's Theorem tells us, if gcd(a, n) = 1, then a^\phi(n) = 1 MOD n,
-                // where \phi(n) is Euler's totient for n.
-
-                // c is basically a harmonic degeneracy factor, and there might be no value in testing
-                // any case except c = 1, without loss of generality.
-
-                // This sets a nonuniform distribution on our y values to test.
-                // y values are close to qubitPower / rGuess, and we midpoint round.
-
-                // However, results are better with uniformity over r, rather than y.
-
-                // So, we guess r, between fullMinR and fullMaxR.
-                // Since our output is r rather than y, we can skip the continued fractions step.
-                bitCapInt r = rDist[0U](rand_gen);
-                for (size_t i = 1U; i < rDist.size(); ++i) {
-                    r <<= WORD_SIZE;
-                    r |= rDist[i](rand_gen);
-                }
-
-                r += rMin;
-                if (r & 1U) {
-                    r <<= 1U;
-                }
-
-                // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
-                // we first check if our guess for r is already a factor.
-                testFactor = gcd(toFactor, r);
-                TEST_GCD(testFactor, toFactor, "Success (on r trial division): Found ");
-
-                const bitCapInt apowrhalf = uipow(base, r) % toFactor;
-                bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
-                bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
-                bitCapInt fmul = f1 * f2;
-#if !IS_RSA_SEMIPRIME
-                // There's no chance that (f1 * f2) divides toFactor if f1 > 1 and f2 > 1 unless f1 and f2 are prime.
-                while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
-                    fmul = f1;
-                    f1 *= f2;
-                    f2 = toFactor / (fmul * f2);
-                    fmul = f1 * f2;
-                }
-#endif
-                if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
-                    // Inform the other threads on this node that we've succeeded and are done:
-                    isFinished = true;
-
-                    PRINT_SUCCESS(f1, f2, toFactor, "Success (on r difference of squares): Found ");
-                    return;
-                }
             }
 
             // Check if finished, between batches.
