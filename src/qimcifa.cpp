@@ -194,7 +194,6 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 
 typedef std::uniform_int_distribution<WORD> rand_dist;
 
-#if QBCAPPOW > 6U
 std::vector<rand_dist> rangeRange(const bitCapInt& low, const bitCapInt& high) {
     std::vector<rand_dist> distToReturn;
     bitCapInt distPart = high - low;
@@ -206,7 +205,6 @@ std::vector<rand_dist> rangeRange(const bitCapInt& low, const bitCapInt& high) {
 
     return distToReturn;
 }
-#endif
 
 } // namespace Qimcifa
 
@@ -283,11 +281,7 @@ int main()
     const bitCapInt fullMaxR = toFactor - floorSqrt(toFactor);
 #endif
 
-#if QBCAPPOW > 6U
     std::vector<rand_dist> baseDist = rangeRange(3U, toFactor);
-#else
-    std::vector<rand_dist> baseDist = { rand_dist(2U, toFactor - 1U) };
-#endif
 
     auto workerFn = [&nodeId, &nodeCount, &toFactor, &fullMinR, &fullMaxR, &baseDist, &iterClock, &rand_gen,
                         &isFinished](int cpu) {
@@ -323,13 +317,11 @@ int main()
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
                 // Choose a base at random, >1 and <toFactor.
                 bitCapInt base = baseDist[0U](rand_gen);
-#if QBCAPPOW > 6U
                 for (size_t i = 1U; i < baseDist.size(); ++i) {
                     base <<= WORD_SIZE;
                     base |= baseDist[i](rand_gen);
                 }
                 base += 2U;
-#endif
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
@@ -375,23 +367,27 @@ int main()
                 // So, we guess r, between fullMinR and fullMaxR.
                 // Since our output is r rather than y, we can skip the continued fractions step.
                 bitCapInt r = rDist[0U](rand_gen);
-#if QBCAPPOW > 6U
                 for (size_t i = 1U; i < rDist.size(); ++i) {
                     r <<= WORD_SIZE;
                     r |= rDist[i](rand_gen);
                 }
 #if IS_RSA_SEMIPRIME
                 // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
-                r += rMinShift;
+                r = (r + rMinShift) << 2U;
+
+                // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
+                // we first check if our guess for r is already a factor.
+                if (gcd(toFactor, r | 1) != 1U) {
+                    // Inform the other threads on this node that we've succeeded and are done:
+                    isFinished = true;
+
+                    const bitCapInt testFactor = gcd(toFactor, r | 1);
+
+                    PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
+                    return;
+                }
 #else
                 r += rMin;
-#endif
-#endif
-
-#if IS_RSA_SEMIPRIME
-                // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
-                r <<= 2U;
-#else
                 if (r & 1U) {
                     r <<= 1U;
                 }
