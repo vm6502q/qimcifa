@@ -380,7 +380,7 @@ int main()
                 testFactor = gcd(toFactor, r | 1);
                 TEST_SUCCESS(testFactor, toFactor, "Success (on r trial division): Found ");
 
-                testFactor = gcd(toFactor, r - 2);
+                testFactor = gcd(toFactor, r - 1);
                 TEST_SUCCESS(testFactor, toFactor, "Success (on r trial division): Found ");
 #else
                 r += rMin;
