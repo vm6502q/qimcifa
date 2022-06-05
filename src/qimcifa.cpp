@@ -293,9 +293,9 @@ int main()
                 // Then, by Euler's theorem, uintpow(base, \phi(toFactor)) % toFactor == 1.
                 // Remember that uintpow(base, 0) == 1.
                 // Euler's totient, \phi(toFactor), is therefore a harmonic of the modular period.
-                // \phi(toFactor) is a multiple of the Carmichael function, \lambda(toFactor)
+                // \phi(toFactor) is a multiple of the Carmichael function, \lambda(toFactor),
                 // defined as as the lowest number for which uintpow(base, \lambda(toFactor)) % toFactor == 1.
-                // Then, \lambda(toFactor) + 1 is the period.
+                // Then, \lambda(toFactor) is the period.
 
 #if IS_RSA_SEMIPRIME
                 // For semiprime numbers, \phi(toFactor) = (p - 1) * (q - 1) for primes "p" and "q".
