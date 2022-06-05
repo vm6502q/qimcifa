@@ -258,11 +258,10 @@ int main()
 
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
     const bitCapInt fullMinR = primeDict[primeBits] ? primeDict[primeBits] : ((ONE_BCI << (primeBits - 1U)) + 1);
-    const bitCapInt fullMaxR = toFactor / fullMinR;
 #else
     const bitCapInt fullMinR = 2U;
-    const bitCapInt fullMaxR = toFactor / 2;
 #endif
+    const bitCapInt fullMaxR = toFactor / 2;
     const bitCapInt nodeRange = (fullMaxR + 1U - fullMinR) / nodeCount;
     const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
