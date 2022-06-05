@@ -192,14 +192,28 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
+typedef std::uniform_int_distribution<WORD> rand_dist;
+
+#if QBCAPPOW > 6U
+std::vector<rand_dist> rangeRange(const bitCapInt& low, const bitCapInt& high) {
+    std::vector<rand_dist> distToReturn;
+    bitCapInt distPart = high - low;
+    while (distPart) {
+        distToReturn.push_back(rand_dist(0U, (WORD)distPart));
+        distPart >>= WORD_SIZE;
+    }
+    std::reverse(distToReturn.begin(), distToReturn.end());
+
+    return distToReturn;
+}
+#endif
+
 } // namespace Qimcifa
 
 using namespace Qimcifa;
 
 int main()
 {
-    typedef std::uniform_int_distribution<WORD> rand_dist;
-
     bitCapInt toFactor;
     bitCapInt nodeCount = 1U;
     bitCapInt nodeId = 0U;
@@ -270,13 +284,10 @@ int main()
 #endif
 
     std::vector<rand_dist> baseDist;
+    std::vector<rand_dist> phiSpreadDist;
 #if QBCAPPOW > 6U
-    bitCapInt distPart = toFactor - 3U;
-    while (distPart) {
-        baseDist.push_back(rand_dist(0U, (WORD)distPart));
-        distPart >>= WORD_SIZE;
-    }
-    std::reverse(baseDist.begin(), baseDist.end());
+    baseDist = rangeRange(3U, toFactor);
+    phiSpreadDist = rangeRange(minPrime, maxPrime);
 #else
     baseDist.push_back(rand_dist(2U, toFactor - 1U));
 #endif
@@ -303,24 +314,11 @@ int main()
         const bitCapInt rMin = nodeMin + threadRange * cpu;
         const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
 
-        std::vector<rand_dist> rDist;
-#if QBCAPPOW > 6U
 #if IS_RSA_SEMIPRIME
         // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
-        bitCapInt distPart = (rMax - rMin) >> 2U;
+        std::vector<rand_dist> rDist(rangeRange(rMin >> 2U, rMax >> 2U));
 #else
-        bitCapInt distPart = rMax - rMin;
-#endif
-        while (distPart) {
-            rDist.push_back(rand_dist(0U, (WORD)distPart));
-            distPart >>= WORD_SIZE;
-        }
-        std::reverse(rDist.begin(), rDist.end());
-#elif IS_RSA_SEMIPRIME
-        // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
-        rDist.push_back(rand_dist(rMin >> 2U, rMax >> 2U));
-#else
-        rDist.push_back(rand_dist(rMin, rMax));
+        std::vector<rand_dist> rDist(rangeRange(rMin, rMax));
 #endif
 
         for (;;) {
