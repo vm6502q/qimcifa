@@ -32,7 +32,7 @@
 #include <mutex>
 
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
-#define IS_RSA_SEMIPRIME 0
+#define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
@@ -219,16 +219,18 @@ int main()
     isFinished = false;
 
 #if IS_RSA_SEMIPRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 65521U } },
-        { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
-        { 64U, { 9223372036854775837U, 1844674407370955143U } } };
+    // Minimum prime number in bit width catalog
+    std::map<bitLenInt, bitCapInt> primeDict = {
+        { 16U, 32771U },
+        { 28U, 134217757U },
+        { 32U, 2147483659U },
+        { 64U, 9223372036854775837U }
+    };
 
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1);
-    const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
-    const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
-    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
-    std::vector<rand_dist> pDist(rangeRange((fullMaxBase - fullMinBase) >> 1U));
+    const bitCapInt minPrime = primeDict[primeBits] ? primeDict[primeBits] : ((ONE_BCI << (primeBits - 1U)) + 1);
+    const bitCapInt fullMinBase = minPrime;
+    const bitCapInt fullMaxBase = toFactor / minPrime;
 #else
     const bitCapInt fullMinBase = 2U;
     const bitCapInt fullMaxBase = toFactor / 2;
@@ -237,11 +239,7 @@ int main()
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxBase : (fullMinBase + nodeRange * (nodeId + 1U) - 1U);
 
-#if IS_RSA_SEMIPRIME
-    auto workerFn = [&toFactor, &nodeMin, &nodeMax, &fullMinBase, &pDist, &iterClock, &rand_gen, &isFinished](int cpu) {
-#else
     auto workerFn = [&toFactor, &nodeMin, &nodeMax, &iterClock, &rand_gen, &isFinished](int cpu) {
-#endif
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
@@ -257,11 +255,7 @@ int main()
         const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
         const bitCapInt rMin = nodeMin + threadRange * cpu;
         const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
-#if IS_RSA_SEMIPRIME
-        std::vector<rand_dist> rDist(rangeRange((rMax - rMin) >> 1U));
-#else
         std::vector<rand_dist> rDist(rangeRange(rMax - rMin));
-#endif
 
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -271,11 +265,7 @@ int main()
                     base <<= WORD_SIZE;
                     base |= rDist[i](rand_gen);
                 }
-#if IS_RSA_SEMIPRIME
-                base = (base << 1U) + rMin;
-#else
                 base += rMin;
-#endif
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
@@ -298,57 +288,8 @@ int main()
         return;                                                                                                        \
     }
 
-#if IS_RSA_SEMIPRIME
-                TEST_DIVIDE(base, toFactor, "Base has common factor: Found ");
-#else
                 bitCapInt testFactor = gcd(toFactor, base);
                 TEST_GCD(testFactor, toFactor, "Base has common factor: Found ");
-#endif
-
-                // Past this point, toFactor and base are coprime.
-                // Then, by Euler's theorem, uintpow(base, \phi(toFactor)) % toFactor == 1.
-                // Remember that uintpow(base, 0) == 1.
-                // Euler's totient, \phi(toFactor), is therefore a harmonic of the modular period.
-                // \phi(toFactor) is a multiple of the Carmichael function, \lambda(toFactor),
-                // defined as as the lowest number for which uintpow(base, \lambda(toFactor)) % toFactor == 1.
-                // Then, \lambda(toFactor) is the period.
-
-#if IS_RSA_SEMIPRIME
-                // For semiprime numbers, \phi(toFactor) = (p - 1) * (q - 1) for primes "p" and "q",
-                // and \lambda(toFactor) = lcm(p - 1, q - 1), where "lcm()" is "least common multiple."
-                // "p" and "q" each have half the bit width of toFactor.
-                // Assuming p and q are odd primes, \phi(toFactor) is divisible by 4.
-
-                // Guess "p".
-                bitCapInt p = pDist[0U](rand_gen);
-                for (size_t i = 1U; i < pDist.size(); ++i) {
-                    p <<= WORD_SIZE;
-                    p |= pDist[i](rand_gen);
-                }
-                p = ((p << 1U) + fullMinBase);
-                bitCapInt q = toFactor / p;
-
-                // (p - 1) and (q - 1) are both even.
-                p >>= 1U;
-                q >>= 1U;
-                // This guess for lambda might be chaotic.
-                const bitCapInt lambda = p * q / gcd(p, q);
-
-                const bitCapInt apowrhalf = uipow(base, lambda) % toFactor;
-                if ((apowrhalf == 1) || (apowrhalf == (toFactor - 1))) {
-                    continue;
-                }
-
-                const bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
-                const bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
-                if (((f1 * f2) == toFactor) && (f1 > 1U) && (f2 > 1U)) {
-                    // Inform the other threads on this node that we've succeeded and are done:
-                    isFinished = true;
-
-                    PRINT_SUCCESS(f1, f2, toFactor, "Success (on r difference of squares): Found ");
-                    return;
-                }
-#endif
             }
 
             // Check if finished, between batches.
