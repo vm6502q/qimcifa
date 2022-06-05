@@ -149,38 +149,6 @@ bitCapInt uipow(bitCapInt base, bitCapInt exp)
     return result;
 }
 
-// Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
-bitCapInt floorSqrt(const bitCapInt& x)
-{
-    // Base cases
-    if ((x == 0U) || (x == 1U)) {
-        return x;
-    }
-
-    // Binary search for floor(sqrt(x))
-    bitCapInt start = 1U, end = x >> 1U, ans = 0U;
-    do {
-        const bitCapInt mid = (start + end) >> 1U;
-
-        // If x is a perfect square
-        const bitCapInt sqr = mid * mid;
-        if (sqr == x) {
-            return mid;
-        }
-
-        if (sqr < x) {
-            // Since we need floor, we update answer when mid*mid is smaller than x, and move closer to sqrt(x).
-            start = mid + 1U;
-            ans = mid;
-        } else {
-            // If mid*mid is greater than x
-            end = mid - 1U;
-        }
-    } while (start <= end);
-
-    return ans;
-}
-
 bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
     while (n2) {
@@ -219,7 +187,6 @@ int main()
     std::cin >> toFactor;
 
     const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
-    // const bitCapInt qubitPower = ONE_BCI << qubitCount;
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
 #if IS_DISTRIBUTED
@@ -252,12 +219,19 @@ int main()
     isFinished = false;
 
 #if IS_RSA_SEMIPRIME
-    std::map<bitLenInt, bitCapInt> primeDict = { { 16U, 32771U },
-        { 28U, 134217757U }, { 32U, 2147483659U },
-        { 64U, 9223372036854775837U } };
+    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 65521U } },
+        { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
+        { 64U, { 9223372036854775837U, 1844674407370955143U } } };
 
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt fullMinR = primeDict[primeBits] ? primeDict[primeBits] : ((ONE_BCI << (primeBits - 1U)) + 1);
+    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1);
+    const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
+
+    const bitCapInt minPhi = ((minPrime - 1U) * (toFactor / minPrime - 1U)) >> 2U;
+    const bitCapInt maxPhi = ((maxPrime - 1U) * (toFactor / maxPrime - 1U)) >> 2U;
+    std::vector<rand_dist> phiDist(rangeRange(maxPhi - minPhi));
+
+    const bitCapInt fullMinR = minPrime;
 #else
     const bitCapInt fullMinR = 2U;
 #endif
@@ -266,7 +240,11 @@ int main()
     const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
 
+#if IS_RSA_SEMIPRIME
+    auto workerFn = [&toFactor, &nodeMin, &nodeMax, &minPhi, &phiDist, &iterClock, &rand_gen, &isFinished](int cpu) {
+#else
     auto workerFn = [&toFactor, &nodeMin, &nodeMax, &iterClock, &rand_gen, &isFinished](int cpu) {
+#endif
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
@@ -309,7 +287,39 @@ int main()
     }
 
                 bitCapInt testFactor = gcd(toFactor, base);
-                TEST_GCD(testFactor, toFactor, "Found ");
+                TEST_GCD(testFactor, toFactor, "Base has common factor: Found ");
+
+                // Past this point, toFactor and base are coprime.
+                // Then, by Euler's theorem, uintpow(base, \phi(toFactor)) % toFactor == 1.
+                // Remember that uintpow(base, 0) == 1.
+                // Euler's totient, \phi(toFactor), is therefore a harmonic of the modular period.
+                // \phi(toFactor) is a multiple of the Carmichael function, \lambda(toFactor)
+                // defined as as the lowest number for which uintpow(base, \lambda(toFactor)) % toFactor == 1.
+                // Then, \lambda(toFactor) + 1 is the period.
+
+#if IS_RSA_SEMIPRIME
+                // For semiprime numbers, \phi(toFactor) = (p - 1) * (q - 1) for primes "p" and "q".
+                // "p" and "q" each have half the bit width of toFactor.
+                // Assuming p and q are odd primes, \phi(toFactor) is divisible by 4.
+                bitCapInt phi = phiDist[0U](rand_gen);
+                for (size_t i = 1U; i < phiDist.size(); ++i) {
+                    phi <<= WORD_SIZE;
+                    phi |= phiDist[i](rand_gen);
+                }
+                phi = ((phi + minPhi) << 2U);
+                // TODO: We have guessed for \phi(toFactor). How do reduce this to \lambda(toFactor)?
+
+                const bitCapInt apowrhalf = uipow(base, phi) % toFactor;
+                const bitCapInt f1 = gcd(apowrhalf + 1U, toFactor);
+                const bitCapInt f2 = gcd(apowrhalf - 1U, toFactor);
+                if (((f1 * f2) == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+                    // Inform the other threads on this node that we've succeeded and are done:
+                    isFinished = true;
+
+                    PRINT_SUCCESS(f1, f2, toFactor, "Success (on r difference of squares): Found ");
+                    return;
+                }
+#endif
             }
 
             // Check if finished, between batches.
