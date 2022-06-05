@@ -32,7 +32,7 @@
 #include <mutex>
 
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
-#define IS_RSA_SEMIPRIME 1
+#define IS_RSA_SEMIPRIME 0
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
@@ -257,7 +257,11 @@ int main()
         const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
         const bitCapInt rMin = nodeMin + threadRange * cpu;
         const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
+#if IS_RSA_SEMIPRIME
+        std::vector<rand_dist> rDist(rangeRange((rMax - rMin) >> 1U));
+#else
         std::vector<rand_dist> rDist(rangeRange(rMax - rMin));
+#endif
 
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -267,7 +271,11 @@ int main()
                     base <<= WORD_SIZE;
                     base |= rDist[i](rand_gen);
                 }
+#if IS_RSA_SEMIPRIME
+                base = (base << 1U) + rMin;
+#else
                 base += rMin;
+#endif
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
@@ -283,14 +291,19 @@ int main()
         return;                                                                                                        \
     }
 
-#define TEST_DIVIDE(testFactor, toFactor, message)                                                                        \
-    if (((toFactor) % (testFactor)) == 0U) {                                                                                          \
+#define TEST_DIVIDE(testFactor, toFactor, message)                                                                     \
+    if (((toFactor) % (testFactor)) == 0U) {                                                                           \
         isFinished = true;                                                                                             \
         PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, message);                                           \
         return;                                                                                                        \
     }
+
+#if IS_RSA_SEMIPRIME
+                TEST_DIVIDE(base, toFactor, "Base has common factor: Found ");
+#else
                 bitCapInt testFactor = gcd(toFactor, base);
                 TEST_GCD(testFactor, toFactor, "Base has common factor: Found ");
+#endif
 
                 // Past this point, toFactor and base are coprime.
                 // Then, by Euler's theorem, uintpow(base, \phi(toFactor)) % toFactor == 1.
@@ -316,8 +329,8 @@ int main()
                 bitCapInt q = toFactor / p;
 
                 // (p - 1) and (q - 1) are both even.
-                p = p >> 1U;
-                q = q >> 1U;
+                p >>= 1U;
+                q >>= 1U;
                 // This guess for lambda might be chaotic.
                 const bitCapInt lambda = p * q / gcd(p, q);
 
