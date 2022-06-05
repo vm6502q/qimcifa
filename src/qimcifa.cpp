@@ -328,17 +328,17 @@ int main()
     auto tClock =                                                                                                      \
         std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);  \
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
-    std::cout << "(Waiting to join other threads...)" << std::endl;
+    std::cout << "(Waiting to join other threads...)" << std::endl
 
-                if (gcd(toFactor, base) != 1U) {
-                    // Inform the other threads on this node that we've succeeded and are done:
-                    isFinished = true;
+#define TEST_SUCCESS(testFactor, toFactor, message)                                                                    \
+    if ((testFactor) != 1U) {                                                                                          \
+        isFinished = true;                                                                                             \
+        PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, message);                                           \
+        return;                                                                                                        \
+    }
 
-                    const bitCapInt testFactor = gcd(toFactor, base);
-
-                    PRINT_SUCCESS(testFactor, (toFactor / testFactor), toFactor, "Chose non-relative prime: Found ");
-                    return;
-                }
+                bitCapInt testFactor = gcd(toFactor, base);
+                TEST_SUCCESS(testFactor, toFactor, "Chose non-relative prime: Found ");
 
                 // This would be where we perform the quantum period finding algorithm.
                 // However, we don't have a quantum computer!
@@ -377,25 +377,11 @@ int main()
 
                 // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                 // we first check if our guess for r is already a factor.
-                if (gcd(toFactor, r | 1) != 1U) {
-                    // Inform the other threads on this node that we've succeeded and are done:
-                    isFinished = true;
+                testFactor = gcd(toFactor, r | 1);
+                TEST_SUCCESS(testFactor, toFactor, "Success (on r trial division): Found ");
 
-                    const bitCapInt testFactor = gcd(toFactor, r | 1);
-
-                    PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
-                    return;
-                }
-
-                if (gcd(toFactor, r - 2) != 1U) {
-                    // Inform the other threads on this node that we've succeeded and are done:
-                    isFinished = true;
-
-                    const bitCapInt testFactor = gcd(toFactor, r - 2);
-
-                    PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
-                    return;
-                }
+                testFactor = gcd(toFactor, r - 2);
+                TEST_SUCCESS(testFactor, toFactor, "Success (on r trial division): Found ");
 #else
                 r += rMin;
                 if (r & 1U) {
@@ -404,15 +390,8 @@ int main()
 
                 // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                 // we first check if our guess for r is already a factor.
-                if (gcd(toFactor, r) != 1U) {
-                    // Inform the other threads on this node that we've succeeded and are done:
-                    isFinished = true;
-
-                    const bitCapInt testFactor = gcd(toFactor, r);
-
-                    PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
-                    return;
-                }
+                testFactor = gcd(toFactor, r);
+                TEST_SUCCESS(testFactor, toFactor, "Success (on r trial division): Found ");
 #endif
 
                 const bitCapInt apowrhalf = uipow(base, r) % toFactor;
