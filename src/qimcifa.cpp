@@ -31,6 +31,8 @@
 #include <map>
 #include <mutex>
 
+// Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
+#define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
@@ -249,8 +251,18 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
+#if IS_RSA_SEMIPRIME
+    std::map<bitLenInt, bitCapInt> primeDict = { { 16U, 32771U },
+        { 28U, 134217757U }, { 32U, 2147483659U },
+        { 64U, 9223372036854775837U } };
+
+    const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
+    const bitCapInt fullMinR = primeDict[primeBits] ? primeDict[primeBits] : ((ONE_BCI << (primeBits - 1U)) + 1);
+    const bitCapInt fullMaxR = toFactor / fullMinR;
+#else
     const bitCapInt fullMinR = 2U;
     const bitCapInt fullMaxR = toFactor / 2;
+#endif
     const bitCapInt nodeRange = (fullMaxR + 1U - fullMinR) / nodeCount;
     const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
@@ -263,7 +275,7 @@ int main()
         // Batch size is BASE_TRIALS * PERIOD_TRIALS.
 
         // Number of times to reuse a random base:
-        const size_t BASE_TRIALS = 1U << 6U;
+        const size_t BASE_TRIALS = 1U << 16U;
 
         const double clockFactor = 1.0 / 1000.0; // Report in ms
         const unsigned threads = std::thread::hardware_concurrency();
@@ -298,7 +310,7 @@ int main()
     }
 
                 bitCapInt testFactor = gcd(toFactor, base);
-                TEST_GCD(testFactor, toFactor, "Chose non-relative prime: Found ");
+                TEST_GCD(testFactor, toFactor, "Found ");
             }
 
             // Check if finished, between batches.
