@@ -32,7 +32,7 @@
 #include <mutex>
 
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
-#define IS_RSA_SEMIPRIME 1
+#define IS_RSA_SEMIPRIME 0
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
@@ -194,12 +194,11 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 
 typedef std::uniform_int_distribution<WORD> rand_dist;
 
-std::vector<rand_dist> rangeRange(const bitCapInt& low, const bitCapInt& high) {
+std::vector<rand_dist> rangeRange(bitCapInt range) {
     std::vector<rand_dist> distToReturn;
-    bitCapInt distPart = high - low;
-    while (distPart) {
-        distToReturn.push_back(rand_dist(0U, (WORD)distPart));
-        distPart >>= WORD_SIZE;
+    while (range) {
+        distToReturn.push_back(rand_dist(0U, (WORD)range));
+        range >>= WORD_SIZE;
     }
     std::reverse(distToReturn.begin(), distToReturn.end());
 
@@ -281,7 +280,7 @@ int main()
     const bitCapInt fullMaxR = toFactor - floorSqrt(toFactor);
 #endif
 
-    std::vector<rand_dist> baseDist = rangeRange(3U, toFactor);
+    std::vector<rand_dist> baseDist = rangeRange(toFactor - 3U);
 
     auto workerFn = [&nodeId, &nodeCount, &toFactor, &fullMinR, &fullMaxR, &baseDist, &iterClock, &rand_gen,
                         &isFinished](int cpu) {
@@ -308,9 +307,9 @@ int main()
 #if IS_RSA_SEMIPRIME
         // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
         const bitCapInt rMinShift = rMin >> 2U;
-        std::vector<rand_dist> rDist(rangeRange(rMinShift, rMax >> 2U));
+        std::vector<rand_dist> rDist(rangeRange((rMax >> 2U) - rMinShift));
 #else
-        std::vector<rand_dist> rDist(rangeRange(rMin, rMax));
+        std::vector<rand_dist> rDist(rangeRange(rMax - rMin));
 #endif
 
         for (;;) {
