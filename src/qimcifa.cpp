@@ -321,13 +321,12 @@ int main()
                 // However, p is "relatively close" to one of our two factors.
 
                 const bitCapInt q = toFactor / p;
-                TEST_DIVIDE(q, toFactor, "Guessed q: Found");
 
                 // At this point, similarly, q is not a factor, and q is probably not prime.
                 // However, q is "relatively close" to one of our two factors.
 
                 // This guess for lambda might be chaotic.
-                const bitCapInt lambda = (p - 1) * (q - 1) / gcd(p - 1, q - 2);
+                const bitCapInt lambda = (p - 1) * (q - 1) / gcd(p - 1, q - 1);
 
                 const bitCapInt apowrhalf = uipow(base, lambda) % toFactor;
                 if ((apowrhalf == 1) || (apowrhalf == (toFactor - 1))) {
