@@ -328,13 +328,6 @@ int main()
         return;                                                                                                        \
     }
 
-#define TEST_DIVISION(testFactor, toFactor, message)                                                                   \
-    if (((toFactor) % (testFactor)) == 0) {                                                                              \
-        isFinished = true;                                                                                             \
-        PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, message);                                           \
-        return;                                                                                                        \
-    }
-
                 bitCapInt testFactor = gcd(toFactor, base);
                 TEST_GCD(testFactor, toFactor, "Chose non-relative prime: Found ");
 
