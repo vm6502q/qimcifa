@@ -316,7 +316,8 @@ int main()
 
 #if IS_RSA_SEMIPRIME
         // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
-        std::vector<rand_dist> rDist(rangeRange(rMin >> 2U, rMax >> 2U));
+        const bitCapInt rMinShift = rMin >> 2U;
+        std::vector<rand_dist> rDist(rangeRange(rMinShift, rMax >> 2U));
 #else
         std::vector<rand_dist> rDist(rangeRange(rMin, rMax));
 #endif
@@ -383,7 +384,7 @@ int main()
                 }
 #if IS_RSA_SEMIPRIME
                 // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
-                r += rMin >> 2U;
+                r += rMinShift;
 #else
                 r += rMin;
 #endif
