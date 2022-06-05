@@ -320,7 +320,11 @@ int main()
                 // At this point, p is not a factor, and p is probably not prime.
                 // However, p is "relatively close" to one of our two factors.
 
-                const bitCapInt q = toFactor / p;
+                bitCapInt q = toFactor / p;
+                if ((q & 1U) == 0) {
+                    q |= 1U;
+                    TEST_DIVIDE(q, toFactor, "Guessed q: Found");
+                }
 
                 // At this point, similarly, q is not a factor, and q is probably not prime.
                 // However, q is "relatively close" to one of our two factors.
