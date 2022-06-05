@@ -312,8 +312,8 @@ int main()
                 do {
                     phi >>= 1U;
                     apowrhalf = uipow(base, phi) % toFactor;
-                } while ((apowrhalf == 1) && (phi > 2U));
-                if (phi < 2U) {
+                } while ((apowrhalf == 1) && ((phi & 1U) == 0));
+                if ((apowrhalf == 1) || (apowrhalf == (toFactor - 1))) {
                     continue;
                 }
 
