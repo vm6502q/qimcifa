@@ -386,6 +386,16 @@ int main()
                     PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
                     return;
                 }
+
+                if (gcd(toFactor, r - 2) != 1U) {
+                    // Inform the other threads on this node that we've succeeded and are done:
+                    isFinished = true;
+
+                    const bitCapInt testFactor = gcd(toFactor, r - 2);
+
+                    PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Success (on r trial division): Found ");
+                    return;
+                }
 #else
                 r += rMin;
                 if (r & 1U) {
