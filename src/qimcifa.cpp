@@ -223,10 +223,11 @@ int main()
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
     const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
+    const bitCapInt fullMaxBase = toFactor / fullMinBase;
 #else
     const bitCapInt fullMinBase = 2U;
-#endif
     const bitCapInt fullMaxBase = toFactor / 2U;
+#endif
     const bitCapInt nodeRange = (fullMaxBase + 1U - fullMinBase) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxBase : (fullMinBase + nodeRange * (nodeId + 1U) - 1U);
