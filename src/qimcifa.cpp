@@ -214,15 +214,6 @@ int main()
     }
 #endif
 
-    auto iterClock = std::chrono::high_resolution_clock::now();
-
-    std::random_device rand_dev;
-    std::mt19937 rand_gen(rand_dev());
-
-    const unsigned cpuCount = std::thread::hardware_concurrency();
-    std::atomic<bool> isFinished;
-    isFinished = false;
-
 #if IS_RSA_SEMIPRIME
     std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 65521U } },
         { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
@@ -235,12 +226,21 @@ int main()
 #else
     const bitCapInt fullMinBase = 2U;
 #endif
-    const bitCapInt fullMaxBase = toFactor / 2;
+    const bitCapInt fullMaxBase = toFactor / 2U;
     const bitCapInt nodeRange = (fullMaxBase + 1U - fullMinBase) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxBase : (fullMinBase + nodeRange * (nodeId + 1U) - 1U);
 
-    auto workerFn = [&toFactor, &nodeMin, &nodeMax, &iterClock, &rand_gen, &isFinished](int cpu) {
+    auto iterClock = std::chrono::high_resolution_clock::now();
+
+    std::random_device rand_dev;
+    std::mt19937 rand_gen(rand_dev());
+
+    const unsigned cpuCount = std::thread::hardware_concurrency();
+    std::atomic<bool> isFinished;
+    isFinished = false;
+
+    auto workerFn = [&toFactor, &nodeMin, &nodeMax, &iterClock, &rand_gen, &isFinished](int cpu, unsigned cpuCount) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
@@ -251,11 +251,10 @@ int main()
         const size_t BASE_TRIALS = 1U << 16U;
 
         const double clockFactor = 1.0 / 1000.0; // Report in ms
-        const unsigned threads = std::thread::hardware_concurrency();
 
-        const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
+        const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / cpuCount;
         const bitCapInt rMin = nodeMin + threadRange * cpu;
-        const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
+        const bitCapInt rMax = ((cpu + 1U) == cpuCount) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
         std::vector<rand_dist> rDist(rangeRange(rMax - rMin));
 
         for (;;) {
@@ -302,8 +301,8 @@ int main()
 
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        futures[cpu] = std::async(std::launch::async, workerFn, cpu);
-    };
+        futures[cpu] = std::async(std::launch::async, workerFn, cpu, cpuCount);
+    }
 
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         futures[cpu].get();
