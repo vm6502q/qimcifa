@@ -222,8 +222,8 @@ int main()
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
-    const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
-    const bitCapInt fullMaxBase = toFactor / fullMinBase;
+    const bitCapInt fullMinBase = (((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U)) >> 1U;
+    const bitCapInt fullMaxBase = (toFactor / ((fullMinBase << 1U) | 1U)) >> 1U;
 #else
     const bitCapInt fullMinBase = 2U;
     const bitCapInt fullMaxBase = toFactor / 2U;
@@ -266,7 +266,11 @@ int main()
                     base <<= WORD_SIZE;
                     base |= rDist[i](rand_gen);
                 }
+#if IS_RSA_SEMIPRIME
+                base = ((base << 1U) + rMin) | 1U;
+#else
                 base += rMin;
+#endif
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
