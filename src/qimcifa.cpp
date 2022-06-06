@@ -224,18 +224,15 @@ int main()
     isFinished = false;
 
 #if IS_RSA_SEMIPRIME
-    // Minimum prime number in bit width catalog
-    std::map<bitLenInt, bitCapInt> primeDict = {
-        { 16U, 32771U },
-        { 28U, 134217757U },
-        { 32U, 2147483659U },
-        { 64U, 9223372036854775837U }
-    };
+    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 65521U } },
+        { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
+        { 64U, { 9223372036854775837U, 1844674407370955143U } } };
 
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt minPrime = primeDict[primeBits] ? primeDict[primeBits] : ((ONE_BCI << (primeBits - 1U)) + 1);
-    const bitCapInt fullMinBase = minPrime;
-    const bitCapInt fullMaxBase = toFactor / minPrime;
+    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1);
+    const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
+    const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
+    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
 #else
     const bitCapInt fullMinBase = 2U;
     const bitCapInt fullMaxBase = toFactor / 2;
