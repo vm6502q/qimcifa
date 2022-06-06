@@ -224,7 +224,8 @@ int main()
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
     // We're only picking odd numbers, so divide the boundaries both by 2.
     const bitCapInt fullMinBase = (((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U)) >> 1U;
-    const bitCapInt fullMaxBase = (((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U)) >> 1U;
+    // This seems to work better if it's twice as high, (without << 1U).
+    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
 #else
     const bitCapInt fullMinBase = 2U;
     const bitCapInt fullMaxBase = toFactor / 2U;
