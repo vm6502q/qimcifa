@@ -167,7 +167,7 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 
 typedef std::uniform_int_distribution<WORD> rand_dist;
 
-std::vector<rand_dist> rangeRange(bitCapInt range) {
+std::vector<rand_dist> randRange(bitCapInt range) {
     std::vector<rand_dist> distToReturn;
     while (range) {
         distToReturn.push_back(rand_dist(0U, (WORD)range));
@@ -224,7 +224,7 @@ int main()
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
     // We're only picking odd numbers, so divide the boundaries both by 2.
     const bitCapInt fullMinBase = (((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U)) >> 1U;
-    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U) >> 1U;
+    const bitCapInt fullMaxBase = (((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U)) >> 1U;
 #else
     const bitCapInt fullMinBase = 2U;
     const bitCapInt fullMaxBase = toFactor / 2U;
@@ -257,15 +257,15 @@ int main()
         const bitCapInt threadRange = ((cpuCount - 1) + nodeMax - nodeMin) / cpuCount;
         const bitCapInt rMin = nodeMin + threadRange * cpu;
         const bitCapInt rMax = rMin + threadRange;
-        std::vector<rand_dist> rDist(rangeRange(rMax - rMin));
+        std::vector<rand_dist> baseDist(randRange(rMax - rMin));
 
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
                 // Choose a base at random, >1 and <toFactor.
-                bitCapInt base = rDist[0U](rand_gen);
-                for (size_t i = 1U; i < rDist.size(); ++i) {
+                bitCapInt base = baseDist[0U](rand_gen);
+                for (size_t i = 1U; i < baseDist.size(); ++i) {
                     base <<= WORD_SIZE;
-                    base |= rDist[i](rand_gen);
+                    base |= baseDist[i](rand_gen);
                 }
 #if IS_RSA_SEMIPRIME
                 base = ((base + rMin) << 1U) | 1U;
