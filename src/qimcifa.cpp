@@ -185,8 +185,8 @@ using namespace Qimcifa;
 int main()
 {
     bitCapInt toFactor;
-    bitCapInt nodeCount = 1U;
-    bitCapInt nodeId = 0U;
+    size_t nodeCount = 1U;
+    size_t nodeId = 0U;
 
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
@@ -205,7 +205,7 @@ int main()
     } while (!nodeCount);
     if (nodeCount > 1U) {
         do {
-            std::cout << "Which node is this? (0-" << (int)(nodeCount - 1U) << "):";
+            std::cout << "Which node is this? (0-" << (nodeCount - 1U) << "):";
             std::cin >> nodeId;
             if (nodeId >= nodeCount) {
                 std::cout << "Invalid node ID choice!" << std::endl;
