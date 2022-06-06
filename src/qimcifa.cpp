@@ -229,7 +229,7 @@ int main()
         { 64U, { 9223372036854775837U, 1844674407370955143U } } };
 
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1);
+    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
     const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
     const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
@@ -257,7 +257,11 @@ int main()
         const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
         const bitCapInt rMin = nodeMin + threadRange * cpu;
         const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
+#if IS_RSA_SEMIPRIME
+        std::vector<rand_dist> rDist(rangeRange((rMax - rMin) >> 1U));
+#else
         std::vector<rand_dist> rDist(rangeRange(rMax - rMin));
+#endif
 
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -267,7 +271,11 @@ int main()
                     base <<= WORD_SIZE;
                     base |= rDist[i](rand_gen);
                 }
+#if IS_RSA_SEMIPRIME
+                base = (base << 1U) + rMin;
+#else
                 base += rMin;
+#endif
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
