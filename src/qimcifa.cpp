@@ -231,7 +231,7 @@ int main()
 #endif
     const bitCapInt nodeRange = ((nodeCount - 1U) + fullMaxBase - fullMinBase) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
-    const bitCapInt nodeMax = fullMinBase + nodeRange * (nodeId + 1U);
+    const bitCapInt nodeMax = nodeMin + nodeRange;
 
     auto iterClock = std::chrono::high_resolution_clock::now();
 
@@ -256,7 +256,7 @@ int main()
 
         const bitCapInt threadRange = ((cpuCount - 1) + nodeMax - nodeMin) / cpuCount;
         const bitCapInt rMin = nodeMin + threadRange * cpu;
-        const bitCapInt rMax = nodeMin + threadRange * (cpu + 1U);
+        const bitCapInt rMax = rMin + threadRange;
         std::vector<rand_dist> rDist(rangeRange(rMax - rMin));
 
         for (;;) {
@@ -282,13 +282,6 @@ int main()
 
 #define TEST_GCD(testFactor, toFactor, message)                                                                        \
     if ((testFactor) != 1U) {                                                                                          \
-        isFinished = true;                                                                                             \
-        PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, message);                                           \
-        return;                                                                                                        \
-    }
-
-#define TEST_DIVIDE(testFactor, toFactor, message)                                                                     \
-    if (((toFactor) % (testFactor)) == 0U) {                                                                           \
         isFinished = true;                                                                                             \
         PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, message);                                           \
         return;                                                                                                        \
