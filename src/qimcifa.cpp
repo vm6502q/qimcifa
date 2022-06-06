@@ -223,12 +223,12 @@ int main()
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
     const bitCapInt fullMinBase = (((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U)) >> 1U;
-    const bitCapInt fullMaxBase = (((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U)) >> 1U;
+    const bitCapInt fullMaxBase = (((toFactor / minPrime) > maxPrime) ? maxPrime : (toFactor / minPrime)) & ~1U;
 #else
     const bitCapInt fullMinBase = 2U;
     const bitCapInt fullMaxBase = toFactor / 2U;
 #endif
-    const bitCapInt nodeRange = (fullMaxBase + 1U - fullMinBase) / nodeCount;
+    const bitCapInt nodeRange = (fullMaxBase - fullMinBase) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxBase : (fullMinBase + nodeRange * (nodeId + 1U));
 
@@ -253,7 +253,7 @@ int main()
 
         const double clockFactor = 1.0 / 1000.0; // Report in ms
 
-        const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / cpuCount;
+        const bitCapInt threadRange = (nodeMax - nodeMin) / cpuCount;
         const bitCapInt rMin = nodeMin + threadRange * cpu;
         const bitCapInt rMax = ((cpu + 1U) == cpuCount) ? nodeMax : (nodeMin + threadRange * (cpu + 1U));
         std::vector<rand_dist> rDist(rangeRange(rMax - rMin));
