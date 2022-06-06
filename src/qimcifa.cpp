@@ -222,15 +222,20 @@ int main()
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
+    // We're only picking odd numbers, so divide the boundaries both by 2.
     const bitCapInt fullMinBase = (((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U)) >> 1U;
-    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : (toFactor / minPrime);
+    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U) >> 1U;
+    // For some reason, this works really well if the bounds extend to 2 times the range between minimum and maximum prime.
+    const bitCapInt nodeRange = ((fullMaxBase - fullMinBase) << 1U) / nodeCount;
+    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
+    const bitCapInt nodeMax = fullMinBase + nodeRange * (nodeId + 1U);
 #else
     const bitCapInt fullMinBase = 2U;
     const bitCapInt fullMaxBase = toFactor / 2U;
-#endif
     const bitCapInt nodeRange = (fullMaxBase - fullMinBase) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxBase : (fullMinBase + nodeRange * (nodeId + 1U));
+#endif
 
     auto iterClock = std::chrono::high_resolution_clock::now();
 
