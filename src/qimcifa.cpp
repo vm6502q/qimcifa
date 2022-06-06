@@ -267,7 +267,7 @@ int main()
                     base |= rDist[i](rand_gen);
                 }
 #if IS_RSA_SEMIPRIME
-                base = ((base << 1U) + rMin) | 1U;
+                base = ((base + rMin) << 1U) | 1U;
 #else
                 base += rMin;
 #endif
