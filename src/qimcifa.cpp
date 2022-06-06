@@ -280,15 +280,20 @@ int main()
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
     std::cout << "(Waiting to join other threads...)" << std::endl
 
-#define TEST_GCD(testFactor, toFactor, message)                                                                        \
-    if ((testFactor) != 1U) {                                                                                          \
-        isFinished = true;                                                                                             \
-        PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, message);                                           \
-        return;                                                                                                        \
-    }
-
+#if IS_RSA_SEMIPRIME
+                if ((toFactor % base) == 0U) {
+                    isFinished = true;
+                    PRINT_SUCCESS(base, toFactor / base, toFactor, "Base has common factor: Found ");
+                    return;
+                }
+#else
                 bitCapInt testFactor = gcd(toFactor, base);
-                TEST_GCD(testFactor, toFactor, "Base has common factor: Found ");
+                if (testFactor != 1U) {
+                    isFinished = true;
+                    PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Base has common factor: Found ");
+                    return;
+                }
+#endif
             }
 
             // Check if finished, between batches.
