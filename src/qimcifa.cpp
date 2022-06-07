@@ -230,7 +230,7 @@ int main()
         { 64U, { 9223372036854775837U, 1844674407370955143U } } };
 
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1U);
+    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) | 1U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
     const bitCapInt fullMinBase = (toFactor / maxPrime);
     // This seems to work much better if it's twice as high:
@@ -283,8 +283,7 @@ int main()
                 }
 
                 // We're only picking numbers that are not multiples of 2 and 3.
-                base = 3U * base + threadMin;
-                base -= 1U + (base & 1U);
+                base = 3U * base + threadMin - (1U + (base & 1U));
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
