@@ -375,6 +375,7 @@ inline void bi_not(const BigInteger* left, BigInteger* result)
 }
 
 
+#if 0
 // "School book multiplication" (on half words)
 // Complexity - O(x^2)
 void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
@@ -408,8 +409,8 @@ void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
         }
     }
 }
+#endif
 
-#if 0
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
 void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
@@ -442,7 +443,6 @@ void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
         }
     }
 }
-#endif
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)

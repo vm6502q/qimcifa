@@ -410,8 +410,7 @@ int main()
         if (bci_neq_0(f1)) {
             bci_div(toFactor, f1, &f2);
             std::cout << "Base has common factor: Found ";
-            // TODO: Serious problem with the output stream memory usage and execution time:
-            // std::cout << f1 << " * " << f2 << " = " << toFactor << std::endl;
+            std::cout << f1 << " * " << f2 << " = " << toFactor << std::endl;
             auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
             std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
             std::cout << "(Waiting to join other threads...)" << std::endl;
