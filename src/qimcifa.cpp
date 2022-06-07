@@ -223,6 +223,7 @@ int main()
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
     const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : (toFactor / maxPrime);
+    // This seems to work much better if it's twice as high:
     const bitCapInt fullMaxBase = (((toFactor / minPrime) > maxPrime) ? maxPrime : (toFactor / minPrime)) << 1U;
 #else
     // We include potential factors as low as 2.
@@ -258,6 +259,7 @@ int main()
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
         const bitCapInt threadMin = nodeMin + threadRange * cpu;
         const bitCapInt threadMax = threadMin + threadRange;
+        // We're picking only odd numbers.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) >> 1U));
 
         for (;;) {
@@ -269,6 +271,7 @@ int main()
                     base |= baseDist[i](rand_gen);
                 }
 #if IS_RSA_SEMIPRIME
+                // We're picking only odd numbers.
                 base = ((base << 1U) + threadMin) | 1U;
 #else
                 base += threadMin;
