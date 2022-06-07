@@ -268,10 +268,10 @@ int main()
 
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
         // Make sure this is even multiple of 3, minus 1:
-        const bitCapInt threadMin = (((nodeMin + threadRange * cpu) + 5U) / 6U) * 6U - 1U;
+        const bitCapInt threadMin = ((nodeMin + threadRange * cpu + 5U) / 6U) * 6U - 1U;
         const bitCapInt threadMax = threadMin + threadRange + 1U;
         // We're picking only numbers that are not multiples of 2 or 3.
-        std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) / 3U));
+        std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 2U) / 3U));
 
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
