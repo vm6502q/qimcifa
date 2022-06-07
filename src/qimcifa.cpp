@@ -269,7 +269,7 @@ int main()
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
         // Make sure this is an even multiple of 3:
         const bitCapInt threadMin = ((nodeMin + threadRange * cpu) / 6U) * 6U;
-        const bitCapInt threadMax = (threadMin + threadRange) + 2U;
+        const bitCapInt threadMax = (threadMin + threadRange) + 5U;
         // We're picking only numbers that are not multiples of 2 or 3.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) / 3U));
 
