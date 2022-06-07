@@ -257,11 +257,12 @@ int main()
         const double clockFactor = 1.0 / 1000.0; // Report in ms
 
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
-        const bitCapInt threadMin = nodeMin + threadRange * cpu;
-        const bitCapInt threadMax = threadMin + threadRange;
+        // Make sure this is a multiple of 3:
+        const bitCapInt threadMin = (((nodeMin + threadRange * cpu) | 1) / 3) * 3;
+        const bitCapInt threadMax = (threadMin + threadRange) | 1;
 #if IS_RSA_SEMIPRIME
         // We're picking only odd numbers.
-        std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) >> 1U));
+        std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) / 3));
 #else
         std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
 #endif
@@ -276,7 +277,12 @@ int main()
                 }
 #if IS_RSA_SEMIPRIME
                 // We're picking only odd numbers.
-                base = ((base << 1U) + threadMin) | 1U;
+                base = 3 * base + threadMin;
+                if (base & 1) {
+                     base -= 2;
+                } else {
+                     --base;
+                }
 #else
                 base += threadMin;
 #endif
