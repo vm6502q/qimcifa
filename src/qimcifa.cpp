@@ -259,8 +259,12 @@ int main()
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
         const bitCapInt threadMin = nodeMin + threadRange * cpu;
         const bitCapInt threadMax = threadMin + threadRange;
+#if IS_RSA_SEMIPRIME
         // We're picking only odd numbers.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) >> 1U));
+#else
+        std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
+#endif
 
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
