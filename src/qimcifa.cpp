@@ -76,15 +76,16 @@ namespace Qimcifa {
 #if QBCAPPOW == 7U
 std::ostream& operator<<(std::ostream& os, bitCapInt b)
 {
+    if (b == 0) {
+        os << "0";
+        return os;
+    }
+
     // Calculate the base-10 digits, from lowest to highest.
     std::vector<std::string> digits;
     while (b) {
         digits.push_back(std::to_string((unsigned char)(b % 10U)));
         b /= 10U;
-    }
-
-    if (digits.size() == 0U) {
-        return os;
     }
 
     // Reversing order, print the digits from highest to lowest.
