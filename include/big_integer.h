@@ -188,11 +188,11 @@ inline void bi_lshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, B
         bi_copy(left, result);
         return;
     }
-    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
-        result->bits[i] = 0;
-    }
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result->bits[i] = left->bits[i - rightMult];
+    }
+    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
+        result->bits[i] = 0;
     }
 }
 
@@ -215,11 +215,11 @@ inline void bi_rshift_word(const BigInteger* left, BIG_INTEGER_WORD rightMult, B
         bi_copy(left, result);
         return;
     }
-    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
-        result->bits[BIG_INTEGER_WORD_SIZE - (i + 1)] = 0;
-    }
     for (int i = rightMult; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result->bits[i - rightMult] = left->bits[i];
+    }
+    for (BIG_INTEGER_WORD i = 0; i < rightMult; ++i) {
+        result->bits[BIG_INTEGER_WORD_SIZE - (i + 1)] = 0;
     }
 }
 
@@ -303,8 +303,6 @@ inline void bi_rshift_ip(BigInteger* left, BIG_INTEGER_WORD right)
         return;
     }
 
-    BigInteger lWord;
-    bi_copy(left, &lWord);
     const int rModComp = BIG_INTEGER_WORD_BITS - rMod;
     BIG_INTEGER_WORD carry = 0;
     for (int i = BIG_INTEGER_MAX_WORD_INDEX; i >= 0; --i) {
@@ -321,7 +319,7 @@ inline int bi_log2(const BigInteger* n)
     bi_rshift(n, 1U, &p);
     while (bi_compare_0(&p) != 0) {
         bi_rshift_ip(&p, 1U);
-        pw++;
+        ++pw;
     }
     return pw;
 }
@@ -359,6 +357,42 @@ inline void bi_not(const BigInteger* left, BigInteger* result)
     }
 }
 
+
+// "School book multiplication" (on half words)
+// Complexity - O(x^2)
+void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
+{
+    int maxI = BIG_INTEGER_WORD_SIZE << 1;
+    const BIG_INTEGER_WORD m = (1ULL << (BIG_INTEGER_WORD_BITS >> 1U)) - 1ULL;
+
+    bi_set_0(result);
+    for (int i = 0; i < maxI; ++i) {
+        BIG_INTEGER_WORD carry = 0;
+        int i2 = i >> 1;
+        for (int j = 0; j < (maxI - i); ++j) {
+            int j2 = j >> 1;
+            if (((i & 1) == 0) && ((j & 1) == 0)) {
+                BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] & m) + (result->bits[i2 + j2] & m) + carry;
+                carry = temp >> 32;
+                result->bits[i2 + j2] |= temp & m;
+            } else if (((i & 1) == 0) && ((j & 1) == 1)) {
+                BIG_INTEGER_WORD temp = (right->bits[j2] >> 32) * (left->bits[i2] & m) + (result->bits[i2 + j2] >> 32) + carry;
+                carry = temp >> 32;
+                result->bits[i2 + j2] |= (temp & m) << 32;
+            } else if (((i & 1) == 1) && ((j & 1) == 0)) {
+                BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] >> 32) + (result->bits[i2 + j2] >> 32) + carry;
+                carry = temp >> 32;
+                result->bits[i2 + j2] |= (temp & m) << 32;
+            } else {
+                BIG_INTEGER_WORD temp = (right->bits[j2] >> 32) * (left->bits[i2] >> 32) + (result->bits[i2 + j2 + 1] & m) + carry;
+                carry = temp >> 32;
+                result->bits[i2 + j2 + 1] |= temp & m;
+            }
+        }
+    }
+}
+
+#if 0
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
 void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
@@ -391,6 +425,7 @@ void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
         }
     }
 }
+#endif
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
