@@ -222,15 +222,15 @@ int main()
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 1U)) + 1U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << primeBits) - 1U);
-    // We're only picking odd numbers, so divide the boundaries both by 2.
-    const bitCapInt fullMinBase = (((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U)) >> 1U;
-    // This seems to work better if it's twice as high, (without << 1U).
-    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
+    const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : (toFactor / maxPrime);
+    const bitCapInt fullMaxBase = (((toFactor / minPrime) > maxPrime) ? maxPrime : (toFactor / minPrime)) << 1U;
 #else
+    // We include potential factors as low as 2.
     const bitCapInt fullMinBase = 2U;
-    const bitCapInt fullMaxBase = toFactor / 2U;
+    // We include potential factors as high as toFactor / 2.
+    const bitCapInt fullMaxBase = toFactor >> 1U;
 #endif
-    const bitCapInt nodeRange = ((nodeCount - 1U) + fullMaxBase - fullMinBase) / nodeCount;
+    const bitCapInt nodeRange = ((nodeCount - 1U) + (fullMaxBase - fullMinBase)) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const bitCapInt nodeMax = nodeMin + nodeRange;
 
@@ -255,10 +255,10 @@ int main()
 
         const double clockFactor = 1.0 / 1000.0; // Report in ms
 
-        const bitCapInt threadRange = ((cpuCount - 1) + nodeMax - nodeMin) / cpuCount;
-        const bitCapInt rMin = nodeMin + threadRange * cpu;
-        const bitCapInt rMax = rMin + threadRange;
-        std::vector<rand_dist> baseDist(randRange(rMax - rMin));
+        const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
+        const bitCapInt threadMin = nodeMin + threadRange * cpu;
+        const bitCapInt threadMax = threadMin + threadRange;
+        std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) >> 1U));
 
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -269,9 +269,9 @@ int main()
                     base |= baseDist[i](rand_gen);
                 }
 #if IS_RSA_SEMIPRIME
-                base = ((base + rMin) << 1U) | 1U;
+                base = ((base << 1U) + threadMin) | 1U;
 #else
-                base += rMin;
+                base += threadMin;
 #endif
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
