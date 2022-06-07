@@ -229,6 +229,8 @@ int main()
     }
 #endif
 
+    auto iterClock = std::chrono::high_resolution_clock::now();
+
 #if IS_RSA_SEMIPRIME
     std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = {
         { 16U, { 16411U, 65521U } },
@@ -239,8 +241,8 @@ int main()
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 2U)) | 1U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << (primeBits + 1U)) - 1U);
-    const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1);
-    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1);
+    const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
+    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
 #else
     // We include potential factors as low as 5.
     const bitCapInt fullMinBase = 5U;
@@ -250,8 +252,6 @@ int main()
     const bitCapInt nodeRange = ((nodeCount - 1U) + (fullMaxBase - fullMinBase)) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const bitCapInt nodeMax = nodeMin + nodeRange;
-
-    auto iterClock = std::chrono::high_resolution_clock::now();
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
