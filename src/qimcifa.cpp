@@ -286,10 +286,10 @@ int main()
         const double clockFactor = 1.0 / 1000.0; // Report in ms
 
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
-#if IS_HI_TRIAL_DIVISION
-        // Make sure this is even multiple of 15, minus 1:
-        const bitCapInt threadMin = ((nodeMin + threadRange * cpu + 29U) / 30) * 30 - 1U;
+        // Make sure this is even multiple of 3, minus 1:
+        const bitCapInt threadMin = ((nodeMin + threadRange * cpu + 5U) / 6U) * 6U - 1U;
         const bitCapInt threadMax = threadMin + threadRange + 1U;
+#if IS_HI_TRIAL_DIVISION
         // We're picking only numbers that are not multiples of 2 or 3.
         // We will also uniformly randomly guess offset from any multiple of 5.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 14U) / 15U));
@@ -298,9 +298,6 @@ int main()
         int randBitCount = 0;
         rand_dist fiveDist;
 #else
-        // Make sure this is even multiple of 3, minus 1:
-        const bitCapInt threadMin = ((nodeMin + threadRange * cpu + 5U) / 6U) * 6U - 1U;
-        const bitCapInt threadMax = threadMin + threadRange + 1U;
         // We're picking only numbers that are not multiples of 2 or 3.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 2U) / 3U));
 #endif
