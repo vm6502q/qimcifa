@@ -35,6 +35,8 @@
 #define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
+// For now, this turns on/off elimination of factors of 5, for testing.
+#define IS_HI_TRIAL_DIVISION 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -208,6 +210,12 @@ int main()
         std::cout << "Factors: 3 * " << (toFactor / 3) << " = " << toFactor << std::endl;
         return 0;
     }
+#if IS_HI_TRIAL_DIVISION
+    if ((toFactor % 5) == 0) {
+        std::cout << "Factors: 5 * " << (toFactor / 5) << " = " << toFactor << std::endl;
+        return 0;
+    }
+#endif
 
 #if IS_DISTRIBUTED
     std::cout << "You can split this work across nodes, without networking!" << std::endl;
@@ -243,6 +251,11 @@ int main()
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << (primeBits + 1U)) - 1U);
     const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
     const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
+#elif IS_HI_TRIAL_DIVISION
+    // We include potential factors as low as 7.
+    const bitCapInt fullMinBase = 7U;
+    // We include potential factors as high as toFactor / 7U.
+    const bitCapInt fullMaxBase = toFactor  / 7U;
 #else
     // We include potential factors as low as 5.
     const bitCapInt fullMinBase = 5U;
@@ -273,11 +286,24 @@ int main()
         const double clockFactor = 1.0 / 1000.0; // Report in ms
 
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
+#if IS_HI_TRIAL_DIVISION
+        // Make sure this is even multiple of 15, minus 1:
+        const bitCapInt threadMin = ((nodeMin + threadRange * cpu + 29U) / 30) * 30 - 1U;
+        const bitCapInt threadMax = threadMin + threadRange + 1U;
+        // We're picking only numbers that are not multiples of 2 or 3.
+        // We will also uniformly randomly guess offset from any multiple of 5.
+        std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 14U) / 15U));
+
+        WORD randBitCache = 0;
+        int randBitCount = 0;
+        rand_dist fiveDist;
+#else
         // Make sure this is even multiple of 3, minus 1:
         const bitCapInt threadMin = ((nodeMin + threadRange * cpu + 5U) / 6U) * 6U - 1U;
         const bitCapInt threadMax = threadMin + threadRange + 1U;
         // We're picking only numbers that are not multiples of 2 or 3.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 2U) / 3U));
+#endif
 
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -288,6 +314,17 @@ int main()
                     base <<= WORD_SIZE;
                     base |= baseDist[i](rand_gen);
                 }
+#endif
+#if IS_HI_TRIAL_DIVISION
+                if (!randBitCount) {
+                    randBitCount = WORD_SIZE;
+                    randBitCache = fiveDist(rand_gen);
+                }
+
+                // Make this a multiple of 5 (or 0), then randomly make it NOT one,
+                // by adding 1 and uniformly randomly guessing and adding 2 bits.
+                base += (base << 2U) + 1U + (randBitCache & 3U);
+                randBitCache -= 2U;
 #endif
                 // We're only picking numbers that are not multiples of 2 or 3.
                 base += threadMin + (base << 1U) - (base & 1U);
