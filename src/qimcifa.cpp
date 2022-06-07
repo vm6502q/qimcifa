@@ -258,11 +258,11 @@ int main()
 
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
         // Make sure this is a multiple of 3:
-        const bitCapInt threadMin = (((nodeMin + threadRange * cpu) | 1) / 3) * 3;
-        const bitCapInt threadMax = (threadMin + threadRange) | 1;
+        const bitCapInt threadMin = ((nodeMin + threadRange * cpu) / 3U) * 3U;
+        const bitCapInt threadMax = (threadMin + threadRange) + 2U;
 #if IS_RSA_SEMIPRIME
         // We're picking only odd numbers.
-        std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) / 3));
+        std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) / 3U));
 #else
         std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
 #endif
@@ -276,13 +276,9 @@ int main()
                     base |= baseDist[i](rand_gen);
                 }
 #if IS_RSA_SEMIPRIME
-                // We're picking only odd numbers.
-                base = 3 * base + threadMin;
-                if (base & 1) {
-                     base -= 2;
-                } else {
-                     --base;
-                }
+                // We're only picking numbers that are not multiples of 2 and 3.
+                base = 3U * base + threadMin;
+                base -= 1U + (base & 1U);
 #else
                 base += threadMin;
 #endif
