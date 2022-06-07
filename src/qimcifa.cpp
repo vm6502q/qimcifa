@@ -283,13 +283,14 @@ int main()
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
                 // Choose a base at random, >1 and <toFactor.
                 bitCapInt base = baseDist[0U](rand_gen);
+#if (QBCAPPOW > 6U) && (!IS_RSA_SEMIPRIME || (QBCAPPOW > 7U))
                 for (size_t i = 1U; i < baseDist.size(); ++i) {
                     base <<= WORD_SIZE;
                     base |= baseDist[i](rand_gen);
                 }
-
-                // We're only picking numbers that are not multiples of 2 and 3.
-                base = threadMin + 3U * base - (base & 1U);
+#endif
+                // We're only picking numbers that are not multiples of 2 or 3.
+                base += threadMin + (base << 1U) - (base & 1U);
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
