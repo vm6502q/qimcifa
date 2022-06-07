@@ -267,9 +267,9 @@ int main()
         const double clockFactor = 1.0 / 1000.0; // Report in ms
 
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
-        // Make sure this is an even multiple of 3:
-        const bitCapInt threadMin = ((nodeMin + threadRange * cpu) / 6U) * 6U;
-        const bitCapInt threadMax = (threadMin + threadRange) + 5U;
+        // Make sure this is 1 plus an even multiple of 3:
+        const bitCapInt threadMin = ((nodeMin + threadRange * cpu) / 6U) * 6U + 1U;
+        const bitCapInt threadMax = threadMin + threadRange + 4U;
         // We're picking only numbers that are not multiples of 2 or 3.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) / 3U));
 
@@ -283,7 +283,7 @@ int main()
                 }
 
                 // We're only picking numbers that are not multiples of 2 and 3.
-                base = 3U * base + threadMin - (1U + (base & 1U));
+                base = threadMin + 3U * base - (base & 1U);
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
