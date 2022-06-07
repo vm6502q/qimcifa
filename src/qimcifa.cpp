@@ -324,7 +324,8 @@ int main()
                 // Make this a multiple of 5 (or 0), then randomly make it NOT one,
                 // by adding 1 and uniformly randomly guessing and adding 2 bits.
                 base += (base << 2U) + 1U + (randBitCache & 3U);
-                randBitCache -= 2U;
+                randBitCache >>= 1U;
+                randBitCount -= 2U;
 #endif
                 // We're only picking numbers that are not multiples of 2 or 3.
                 base += threadMin + (base << 1U) - (base & 1U);
