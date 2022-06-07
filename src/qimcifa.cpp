@@ -235,7 +235,7 @@ int main()
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 2U)) | 1U);
     const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << (primeBits + 1U)) - 1U);
     const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1);
-    const bitCapInt fullMaxBase = ((toFactor / minPrime) < maxPrime) ? maxPrime : ((toFactor / minPrime) | 1);
+    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1);
 #else
     // We include potential factors as low as 5.
     const bitCapInt fullMinBase = 5U;
