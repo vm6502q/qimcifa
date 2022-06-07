@@ -86,6 +86,23 @@ inline int bi_compare_0(const BigInteger* left)
     return 0;
 }
 
+inline int bi_compare_1(const BigInteger* left)
+{
+    for (int i = BIG_INTEGER_MAX_WORD_INDEX; i > 0; --i) {
+        if (left->bits[i]) {
+            return 1;
+        }
+    }
+    if (left->bits[0] > 1) {
+        return 1;
+    }
+    if (left->bits[0] < 1) {
+        return -1;
+    }
+
+    return 0;
+}
+
 inline void bi_add(const BigInteger* left, const BigInteger* right, BigInteger* result)
 {
     result->bits[0] = 0;

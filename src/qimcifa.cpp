@@ -126,9 +126,9 @@
 #define bci_compare(a, b) (bi_compare(&(a), &(b)))
 #define bci_eq_0(a) (bi_compare_0(&(a)) == 0)
 #define bci_neq_0(a) (bi_compare_0(&(a)) != 0)
-#define bci_eq_1(a) (bi_compare(&(a), &ONE_BCI) == 0)
-#define bci_neq_1(a) (bi_compare(&(a), &ONE_BCI) != 0)
-#define bci_gt_1(a) (bi_compare(&(a), &ONE_BCI) > 0)
+#define bci_eq_1(a) (bi_compare_1(&(a)) == 0)
+#define bci_neq_1(a) (bi_compare_1(&(a)) != 0)
+#define bci_gt_1(a) (bi_compare_1(&(a)) > 0)
 #define bci_low64(a) ((a).bits[0])
 #endif
 
@@ -146,9 +146,13 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
     // Calculate the base-10 digits, from lowest to highest.
     std::vector<std::string> digits;
     while (bci_neq_0(b)) {
-        digits.push_back(std::to_string((unsigned char)(b.bits[0] % 10U)));
+        digits.push_back(std::to_string((unsigned char)(bci_low64(b) % 10U)));
         bci_copy(b, &t);
         bci_div(t, BIG_INT_10, &b);
+    }
+
+    if (digits.size() == 0) {
+        return os;
     }
 
     // Reversing order, print the digits from highest to lowest.
@@ -320,6 +324,7 @@ int main()
     bitCapInt nodeMax;
     bci_add(nodeMin, nodeRange, &nodeMax);
 
+    const double clockFactor = 1.0 / 1000.0; // Report in ms
     auto iterClock = std::chrono::high_resolution_clock::now();
 
     std::random_device rand_dev;
@@ -337,9 +342,7 @@ int main()
         // Batch size is BASE_TRIALS * PERIOD_TRIALS.
 
         // Number of times to reuse a random base:
-        const size_t BASE_TRIALS = 1U << 20U;
-
-        const double clockFactor = 1.0 / 1000.0; // Report in ms
+        const size_t BASE_TRIALS = 1U << 8U;
 
         const bitCapInt cpuCountBci = bci_create(cpuCount);
         const bitCapInt cpuBci = bci_create(cpu);
@@ -382,40 +385,37 @@ int main()
                     bci_decrement(&base, 1U);
                 }
 
-#define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
-    std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
-    auto tClock =                                                                                                      \
-        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);  \
-    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
-    std::cout << "(Waiting to join other threads...)" << std::endl
-
-#define TEST_GCD(testFactor, toFactor, message)                                                                        \
-    if (!bci_eq_1(testFactor)) {                                                                                        \
-        isFinished = true;                                                                                             \
-        bitCapInt f2;                                                                                                  \
-        bci_div(toFactor, testFactor, &f2);                                                                            \
-        PRINT_SUCCESS(testFactor, f2, toFactor, message);                                                              \
-        return;                                                                                                        \
-    }
-
                 gcd(toFactor, base, &t);
-                TEST_GCD(t, toFactor, "Base has common factor: Found ");
+                if (bci_neq_1(t)) {
+                    isFinished = true;
+                    return t;
+                }
             }
 
             // Check if finished, between batches.
             if (isFinished) {
-                return;
+                return ZERO_BCI;
             }
         }
     };
 
-    std::vector<std::future<void>> futures(cpuCount);
+    std::vector<std::future<bitCapInt>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         futures[cpu] = std::async(std::launch::async, workerFn, cpu, cpuCount);
     }
 
+    bitCapInt f1, f2;
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        futures[cpu].get();
+        f1 = futures[cpu].get();
+        if (bci_neq_0(f1)) {
+            bci_div(toFactor, f1, &f2);
+            std::cout << "Base has common factor: Found ";
+            // TODO: Serious problem with the output stream memory usage and execution time:
+            // std::cout << f1 << " * " << f2 << " = " << toFactor << std::endl;
+            auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
+            std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
+            std::cout << "(Waiting to join other threads...)" << std::endl;
+        }
     }
 
     return 0;
