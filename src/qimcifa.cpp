@@ -194,6 +194,16 @@ int main()
     const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
+    // We've eliminated all factors of 2 and 3 from the RNG.
+    if ((toFactor & 1) == 0) {
+        std::cout << "Factors: 2 * " << (toFactor >> 1) << " = " << toFactor << std::endl;
+        return 0;
+    }
+    if ((toFactor % 3) == 0) {
+        std::cout << "Factors: 3 * " << (toFactor / 3) << " = " << toFactor << std::endl;
+        return 0;
+    }
+
 #if IS_DISTRIBUTED
     std::cout << "You can split this work across nodes, without networking!" << std::endl;
     do {
@@ -260,12 +270,8 @@ int main()
         // Make sure this is a multiple of 3:
         const bitCapInt threadMin = ((nodeMin + threadRange * cpu) / 3U) * 3U;
         const bitCapInt threadMax = (threadMin + threadRange) + 2U;
-#if IS_RSA_SEMIPRIME
-        // We're picking only odd numbers.
+        // We're picking only numbers that are not multiples of 2 or 3.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin) / 3U));
-#else
-        std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
-#endif
 
         for (;;) {
             for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -275,13 +281,10 @@ int main()
                     base <<= WORD_SIZE;
                     base |= baseDist[i](rand_gen);
                 }
-#if IS_RSA_SEMIPRIME
+
                 // We're only picking numbers that are not multiples of 2 and 3.
                 base = 3U * base + threadMin;
                 base -= 1U + (base & 1U);
-#else
-                base += threadMin;
-#endif
 
 #define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
     std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
