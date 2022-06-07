@@ -83,6 +83,10 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
         b /= 10U;
     }
 
+    if (digits.size() == 0U) {
+        return os;
+    }
+
     // Reversing order, print the digits from highest to lowest.
     for (size_t i = digits.size() - 1U; i > 0; --i) {
         os << digits[i];
