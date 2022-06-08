@@ -294,7 +294,7 @@ int main()
 
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
         // Make sure this is even multiple of 3, minus 1:
-        const bitCapInt threadMin = ((nodeMin + threadRange * cpu + 5U) / 6U) * 6U - 1U;
+        const bitCapInt threadMin = ((nodeMin + threadRange * cpu + 41U) / 42U) * 42U - 1U;
         const bitCapInt threadMax = threadMin + threadRange + 1U;
 
 #if IS_HI_TRIAL_DIVISION
