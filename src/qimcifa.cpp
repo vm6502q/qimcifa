@@ -269,8 +269,12 @@ int main()
     }
 
 #if IS_RSA_SEMIPRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 16411U, 65521U } },
-        { 28U, { 67108879U, 536870909U } }, { 32U, { 1073741827U, 8589934583U } } };
+    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = {
+        { 16U, { 16411U, 65521U } },
+        { 28U, { 67108879U, 536870909U } },
+        { 32U, { 1073741827U, 8589934583U } },
+        { 64U, { 4611686018427388039ULL, bitCapInt{"36893488147419103183"} } },
+    };
 
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
     const bitCapInt minPrime =
