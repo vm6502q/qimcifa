@@ -331,7 +331,7 @@ int main()
                     // Make this NOT multiple of 7, by adding it to itself divided by six, + 1.
                     base += base / 6U + 1U;
 
-                    // Make this a multiple of 5 (or 0), then randomly make it NOT one,
+                    // Multiply to make this a multiple of 5 (or 0), then randomly make it NOT one,
                     // by adding 1 and uniformly randomly guessing and adding 2 bits.
                     base += (base << 2U) + 1U + (randBitCache & 3U);
                     randBitCache >>= 2U;
