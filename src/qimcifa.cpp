@@ -272,10 +272,11 @@ int main()
     const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
     const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
 #else
-    // We include potential factors as low as 11.
-    const bitCapInt fullMinBase = 11U;
-    // We include potential factors as high as toFactor / 11.
-    const bitCapInt fullMaxBase = toFactor / 11U;
+    const bitCapInt nextPrime = (primeIndex < trialDivisionPrimes.size()) ? currentPrime : (trialDivisionPrimes.back() + 2U);
+    // We include potential factors as low as the next odd number after the highest trial division prime.
+    const bitCapInt fullMinBase = nextPrime;
+    // We include potential factors as high as toFactor / nextPrime.
+    const bitCapInt fullMaxBase = toFactor / nextPrime;
 #endif
     const bitCapInt nodeRange = ((((baseNumerator * (fullMaxBase - fullMinBase)) / baseDenominator) + (nodeCount - 1U)) / nodeCount);
     const bitCapInt nodeMin = (fullMinBase + nodeRange * nodeId) | 1U;
