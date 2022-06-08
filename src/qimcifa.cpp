@@ -305,7 +305,7 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
-#if TRIAL_DIVISION_LEVEL < 23
+#if TRIAL_DIVISION_LEVEL < 53
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, &rand_gen, &isFinished](int cpu, unsigned cpuCount) {
 #else
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished,
@@ -338,10 +338,38 @@ int main()
                 }
 #endif
 
-#if TRIAL_DIVISION_LEVEL >= 23
-                for (size_t i = primeIndex; i > 7U; --i) {
+#if TRIAL_DIVISION_LEVEL >= 53
+                for (size_t i = primeIndex; i > 14U; --i) {
                     base += base / (trialDivisionPrimes[i] - 1U) + 1U;
                 }
+#endif
+#if TRIAL_DIVISION_LEVEL >= 47
+                // Make this NOT a multiple of 47, by adding it to itself divided by 46, + 1.
+                base += base / 46U + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 43
+                // Make this NOT a multiple of 43, by adding it to itself divided by 42, + 1.
+                base += base / 42U + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 41
+                // Make this NOT a multiple of 41, by adding it to itself divided by 40, + 1.
+                base += base / 40U + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 37
+                // Make this NOT a multiple of 37, by adding it to itself divided by 36, + 1.
+                base += base / 36U + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 31
+                // Make this NOT a multiple of 31, by adding it to itself divided by 30, + 1.
+                base += base / 30U + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 29
+                // Make this NOT a multiple of 29, by adding it to itself divided by 28, + 1.
+                base += base / 28U + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 23
+                // Make this NOT a multiple of 23, by adding it to itself divided by 22, + 1.
+                base += base / 22U + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 19
                 // Make this NOT a multiple of 19, by adding it to itself divided by 18, + 1.
