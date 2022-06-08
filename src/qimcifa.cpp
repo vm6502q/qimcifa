@@ -340,7 +340,7 @@ int main()
 
 
 #if TRIAL_DIVISION_LEVEL >= 13
-                for (size_t i = primeIndex; i > 2U; --i) {
+                for (size_t i = primeIndex; i > 4U; --i) {
                     base += base / (trialDivisionPrimes[i] - 1U) + 1U;
                 }
 #endif
