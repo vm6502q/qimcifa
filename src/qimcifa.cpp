@@ -144,7 +144,7 @@ inline bitLenInt log2(const bitCapInt& n)
 
 // Source:
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
-bitCapInt uipow(bitCapInt base, bitCapInt exp)
+inline bitCapInt uipow(bitCapInt base, bitCapInt exp)
 {
     bitCapInt result = 1U;
     for (;;) {
@@ -161,7 +161,7 @@ bitCapInt uipow(bitCapInt base, bitCapInt exp)
     return result;
 }
 
-bitCapInt gcd(bitCapInt n1, bitCapInt n2)
+inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
     while (n2) {
         const bitCapInt t = n1;
@@ -183,6 +183,17 @@ std::vector<rand_dist> randRange(bitCapInt range) {
     std::reverse(distToReturn.begin(), distToReturn.end());
 
     return distToReturn;
+}
+
+void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
+{
+    const double clockFactor = 1.0 / 1000.0; // Report in ms
+
+    std::cout << message << f1 << " * " << f2 << " = " << toFactor << std::endl;
+    auto tClock =
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
+    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
+    std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
 } // namespace Qimcifa
@@ -281,9 +292,7 @@ int main()
         // Batch size is BASE_TRIALS * PERIOD_TRIALS.
 
         // Number of times to reuse a random base:
-        const size_t BASE_TRIALS = 1U << 16U;
-
-        const double clockFactor = 1.0 / 1000.0; // Report in ms
+        const int BASE_TRIALS = 1U << 16U;
 
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
         // Make sure this is even multiple of 3, minus 1:
@@ -295,15 +304,21 @@ int main()
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 14U) / 15U));
 
         WORD randBitCache = 0;
-        int randBitCount = 0;
         rand_dist fiveDist;
+        const int maxBatch = (BASE_TRIALS << 1U) / WORD_SIZE;
+        const int subBatchSize = WORD_SIZE >> 1U;
 #else
         // We're picking only numbers that are not multiples of 2 or 3.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 2U) / 3U));
 #endif
 
         for (;;) {
-            for (size_t batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+#if IS_HI_TRIAL_DIVISION
+            for (int batchItem = 0U; batchItem < maxBatch; ++batchItem) {
+            for (int subBatchItem = 0U; subBatchItem < subBatchSize; ++subBatchItem) {
+#else
+            for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+#endif
                 // Choose a base at random, >1 and <toFactor.
                 bitCapInt base = baseDist[0U](rand_gen);
 #if (QBCAPPOW > 6U) && (!IS_RSA_SEMIPRIME || (QBCAPPOW > 7U))
@@ -313,42 +328,35 @@ int main()
                 }
 #endif
 #if IS_HI_TRIAL_DIVISION
-                if (!randBitCount) {
-                    randBitCount = WORD_SIZE;
-                    randBitCache = fiveDist(rand_gen);
-                }
-
                 // Make this a multiple of 5 (or 0), then randomly make it NOT one,
                 // by adding 1 and uniformly randomly guessing and adding 2 bits.
                 base += (base << 2U) + 1U + (randBitCache & 3U);
                 randBitCache >>= 2U;
-                randBitCount -= 2U;
 #endif
                 // We're only picking numbers that are not multiples of 2 or 3.
                 base += threadMin + (base << 1U) - (base & 1U);
 
-#define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
-    std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
-    auto tClock =                                                                                                      \
-        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);  \
-    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
-    std::cout << "(Waiting to join other threads...)" << std::endl
-
 #if IS_RSA_SEMIPRIME
                 if ((toFactor % base) == 0U) {
                     isFinished = true;
-                    PRINT_SUCCESS(base, toFactor / base, toFactor, "Base has common factor: Found ");
+                    printSuccess(base, toFactor / base, toFactor, "Base has common factor: Found ", iterClock);
                     return;
                 }
 #else
                 bitCapInt testFactor = gcd(toFactor, base);
                 if (testFactor != 1U) {
                     isFinished = true;
-                    PRINT_SUCCESS(testFactor, toFactor / testFactor, toFactor, "Base has common factor: Found ");
+                    printSuccess(testFactor, toFactor / testFactor, toFactor, "Base has common factor: Found ", iterClock);
                     return;
                 }
 #endif
+#if IS_HI_TRIAL_DIVISION
             }
+            randBitCache = fiveDist(rand_gen);
+            }
+#else
+            }
+#endif
 
             // Check if finished, between batches.
             if (isFinished) {
