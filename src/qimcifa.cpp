@@ -71,6 +71,7 @@
 #define WORD_SIZE 64U
 #endif
 #define HALF_WORD uint32_t
+#define HALF_WORD_SIZE 32
 
 namespace Qimcifa {
 
@@ -305,14 +306,13 @@ int main()
         WORD fiveBitCache = 0;
         rand_dist_half threeDist;
         rand_dist fiveDist;
-        const int maxBatch = (BASE_TRIALS << 1U) / WORD_SIZE;
-        const int subBatchSize = WORD_SIZE >> 1U;
+        const int maxBatch = BASE_TRIALS / HALF_WORD_SIZE;
 
         for (;;) {
             for (int batchItem = 0U; batchItem < maxBatch; ++batchItem) {
                 threeBitCache = threeDist(rand_gen);
                 fiveBitCache = fiveDist(rand_gen);
-                for (int subBatchItem = 0U; subBatchItem < subBatchSize; ++subBatchItem) {
+                for (int subBatchItem = 0U; subBatchItem < HALF_WORD_SIZE; ++subBatchItem) {
                     // Choose a base at random, >1 and <toFactor.
                     bitCapInt base = baseDist[0U](rand_gen);
 #if (QBCAPPOW > 6U) && (!IS_RSA_SEMIPRIME || (QBCAPPOW > 7U))
