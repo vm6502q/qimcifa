@@ -263,7 +263,7 @@ int main()
         currentPrime = trialDivisionPrimes[primeIndex];
     }
     if (primeIndex >= trialDivisionPrimes.size()) {
-        --primeIndex;
+        primeIndex = trialDivisionPrimes.size() - 1U;
     }
 
 #if IS_RSA_SEMIPRIME
