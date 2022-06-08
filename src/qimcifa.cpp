@@ -174,7 +174,8 @@ inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 
 typedef std::uniform_int_distribution<WORD> rand_dist;
 
-std::vector<rand_dist> randRange(bitCapInt range) {
+std::vector<rand_dist> randRange(bitCapInt range)
+{
     std::vector<rand_dist> distToReturn;
     while (range) {
         distToReturn.push_back(rand_dist(0U, (WORD)range));
@@ -185,7 +186,8 @@ std::vector<rand_dist> randRange(bitCapInt range) {
     return distToReturn;
 }
 
-void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
+void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message,
+    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
     const double clockFactor = 1.0 / 1000.0; // Report in ms
 
@@ -221,12 +223,10 @@ int main()
         std::cout << "Factors: 3 * " << (toFactor / 3) << " = " << toFactor << std::endl;
         return 0;
     }
-#if IS_HI_TRIAL_DIVISION
     if ((toFactor % 5) == 0) {
         std::cout << "Factors: 5 * " << (toFactor / 5) << " = " << toFactor << std::endl;
         return 0;
     }
-#endif
 
 #if IS_DISTRIBUTED
     std::cout << "You can split this work across nodes, without networking!" << std::endl;
@@ -251,27 +251,21 @@ int main()
     auto iterClock = std::chrono::high_resolution_clock::now();
 
 #if IS_RSA_SEMIPRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = {
-        { 16U, { 16411U, 65521U } },
-        { 28U, { 67108879U, 536870909U } },
-        { 32U, { 1073741827U, 8589934583U } }
-    };
+    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 16411U, 65521U } },
+        { 28U, { 67108879U, 536870909U } }, { 32U, { 1073741827U, 8589934583U } } };
 
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 2U)) | 1U);
-    const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << (primeBits + 1U)) - 1U);
+    const bitCapInt minPrime =
+        primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 2U)) | 1U);
+    const bitCapInt maxPrime =
+        primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << (primeBits + 1U)) - 1U);
     const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
     const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
-#elif IS_HI_TRIAL_DIVISION
+#else
     // We include potential factors as low as 7.
     const bitCapInt fullMinBase = 7U;
     // We include potential factors as high as toFactor / 7U.
-    const bitCapInt fullMaxBase = toFactor  / 7U;
-#else
-    // We include potential factors as low as 5.
-    const bitCapInt fullMinBase = 5U;
-    // We include potential factors as high as toFactor / 5U.
-    const bitCapInt fullMaxBase = toFactor  / 5U;
+    const bitCapInt fullMaxBase = toFactor / 7U;
 #endif
     const bitCapInt nodeRange = ((nodeCount - 1U) + (fullMaxBase - fullMinBase)) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
@@ -298,9 +292,10 @@ int main()
         // Make sure this is even multiple of 3, minus 1:
         const bitCapInt threadMin = ((nodeMin + threadRange * cpu + 5U) / 6U) * 6U - 1U;
         const bitCapInt threadMax = threadMin + threadRange + 1U;
+
 #if IS_HI_TRIAL_DIVISION
-        // We're picking only numbers that are not multiples of 2 or 3.
-        // We will also uniformly randomly guess offset from any multiple of 5.
+        // First, we uniformly randomly guess offset from any multiple of 5.
+        // Then, we're uniformly composing only numbers that are not multiples of 2 or 3.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 14U) / 15U));
 
         WORD randBitCache = 0;
@@ -308,52 +303,53 @@ int main()
         const int maxBatch = (BASE_TRIALS << 1U) / WORD_SIZE;
         const int subBatchSize = WORD_SIZE >> 1U;
 #else
-        // We're picking only numbers that are not multiples of 2 or 3.
+        // We're choosing only even multiples of 2 or 3.
         std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 2U) / 3U));
+        const int maxBatch = BASE_TRIALS;
 #endif
 
         for (;;) {
-#if IS_HI_TRIAL_DIVISION
             for (int batchItem = 0U; batchItem < maxBatch; ++batchItem) {
-            randBitCache = fiveDist(rand_gen);
-            for (int subBatchItem = 0U; subBatchItem < subBatchSize; ++subBatchItem) {
-#else
-            for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-#endif
-                // Choose a base at random, >1 and <toFactor.
-                bitCapInt base = baseDist[0U](rand_gen);
-#if (QBCAPPOW > 6U) && (!IS_RSA_SEMIPRIME || (QBCAPPOW > 7U))
-                for (size_t i = 1U; i < baseDist.size(); ++i) {
-                    base <<= WORD_SIZE;
-                    base |= baseDist[i](rand_gen);
-                }
-#endif
 #if IS_HI_TRIAL_DIVISION
-                // Make this a multiple of 5 (or 0), then randomly make it NOT one,
-                // by adding 1 and uniformly randomly guessing and adding 2 bits.
-                base += (base << 2U) + 1U + (randBitCache & 3U);
-                randBitCache >>= 2U;
+                randBitCache = fiveDist(rand_gen);
+                for (int subBatchItem = 0U; subBatchItem < subBatchSize; ++subBatchItem) {
 #endif
-                // We're only picking numbers that are not multiples of 2 or 3.
-                base += threadMin + (base << 1U) - (base & 1U);
+                    // Choose a base at random, >1 and <toFactor.
+                    bitCapInt base = baseDist[0U](rand_gen);
+#if (QBCAPPOW > 6U) && (!IS_RSA_SEMIPRIME || (QBCAPPOW > 7U))
+                    for (size_t i = 1U; i < baseDist.size(); ++i) {
+                        base <<= WORD_SIZE;
+                        base |= baseDist[i](rand_gen);
+                    }
+#endif
+
+#if IS_HI_TRIAL_DIVISION
+                    // Make this a multiple of 5 (or 0), then randomly make it NOT one,
+                    // by adding 1 and uniformly randomly guessing and adding 2 bits.
+                    base += (base << 2U) + 1U + (randBitCache & 3U);
+                    randBitCache >>= 2U;
+#endif
+                    // From this, we're composing numbers that are only NOT multiples of 2 or 3.
+                    base += threadMin + (base << 1U) - (base & 1U);
 
 #if IS_RSA_SEMIPRIME
-                if ((toFactor % base) == 0U) {
-                    isFinished = true;
-                    printSuccess(base, toFactor / base, toFactor, "Base has common factor: Found ", iterClock);
-                    return;
-                }
+                    if ((toFactor % base) == 0U) {
+                        isFinished = true;
+                        printSuccess(base, toFactor / base, toFactor, "Base has common factor: Found ", iterClock);
+                        return;
+                    }
 #else
-                bitCapInt testFactor = gcd(toFactor, base);
-                if (testFactor != 1U) {
-                    isFinished = true;
-                    printSuccess(testFactor, toFactor / testFactor, toFactor, "Base has common factor: Found ", iterClock);
-                    return;
-                }
+                    bitCapInt testFactor = gcd(toFactor, base);
+                    if (testFactor != 1U) {
+                        isFinished = true;
+                        printSuccess(
+                            testFactor, toFactor / testFactor, toFactor, "Base has common factor: Found ", iterClock);
+                        return;
+                    }
 #endif
 #if IS_HI_TRIAL_DIVISION
-            // We have an extra level of for loop nesting in this macro branch, for IS_HI_TRIAL_DIVISION.
-            }
+                    // We have an extra level of for loop nesting in this macro branch, for IS_HI_TRIAL_DIVISION.
+                }
 #endif
             }
 
