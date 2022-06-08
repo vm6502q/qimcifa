@@ -256,6 +256,20 @@ int main()
 
     auto iterClock = std::chrono::high_resolution_clock::now();
 
+#if TRIAL_DIVISION_LEVEL >= 7
+    const bitCapInt baseNumerator = 48U;
+    const bitCapInt baseDenominator = 210U;
+#elif TRIAL_DIVISION_LEVEL >= 5
+    const bitCapInt baseNumerator = 8U;
+    const bitCapInt baseDenominator = 30U;
+#elif TRIAL_DIVISION_LEVEL >= 3
+    const bitCapInt baseNumerator = 2U;
+    const bitCapInt baseDenominator = 6U;
+#else
+    const bitCapInt baseNumerator = 1U;
+    const bitCapInt baseDenominator = 2U;
+#endif
+
 #if IS_RSA_SEMIPRIME
     std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 16411U, 65521U } },
         { 28U, { 67108879U, 536870909U } }, { 32U, { 1073741827U, 8589934583U } } };
@@ -273,9 +287,9 @@ int main()
     // We include potential factors as high as toFactor / 11.
     const bitCapInt fullMaxBase = toFactor / 11U;
 #endif
-    const bitCapInt nodeRange = ((nodeCount - 1U) + (fullMaxBase - fullMinBase)) / nodeCount;
-    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
-    const bitCapInt nodeMax = nodeMin + nodeRange;
+    const bitCapInt nodeRange = ((((baseNumerator * (fullMaxBase - fullMinBase)) / baseDenominator) + (nodeCount - 1U)) / nodeCount);
+    const bitCapInt nodeMin = (fullMinBase + nodeRange * nodeId) | 1U;
+    const bitCapInt nodeMax = (nodeMin + nodeRange) | 1U;
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
@@ -294,28 +308,12 @@ int main()
         // Number of times to reuse a random base:
         const int BASE_TRIALS = 1U << 16U;
 
-#if TRIAL_DIVISION_LEVEL >= 7
-        const bitCapInt baseDistNumerator = 48U;
-        const bitCapInt threadMinMult = 210U;
-#elif TRIAL_DIVISION_LEVEL >= 5
-        const bitCapInt baseDistNumerator = 8U;
-        const bitCapInt threadMinMult = 30U;
-#elif TRIAL_DIVISION_LEVEL >= 3
-        const bitCapInt baseDistNumerator = 2U;
-        const bitCapInt threadMinMult = 6U;
-#else
-        const bitCapInt baseDistNumerator = 1U;
-        const bitCapInt threadMinMult = 2U;
-#endif
-
         // Round the range length up.
-        const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
-        // Make sure this is a multiple of 2, 3, 5, and 7, +1:
-        const bitCapInt threadMin = ((((nodeMin + threadRange * cpu) / threadMinMult) * threadMinMult) | 1U);
-        // Don't modify the maximum:
-        const bitCapInt threadMax = nodeMin + threadRange * (cpu + 1U);
+        const bitCapInt threadRange = ((nodeMax - nodeMin) + (cpuCount - 1)) / cpuCount;
+        const bitCapInt threadMin = (nodeMin + threadRange * cpu) | 1U;
+        const bitCapInt threadMax = (threadMin + threadRange) | 1U;
 
-        std::vector<rand_dist> baseDist(randRange((baseDistNumerator * (threadMax - threadMin)) / threadMinMult));
+        std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
 
         for (;;) {
             for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
