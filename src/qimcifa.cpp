@@ -227,6 +227,10 @@ int main()
         std::cout << "Factors: 5 * " << (toFactor / 5) << " = " << toFactor << std::endl;
         return 0;
     }
+    if ((toFactor % 7) == 0) {
+        std::cout << "Factors: 7 * " << (toFactor / 7) << " = " << toFactor << std::endl;
+        return 0;
+    }
 
 #if IS_DISTRIBUTED
     std::cout << "You can split this work across nodes, without networking!" << std::endl;
@@ -296,7 +300,7 @@ int main()
 #if IS_HI_TRIAL_DIVISION
         // First, we uniformly randomly guess offset from any multiple of 5.
         // Then, we're uniformly composing only numbers that are not multiples of 2 or 3.
-        std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 14U) / 15U));
+        std::vector<rand_dist> baseDist(randRange((6U * (threadMax - threadMin) + 104U) / 105U));
 
         WORD randBitCache = 0;
         rand_dist fiveDist;
@@ -324,6 +328,9 @@ int main()
 #endif
 
 #if IS_HI_TRIAL_DIVISION
+                    // Make this NOT multiple of 7, by adding it to itself divided by six, + 1.
+                    base += base / 6U + 1U;
+
                     // Make this a multiple of 5 (or 0), then randomly make it NOT one,
                     // by adding 1 and uniformly randomly guessing and adding 2 bits.
                     base += (base << 2U) + 1U + (randBitCache & 3U);
