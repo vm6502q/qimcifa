@@ -346,7 +346,7 @@ int main()
 #endif
 #if TRIAL_DIVISION_LEVEL >= 7
                 // Make this NOT a multiple of 7, by adding it to itself divided by 6, + 1.
-                base += (base >> 2U) + (base >> 1U) + 1U;
+                base += base / 6U + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 5
                 // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
