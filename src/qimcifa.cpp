@@ -329,18 +329,18 @@ int main()
 #endif
 
 #if TRIAL_DIVISION_LEVEL >= 7
-                // Make this NOT multiple of 7, by adding it to itself divided by 6, + 1.
+                // Make this NOT a multiple of 7, by adding it to itself divided by 6, + 1.
                 base += base / 6U + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 5
-                // Make this NOT multiple of 5, by adding it to itself divided by 4, + 1.
+                // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
                 base += (base >> 2U) + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 3
-                // Make this NOT multiple of 3, by adding it to itself divided by 2, + 1.
+                // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
                 base += (base >> 1U) + 1U;
 #endif
-                // Make this odd, while adding the minimum.
+                // Make this odd, when added to the minimum.
                 base += base + threadMin;
 
 #if IS_RSA_SEMIPRIME
