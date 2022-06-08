@@ -248,11 +248,13 @@ int main()
     bitCapInt currentPrime = 2U;
     size_t primeIndex = 0;
     while (currentPrime <= TRIAL_DIVISION_LEVEL) {
+#if !IS_RSA_SEMIPRIME
         if ((toFactor % currentPrime) == 0) {
             std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
                       << std::endl;
             return 0;
         }
+#endif
 
         baseDenominator *= currentPrime;
         baseNumerator *= currentPrime - 1U;
