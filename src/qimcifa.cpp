@@ -262,7 +262,7 @@ int main()
         }
         currentPrime = trialDivisionPrimes[primeIndex];
     }
-    if (primeIndex) {
+    if (primeIndex >= trialDivisionPrimes.size()) {
         --primeIndex;
     }
 
@@ -340,7 +340,7 @@ int main()
 
 #if TRIAL_DIVISION_LEVEL >= 7
                 for (size_t i = primeIndex; i > 2U; --i) {
-                    base += base / trialDivisionPrimes[i] + 1U;
+                    base += base / (trialDivisionPrimes[i] - 1U) + 1U;
                 }
 #endif
 #if TRIAL_DIVISION_LEVEL >= 5
