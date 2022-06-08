@@ -36,7 +36,7 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division
-#define TRIAL_DIVISION_LEVEL 2
+#define TRIAL_DIVISION_LEVEL 5
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -259,6 +259,9 @@ int main()
         }
         currentPrime = trialDivisionPrimes[primeIndex];
     }
+    if (primeIndex) {
+        --primeIndex;
+    }
 
 #if IS_RSA_SEMIPRIME
     std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 16411U, 65521U } },
@@ -271,6 +274,14 @@ int main()
         primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << (primeBits + 1U)) - 1U);
     const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
     const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
+#elif TRIAL_DIVISION_LEVEL < 2
+    const bitCapInt fullMinBase = 2U;
+    // We include potential factors as high as toFactor / nextPrime.
+    const bitCapInt fullMaxBase = toFactor >> 1U;
+#elif TRIAL_DIVISION_LEVEL < 3
+    const bitCapInt fullMinBase = 3U;
+    // We include potential factors as high as toFactor / nextPrime.
+    const bitCapInt fullMaxBase = toFactor / 3U;
 #else
     const bitCapInt nextPrime = (primeIndex < trialDivisionPrimes.size()) ? currentPrime : (trialDivisionPrimes.back() + 2U);
     // We include potential factors as low as the next odd number after the highest trial division prime.
@@ -289,7 +300,11 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
+#if TRIAL_DIVISION_LEVEL < 7
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, &rand_gen, &isFinished](int cpu, unsigned cpuCount) {
+#else
+    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished, &trialDivisionPrimes](int cpu, unsigned cpuCount) {
+#endif
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
@@ -318,8 +333,9 @@ int main()
 #endif
 
 #if TRIAL_DIVISION_LEVEL >= 7
-                // Make this NOT a multiple of 7, by adding it to itself divided by 6, + 1.
-                base += base / 6U + 1U;
+                for (size_t i = primeIndex; i > 2U; --i) {
+                    base += base / trialDivisionPrimes[i] + 1U;
+                }
 #endif
 #if TRIAL_DIVISION_LEVEL >= 5
                 // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
