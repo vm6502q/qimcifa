@@ -277,12 +277,10 @@ int main()
     };
 
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt minPrime =
+    const bitCapInt fullMinBase =
         primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 2U)) | 1U);
-    const bitCapInt maxPrime =
+    const bitCapInt fullMaxBase =
         primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << (primeBits + 1U)) - 1U);
-    const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
-    const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
 #elif TRIAL_DIVISION_LEVEL < 2
     const bitCapInt fullMinBase = 2U;
     // We include potential factors as high as toFactor / nextPrime.
