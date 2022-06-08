@@ -35,6 +35,8 @@
 #define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
+// Set the ceiling on prime factors to check via trial division
+#define TRIAL_DIVISION_LEVEL 2
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -215,7 +217,6 @@ int main()
     const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
-    // We've eliminated all factors of 2 and 3 from the RNG.
     if ((toFactor & 1) == 0) {
         std::cout << "Factors: 2 * " << (toFactor >> 1) << " = " << toFactor << std::endl;
         return 0;
@@ -293,68 +294,70 @@ int main()
         // Number of times to reuse a random base:
         const int BASE_TRIALS = 1U << 16U;
 
+#if TRIAL_DIVISION_LEVEL >= 7
+        const bitCapInt baseDistNumerator = 48U;
+        const bitCapInt threadMinMult = 210U;
+#elif TRIAL_DIVISION_LEVEL >= 5
+        const bitCapInt baseDistNumerator = 8U;
+        const bitCapInt threadMinMult = 30U;
+#elif TRIAL_DIVISION_LEVEL >= 3
+        const bitCapInt baseDistNumerator = 2U;
+        const bitCapInt threadMinMult = 6U;
+#else
+        const bitCapInt baseDistNumerator = 1U;
+        const bitCapInt threadMinMult = 2U;
+#endif
+
         // Round the range length up.
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
         // Make sure this is a multiple of 2, 3, 5, and 7, +1:
-        const bitCapInt threadMin = ((((nodeMin + threadRange * cpu) / 210U) * 210U) | 1U);
+        const bitCapInt threadMin = ((((nodeMin + threadRange * cpu) / threadMinMult) * threadMinMult) | 1U);
         // Don't modify the maximum:
         const bitCapInt threadMax = nodeMin + threadRange * (cpu + 1U);
 
-        std::vector<rand_dist> baseDist(randRange(6U * (threadMax - threadMin) / 210U));
-
-        HALF_WORD threeBitCache = 0;
-        WORD fiveBitCache = 0;
-        rand_dist_half threeDist;
-        rand_dist fiveDist;
-        const int maxBatch = BASE_TRIALS / HALF_WORD_SIZE;
+        std::vector<rand_dist> baseDist(randRange((baseDistNumerator * (threadMax - threadMin)) / threadMinMult));
 
         for (;;) {
-            for (int batchItem = 0U; batchItem < maxBatch; ++batchItem) {
-                threeBitCache = threeDist(rand_gen);
-                fiveBitCache = fiveDist(rand_gen);
-                for (int subBatchItem = 0U; subBatchItem < HALF_WORD_SIZE; ++subBatchItem) {
-                    // Choose a base at random, >1 and <toFactor.
-                    bitCapInt base = baseDist[0U](rand_gen);
+            for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+                // Choose a base at random, >1 and <toFactor.
+                bitCapInt base = baseDist[0U](rand_gen);
 #if (QBCAPPOW > 6U) && (!IS_RSA_SEMIPRIME || (QBCAPPOW > 7U))
-                    for (size_t i = 1U; i < baseDist.size(); ++i) {
-                        base <<= WORD_SIZE;
-                        base |= baseDist[i](rand_gen);
-                    }
+                for (size_t i = 1U; i < baseDist.size(); ++i) {
+                    base <<= WORD_SIZE;
+                    base |= baseDist[i](rand_gen);
+                }
 #endif
 
-                    // Make this NOT multiple of 7, by adding it to itself divided by six, + 1.
-                    base += base / 6U + 1U;
-
-                    // Multiply to make this a multiple of 5 (or 0), then randomly make it NOT one,
-                    // by adding 1 and uniformly randomly guessing and adding 2 bits.
-                    base += (base << 2U) + 1U + (fiveBitCache & 3U);
-                    fiveBitCache >>= 2U;
-
-                    // Multiply to make this (also) a multiple of 3, then randomly make it NOT one,
-                    // by adding 1 and uniformly randomly guessing and adding 1 bit.
-                    base += (base << 1U) + 1U + (threeBitCache & 1U);
-                    threeBitCache >>= 1U;
-
-                    // Make this odd, while adding the minimum.
-                    base += base + threadMin;
+#if TRIAL_DIVISION_LEVEL >= 7
+                // Make this NOT multiple of 7, by adding it to itself divided by 6, + 1.
+                base += base / 6U + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 5
+                // Make this NOT multiple of 5, by adding it to itself divided by 4, + 1.
+                base += (base >> 2U) + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 3
+                // Make this NOT multiple of 3, by adding it to itself divided by 2, + 1.
+                base += (base >> 1U) + 1U;
+#endif
+                // Make this odd, while adding the minimum.
+                base += base + threadMin;
 
 #if IS_RSA_SEMIPRIME
-                    if ((toFactor % base) == 0U) {
-                        isFinished = true;
-                        printSuccess(base, toFactor / base, toFactor, "Base has common factor: Found ", iterClock);
-                        return;
-                    }
-#else
-                    bitCapInt testFactor = gcd(toFactor, base);
-                    if (testFactor != 1U) {
-                        isFinished = true;
-                        printSuccess(
-                            testFactor, toFactor / testFactor, toFactor, "Base has common factor: Found ", iterClock);
-                        return;
-                    }
-#endif
-                    // We have an extra level of for loop nesting in this macro branch, for IS_HI_TRIAL_DIVISION.
+                if ((toFactor % base) == 0U) {
+                    isFinished = true;
+                    printSuccess(base, toFactor / base, toFactor, "Base has common factor: Found ", iterClock);
+                    return;
                 }
+#else
+                bitCapInt testFactor = gcd(toFactor, base);
+                if (testFactor != 1U) {
+                    isFinished = true;
+                    printSuccess(
+                        testFactor, toFactor / testFactor, toFactor, "Base has common factor: Found ", iterClock);
+                    return;
+                }
+#endif
             }
 
             // Check if finished, between batches.
