@@ -311,7 +311,7 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
-#if TRIAL_DIVISION_LEVEL < 103
+#if TRIAL_DIVISION_LEVEL < 59
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, &rand_gen, &isFinished](int cpu, unsigned cpuCount) {
 #else
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished,
@@ -344,50 +344,10 @@ int main()
                 }
 #endif
 
-#if TRIAL_DIVISION_LEVEL >= 103
-                for (size_t i = primeIndex; i > 25U; --i) {
+#if TRIAL_DIVISION_LEVEL >= 59
+                for (size_t i = primeIndex; i > 15U; --i) {
                     base += base / (trialDivisionPrimes[i] - 1U) + 1U;
                 }
-#endif
-#if TRIAL_DIVISION_LEVEL >= 101
-                // Make this NOT a multiple of 101, by adding it to itself divided by 100, + 1.
-                base += base / 100 + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 97
-                // Make this NOT a multiple of 97, by adding it to itself divided by 96, + 1.
-                base += base / 96 + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 89
-                // Make this NOT a multiple of 89, by adding it to itself divided by 88, + 1.
-                base += base / 88U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 83
-                // Make this NOT a multiple of 83, by adding it to itself divided by 82, + 1.
-                base += base / 82U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 79
-                // Make this NOT a multiple of 79, by adding it to itself divided by 78, + 1.
-                base += base / 78U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 73
-                // Make this NOT a multiple of 73, by adding it to itself divided by 72, + 1.
-                base += base / 72U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 71
-                // Make this NOT a multiple of 71, by adding it to itself divided by 70, + 1.
-                base += base / 70U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 67
-                // Make this NOT a multiple of 67, by adding it to itself divided by 66, + 1.
-                base += base / 66U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 61
-                // Make this NOT a multiple of 61, by adding it to itself divided by 60, + 1.
-                base += base / 60U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 59
-                // Make this NOT a multiple of 59, by adding it to itself divided by 58, + 1.
-                base += base / 58U + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 53
                 // Make this NOT a multiple of 53, by adding it to itself divided by 52, + 1.
