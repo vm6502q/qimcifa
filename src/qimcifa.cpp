@@ -35,8 +35,6 @@
 #define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
-// For now, this turns on/off elimination of factors of 5, for testing.
-#define IS_HI_TRIAL_DIVISION 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -72,6 +70,7 @@
 #define WORD uint64_t
 #define WORD_SIZE 64U
 #endif
+#define HALF_WORD uint32_t
 
 namespace Qimcifa {
 
@@ -173,6 +172,7 @@ inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 }
 
 typedef std::uniform_int_distribution<WORD> rand_dist;
+typedef std::uniform_int_distribution<HALF_WORD> rand_dist_half;
 
 std::vector<rand_dist> randRange(bitCapInt range)
 {
@@ -292,32 +292,27 @@ int main()
         // Number of times to reuse a random base:
         const int BASE_TRIALS = 1U << 16U;
 
+        // Round the range length up.
         const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
-        // Make sure this is even multiple of 3, minus 1:
-        const bitCapInt threadMin = ((nodeMin + threadRange * cpu + 41U) / 42U) * 42U - 1U;
-        const bitCapInt threadMax = threadMin + threadRange + 1U;
+        // Make sure this is a multiple of 2, 3, 5, and 7, +1:
+        const bitCapInt threadMin = ((((nodeMin + threadRange * cpu) / 210U) * 210U) | 1U);
+        // Don't modify the maximum:
+        const bitCapInt threadMax = nodeMin + threadRange * (cpu + 1U);
 
-#if IS_HI_TRIAL_DIVISION
-        // First, we uniformly randomly guess offset from any multiple of 5.
-        // Then, we're uniformly composing only numbers that are not multiples of 2 or 3.
-        std::vector<rand_dist> baseDist(randRange((6U * (threadMax - threadMin) + 104U) / 105U));
+        std::vector<rand_dist> baseDist(randRange(6U * (threadMax - threadMin) / 210U));
 
-        WORD randBitCache = 0;
+        HALF_WORD threeBitCache = 0;
+        WORD fiveBitCache = 0;
+        rand_dist_half threeDist;
         rand_dist fiveDist;
         const int maxBatch = (BASE_TRIALS << 1U) / WORD_SIZE;
         const int subBatchSize = WORD_SIZE >> 1U;
-#else
-        // We're choosing only even multiples of 2 or 3.
-        std::vector<rand_dist> baseDist(randRange((threadMax - threadMin + 2U) / 3U));
-        const int maxBatch = BASE_TRIALS;
-#endif
 
         for (;;) {
             for (int batchItem = 0U; batchItem < maxBatch; ++batchItem) {
-#if IS_HI_TRIAL_DIVISION
-                randBitCache = fiveDist(rand_gen);
+                threeBitCache = threeDist(rand_gen);
+                fiveBitCache = fiveDist(rand_gen);
                 for (int subBatchItem = 0U; subBatchItem < subBatchSize; ++subBatchItem) {
-#endif
                     // Choose a base at random, >1 and <toFactor.
                     bitCapInt base = baseDist[0U](rand_gen);
 #if (QBCAPPOW > 6U) && (!IS_RSA_SEMIPRIME || (QBCAPPOW > 7U))
@@ -327,17 +322,21 @@ int main()
                     }
 #endif
 
-#if IS_HI_TRIAL_DIVISION
                     // Make this NOT multiple of 7, by adding it to itself divided by six, + 1.
                     base += base / 6U + 1U;
 
                     // Multiply to make this a multiple of 5 (or 0), then randomly make it NOT one,
                     // by adding 1 and uniformly randomly guessing and adding 2 bits.
-                    base += (base << 2U) + 1U + (randBitCache & 3U);
-                    randBitCache >>= 2U;
-#endif
-                    // From this, we're composing numbers that are only NOT multiples of 2 or 3.
-                    base += threadMin + (base << 1U) - (base & 1U);
+                    base += (base << 2U) + 1U + (fiveBitCache & 3U);
+                    fiveBitCache >>= 2U;
+
+                    // Multiply to make this (also) a multiple of 3, then randomly make it NOT one,
+                    // by adding 1 and uniformly randomly guessing and adding 1 bit.
+                    base += (base << 1U) + 1U + (threeBitCache & 1U);
+                    threeBitCache >>= 1U;
+
+                    // Make this odd, while adding the minimum.
+                    base += base + threadMin;
 
 #if IS_RSA_SEMIPRIME
                     if ((toFactor % base) == 0U) {
@@ -354,10 +353,8 @@ int main()
                         return;
                     }
 #endif
-#if IS_HI_TRIAL_DIVISION
                     // We have an extra level of for loop nesting in this macro branch, for IS_HI_TRIAL_DIVISION.
                 }
-#endif
             }
 
             // Check if finished, between batches.
