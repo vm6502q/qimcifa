@@ -36,7 +36,7 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division
-#define TRIAL_DIVISION_LEVEL 11
+#define TRIAL_DIVISION_LEVEL 19
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -305,7 +305,7 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
-#if TRIAL_DIVISION_LEVEL < 13
+#if TRIAL_DIVISION_LEVEL < 23
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, &rand_gen, &isFinished](int cpu, unsigned cpuCount) {
 #else
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished,
@@ -338,11 +338,22 @@ int main()
                 }
 #endif
 
-
-#if TRIAL_DIVISION_LEVEL >= 13
-                for (size_t i = primeIndex; i > 4U; --i) {
+#if TRIAL_DIVISION_LEVEL >= 23
+                for (size_t i = primeIndex; i > 7U; --i) {
                     base += base / (trialDivisionPrimes[i] - 1U) + 1U;
                 }
+#endif
+#if TRIAL_DIVISION_LEVEL >= 19
+                // Make this NOT a multiple of 19, by adding it to itself divided by 18, + 1.
+                base += base / 18U + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 17
+                // Make this NOT a multiple of 17, by adding it to itself divided by 16, + 1.
+                base += (base >> 4U) + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 13
+                // Make this NOT a multiple of 13, by adding it to itself divided by 12, + 1.
+                base += base / 12U + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 11
                 // Make this NOT a multiple of 11, by adding it to itself divided by 10, + 1.
