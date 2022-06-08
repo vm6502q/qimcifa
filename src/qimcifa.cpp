@@ -36,7 +36,7 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division
-#define TRIAL_DIVISION_LEVEL 73
+#define TRIAL_DIVISION_LEVEL 79
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -307,7 +307,7 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
-#if TRIAL_DIVISION_LEVEL < 79
+#if TRIAL_DIVISION_LEVEL < 103
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, &rand_gen, &isFinished](int cpu, unsigned cpuCount) {
 #else
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished,
@@ -340,14 +340,30 @@ int main()
                 }
 #endif
 
-const std::vector<bitCapInt> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
-        61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
-        181, 191, 193, 197, 199 };
-
-#if TRIAL_DIVISION_LEVEL >= 79
-                for (size_t i = primeIndex; i > 19U; --i) {
+#if TRIAL_DIVISION_LEVEL >= 103
+                for (size_t i = primeIndex; i > 25U; --i) {
                     base += base / (trialDivisionPrimes[i] - 1U) + 1U;
                 }
+#endif
+#if TRIAL_DIVISION_LEVEL >= 101
+                // Make this NOT a multiple of 101, by adding it to itself divided by 100, + 1.
+                base += base / 100 + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 97
+                // Make this NOT a multiple of 97, by adding it to itself divided by 96, + 1.
+                base += base / 96 + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 89
+                // Make this NOT a multiple of 89, by adding it to itself divided by 88, + 1.
+                base += base / 88U + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 83
+                // Make this NOT a multiple of 83, by adding it to itself divided by 82, + 1.
+                base += base / 82U + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 79
+                // Make this NOT a multiple of 79, by adding it to itself divided by 78, + 1.
+                base += base / 78U + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 73
                 // Make this NOT a multiple of 73, by adding it to itself divided by 72, + 1.
