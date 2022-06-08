@@ -315,6 +315,7 @@ int main()
         for (;;) {
 #if IS_HI_TRIAL_DIVISION
             for (int batchItem = 0U; batchItem < maxBatch; ++batchItem) {
+            randBitCache = fiveDist(rand_gen);
             for (int subBatchItem = 0U; subBatchItem < subBatchSize; ++subBatchItem) {
 #else
             for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -351,12 +352,10 @@ int main()
                 }
 #endif
 #if IS_HI_TRIAL_DIVISION
-            }
-            randBitCache = fiveDist(rand_gen);
-            }
-#else
+            // We have an extra level of for loop nesting in this macro branch, for IS_HI_TRIAL_DIVISION.
             }
 #endif
+            }
 
             // Check if finished, between batches.
             if (isFinished) {
