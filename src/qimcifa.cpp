@@ -217,23 +217,6 @@ int main()
     const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
-    if ((toFactor & 1) == 0) {
-        std::cout << "Factors: 2 * " << (toFactor >> 1) << " = " << toFactor << std::endl;
-        return 0;
-    }
-    if ((toFactor % 3) == 0) {
-        std::cout << "Factors: 3 * " << (toFactor / 3) << " = " << toFactor << std::endl;
-        return 0;
-    }
-    if ((toFactor % 5) == 0) {
-        std::cout << "Factors: 5 * " << (toFactor / 5) << " = " << toFactor << std::endl;
-        return 0;
-    }
-    if ((toFactor % 7) == 0) {
-        std::cout << "Factors: 7 * " << (toFactor / 7) << " = " << toFactor << std::endl;
-        return 0;
-    }
-
 #if IS_DISTRIBUTED
     std::cout << "You can split this work across nodes, without networking!" << std::endl;
     do {
@@ -256,19 +239,26 @@ int main()
 
     auto iterClock = std::chrono::high_resolution_clock::now();
 
-#if TRIAL_DIVISION_LEVEL >= 7
-    const bitCapInt baseNumerator = 48U;
-    const bitCapInt baseDenominator = 210U;
-#elif TRIAL_DIVISION_LEVEL >= 5
-    const bitCapInt baseNumerator = 8U;
-    const bitCapInt baseDenominator = 30U;
-#elif TRIAL_DIVISION_LEVEL >= 3
-    const bitCapInt baseNumerator = 2U;
-    const bitCapInt baseDenominator = 6U;
-#else
-    const bitCapInt baseNumerator = 1U;
-    const bitCapInt baseDenominator = 2U;
-#endif
+    const std::vector<bitCapInt> trialDivisionPrimes = { 2U, 3U, 5U, 7U };
+
+    bitCapInt baseNumerator = 1U;
+    bitCapInt baseDenominator = 1U;
+    bitCapInt currentPrime = 2U;
+    size_t primeIndex = 0;
+    while (currentPrime <= TRIAL_DIVISION_LEVEL) {
+        if ((toFactor % currentPrime) == 0) {
+            std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor << std::endl;
+            return 0;
+        }
+
+        baseDenominator *= currentPrime;
+        baseNumerator *= currentPrime - 1U;
+        primeIndex++;
+        if (primeIndex >= trialDivisionPrimes.size()) {
+            break;
+        }
+        currentPrime = trialDivisionPrimes[primeIndex];
+    }
 
 #if IS_RSA_SEMIPRIME
     std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 16411U, 65521U } },
