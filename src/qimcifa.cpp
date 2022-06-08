@@ -266,10 +266,10 @@ int main()
     const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
     const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
 #else
-    // We include potential factors as low as 7.
-    const bitCapInt fullMinBase = 7U;
-    // We include potential factors as high as toFactor / 7U.
-    const bitCapInt fullMaxBase = toFactor / 7U;
+    // We include potential factors as low as 11.
+    const bitCapInt fullMinBase = 11U;
+    // We include potential factors as high as toFactor / 11.
+    const bitCapInt fullMaxBase = toFactor / 11U;
 #endif
     const bitCapInt nodeRange = ((nodeCount - 1U) + (fullMaxBase - fullMinBase)) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
