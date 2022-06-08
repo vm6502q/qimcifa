@@ -239,7 +239,9 @@ int main()
 
     auto iterClock = std::chrono::high_resolution_clock::now();
 
-    const std::vector<bitCapInt> trialDivisionPrimes = { 2U, 3U, 5U, 7U };
+    const std::vector<bitCapInt> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+        61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
+        181, 191, 193, 197, 199 };
 
     bitCapInt baseNumerator = 1U;
     bitCapInt baseDenominator = 1U;
@@ -247,7 +249,8 @@ int main()
     size_t primeIndex = 0;
     while (currentPrime <= TRIAL_DIVISION_LEVEL) {
         if ((toFactor % currentPrime) == 0) {
-            std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor << std::endl;
+            std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
+                      << std::endl;
             return 0;
         }
 
@@ -283,13 +286,15 @@ int main()
     // We include potential factors as high as toFactor / nextPrime.
     const bitCapInt fullMaxBase = toFactor / 3U;
 #else
-    const bitCapInt nextPrime = (primeIndex < trialDivisionPrimes.size()) ? currentPrime : (trialDivisionPrimes.back() + 2U);
+    const bitCapInt nextPrime =
+        (primeIndex < trialDivisionPrimes.size()) ? currentPrime : (trialDivisionPrimes.back() + 2U);
     // We include potential factors as low as the next odd number after the highest trial division prime.
     const bitCapInt fullMinBase = nextPrime;
     // We include potential factors as high as toFactor / nextPrime.
     const bitCapInt fullMaxBase = toFactor / nextPrime;
 #endif
-    const bitCapInt nodeRange = ((((baseNumerator * (fullMaxBase - fullMinBase)) / baseDenominator) + (nodeCount - 1U)) / nodeCount);
+    const bitCapInt nodeRange =
+        ((((baseNumerator * (fullMaxBase - fullMinBase)) / baseDenominator) + (nodeCount - 1U)) / nodeCount);
     const bitCapInt nodeMin = (fullMinBase + nodeRange * nodeId) | 1U;
     const bitCapInt nodeMax = (nodeMin + nodeRange) | 1U;
 
@@ -303,7 +308,8 @@ int main()
 #if TRIAL_DIVISION_LEVEL < 7
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, &rand_gen, &isFinished](int cpu, unsigned cpuCount) {
 #else
-    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished, &trialDivisionPrimes](int cpu, unsigned cpuCount) {
+    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished,
+                              &trialDivisionPrimes](int cpu, unsigned cpuCount) {
 #endif
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
