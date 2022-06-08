@@ -328,7 +328,12 @@ int main()
 
         // Round the range length up.
         const bitCapInt threadRange = ((nodeMax - nodeMin) + (cpuCount - 1)) / cpuCount;
+#if TRIAL_DIVISION_LEVEL >= 3
+        // We combine the 2 and 3 multiple elimination steps.
+        const bitCapInt threadMin = ((nodeMin + threadRange * cpu) | 1U) + 2U;
+#else
         const bitCapInt threadMin = (nodeMin + threadRange * cpu) | 1U;
+#endif
         const bitCapInt threadMax = (threadMin + threadRange) | 1U;
 
         std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
@@ -406,11 +411,14 @@ int main()
                 base += (base >> 2U) + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 3
+                // We combine the 2 and 3 multiple elimination steps.
                 // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
-                base += (base >> 1U) + 1U;
-#endif
+                // Then, make this odd, when added to the minimum.
+                base += (base << 1U) + threadMin;
+#else
                 // Make this odd, when added to the minimum.
                 base += base + threadMin;
+#endif
 
 #if IS_RSA_SEMIPRIME
                 if ((toFactor % base) == 0U) {
