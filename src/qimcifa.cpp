@@ -328,7 +328,10 @@ int main()
 
         // Round the range length up.
         const bitCapInt threadRange = ((nodeMax - nodeMin) + (cpuCount - 1)) / cpuCount;
-#if TRIAL_DIVISION_LEVEL >= 3
+#if TRIAL_DIVISION_LEVEL >= 5
+        // We combine the 2, 3 and 5 multiple elimination steps.
+        const bitCapInt threadMin = ((nodeMin + threadRange * cpu) | 1U) + 5U;
+#elif TRIAL_DIVISION_LEVEL >= 3
         // We combine the 2 and 3 multiple elimination steps.
         const bitCapInt threadMin = ((nodeMin + threadRange * cpu) | 1U) + 2U;
 #else
@@ -447,10 +450,9 @@ int main()
                 base += base / 6U + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 5
-                // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
-                base += (base >> 2U) + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 3
+                // We combine the 2, 3 and 5 multiple elimination steps.
+                base += (base >> 2U) + (((base >> 2U) + base) << 1U) + threadMin;
+#elif TRIAL_DIVISION_LEVEL >= 3
                 // We combine the 2 and 3 multiple elimination steps.
                 // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
                 // Then, make this odd, when added to the minimum.
