@@ -36,7 +36,7 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division
-#define TRIAL_DIVISION_LEVEL 61
+#define TRIAL_DIVISION_LEVEL 43
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -303,8 +303,8 @@ int main()
 #endif
     const bitCapInt nodeRange =
         divceil(divceil(baseNumerator * (fullMaxBase + 1U - fullMinBase), baseDenominator), nodeCount);
-    const bitCapInt nodeMin = (fullMinBase + nodeRange * nodeId) | 1U;
-    const bitCapInt nodeMax = (nodeMin + nodeRange) | 1U;
+    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
+    const bitCapInt nodeMax = nodeMin + nodeRange;
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
