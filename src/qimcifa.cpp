@@ -174,6 +174,10 @@ inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
+inline bitCapInt divceil(const bitCapInt& left, const bitCapInt& right) {
+    return (left + right - 1U) / right;
+}
+
 typedef std::uniform_int_distribution<WORD> rand_dist;
 typedef std::uniform_int_distribution<HALF_WORD> rand_dist_half;
 
@@ -300,7 +304,7 @@ int main()
     const bitCapInt fullMaxBase = toFactor / nextPrime;
 #endif
     const bitCapInt nodeRange =
-        ((((baseNumerator * (fullMaxBase + 1U - fullMinBase)) / baseDenominator) + (nodeCount - 1U)) / nodeCount);
+        divceil(divceil(baseNumerator * (fullMaxBase + 1U - fullMinBase), baseDenominator), nodeCount);
     const bitCapInt nodeMin = (fullMinBase + nodeRange * nodeId) | 1U;
     const bitCapInt nodeMax = (nodeMin + nodeRange) | 1U;
 
