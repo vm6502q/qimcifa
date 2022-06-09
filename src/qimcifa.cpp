@@ -36,7 +36,7 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division.
-#define TRIAL_DIVISION_LEVEL 61
+#define TRIAL_DIVISION_LEVEL 73
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -329,10 +329,10 @@ int main()
     isFinished = false;
 
 #if TRIAL_DIVISION_LEVEL < 103
-    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, &rand_gen, &isFinished](int cpu, unsigned cpuCount) {
+    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, &rand_gen, &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
 #else
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished,
-                              &trialDivisionPrimes](int cpu, unsigned cpuCount) {
+                              &trialDivisionPrimes](bitCapInt threadMin, bitCapInt threadMax) {
 #endif
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
@@ -342,15 +342,6 @@ int main()
 
         // Number of times to reuse a random base:
         const int BASE_TRIALS = 1U << 16U;
-
-        // Round the range length up.
-        const bitCapInt threadRange = divceil(nodeMax - nodeMin, cpuCount);
-#if TRIAL_DIVISION_LEVEL >= 3
-        const bitCapInt threadMin = ((nodeMin + threadRange * cpu) | 1U) + 2U;
-#else
-        const bitCapInt threadMin = (nodeMin + threadRange * cpu) | 1U;
-#endif
-        const bitCapInt threadMax = threadMin + threadRange;
 
         std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
 
@@ -500,9 +491,32 @@ int main()
         }
     };
 
+    const bitCapInt threadRange = divceil(nodeMax - nodeMin, cpuCount);
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        futures[cpu] = std::async(std::launch::async, workerFn, cpu, cpuCount);
+        bitCapInt threadMin = (nodeMin + threadRange * cpu) | 1U;
+        bitCapInt threadMax = threadMin + threadRange;
+
+        // Align the lower limit to a multiple of ALL trial division factors.
+        currentPrime = 2U;
+        primeIndex = 0;
+        while (currentPrime <= TRIAL_DIVISION_LEVEL) {
+
+            threadMin = (threadMin / currentPrime) * currentPrime;
+
+            primeIndex++;
+            if (primeIndex >= trialDivisionPrimes.size()) {
+                break;
+            }
+            currentPrime = trialDivisionPrimes[primeIndex];
+        }
+
+        threadMin |= 1U;
+#if TRIAL_DIVISION_LEVEL >= 3
+        threadMin += 2U;
+#endif
+
+        futures[cpu] = std::async(std::launch::async, workerFn, threadMin, threadMax);
     }
 
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
