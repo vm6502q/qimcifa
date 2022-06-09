@@ -36,7 +36,8 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division.
-#define TRIAL_DIVISION_LEVEL 73
+// (This might be too high for 56-bit keys. Try ~73, in that case.)
+#define TRIAL_DIVISION_LEVEL 199
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -328,20 +329,17 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
-#if TRIAL_DIVISION_LEVEL < 103
-    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, &rand_gen, &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
-#else
-    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished,
-                              &trialDivisionPrimes](bitCapInt threadMin, bitCapInt threadMax) {
-#endif
+    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
         // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-        // Batch size is BASE_TRIALS * PERIOD_TRIALS.
-
-        // Number of times to reuse a random base:
         const int BASE_TRIALS = 1U << 16U;
+#if TRIAL_DIVISION_LEVEL >= 19
+        const std::vector<bitCapInt> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+            61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
+            181, 191, 193, 197, 199 };
+#endif
 
         std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
 
@@ -356,86 +354,10 @@ int main()
                 }
 #endif
 
-#if TRIAL_DIVISION_LEVEL >= 103
-                for (size_t i = primeIndex; i > 25U; --i) {
+#if TRIAL_DIVISION_LEVEL >= 19
+                for (size_t i = primeIndex; i > 6U; --i) {
                     base += base / (trialDivisionPrimes[i] - 1U) + 1U;
                 }
-#endif
-#if TRIAL_DIVISION_LEVEL >= 101
-                // Make this NOT a multiple of 101, by adding it to itself divided by 100, + 1.
-                base += base / 100 + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 97
-                // Make this NOT a multiple of 97, by adding it to itself divided by 96, + 1.
-                base += base / 96 + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 89
-                // Make this NOT a multiple of 89, by adding it to itself divided by 88, + 1.
-                base += base / 88U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 83
-                // Make this NOT a multiple of 83, by adding it to itself divided by 82, + 1.
-                base += base / 82U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 79
-                // Make this NOT a multiple of 79, by adding it to itself divided by 78, + 1.
-                base += base / 78U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 73
-                // Make this NOT a multiple of 73, by adding it to itself divided by 72, + 1.
-                base += base / 72U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 71
-                // Make this NOT a multiple of 71, by adding it to itself divided by 70, + 1.
-                base += base / 70U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 67
-                // Make this NOT a multiple of 67, by adding it to itself divided by 66, + 1.
-                base += base / 66U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 61
-                // Make this NOT a multiple of 61, by adding it to itself divided by 60, + 1.
-                base += base / 60U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 59
-                // Make this NOT a multiple of 59, by adding it to itself divided by 58, + 1.
-                base += base / 58U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 53
-                // Make this NOT a multiple of 53, by adding it to itself divided by 52, + 1.
-                base += base / 52U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 47
-                // Make this NOT a multiple of 47, by adding it to itself divided by 46, + 1.
-                base += base / 46U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 43
-                // Make this NOT a multiple of 43, by adding it to itself divided by 42, + 1.
-                base += base / 42U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 41
-                // Make this NOT a multiple of 41, by adding it to itself divided by 40, + 1.
-                base += base / 40U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 37
-                // Make this NOT a multiple of 37, by adding it to itself divided by 36, + 1.
-                base += base / 36U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 31
-                // Make this NOT a multiple of 31, by adding it to itself divided by 30, + 1.
-                base += base / 30U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 29
-                // Make this NOT a multiple of 29, by adding it to itself divided by 28, + 1.
-                base += base / 28U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 23
-                // Make this NOT a multiple of 23, by adding it to itself divided by 22, + 1.
-                base += base / 22U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 19
-                // Make this NOT a multiple of 19, by adding it to itself divided by 18, + 1.
-                base += base / 18U + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 17
                 // Make this NOT a multiple of 17, by adding it to itself divided by 16, + 1.
@@ -461,7 +383,7 @@ int main()
                 // We combine the 2 and 3 multiple removal steps.
                 // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
                 // Then, make this odd, when added to the minimum.
-                base = (base & ~1U) + (base << 1U) + threadMin;
+                base = (((base << 1U) + base) & ~1U) + threadMin;
 #else
                 // Make this odd, when added to the minimum.
                 base = (base << 1U) + threadMin;
