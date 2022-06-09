@@ -296,12 +296,10 @@ int main()
     // We include potential factors as high as toFactor / nextPrime.
     const bitCapInt fullMaxBase = toFactor / 3U;
 #else
-    const bitCapInt nextPrime =
-        (primeIndex < trialDivisionPrimes.size()) ? currentPrime : (trialDivisionPrimes.back() + 2U);
     // We include potential factors as low as the next odd number after the highest trial division prime.
-    const bitCapInt fullMinBase = nextPrime;
+    const bitCapInt fullMinBase = currentPrime;
     // We include potential factors as high as toFactor / nextPrime.
-    const bitCapInt fullMaxBase = toFactor / nextPrime;
+    const bitCapInt fullMaxBase = toFactor / currentPrime;
 #endif
     const bitCapInt nodeRange =
         divceil(divceil(baseNumerator * (fullMaxBase + 1U - fullMinBase), baseDenominator), nodeCount);
