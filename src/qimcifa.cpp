@@ -36,7 +36,7 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division.
-#define TRIAL_DIVISION_LEVEL 31
+#define TRIAL_DIVISION_LEVEL 43
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -336,15 +336,7 @@ int main()
 
         // Round the range length up.
         const bitCapInt threadRange = (nodeMax - nodeMin + cpuCount) / cpuCount;
-#if TRIAL_DIVISION_LEVEL >= 5
-        // We combine the 2, 3 and 5 multiple elimination steps.
-        const bitCapInt threadMin = ((nodeMin + threadRange * cpu) | 1U) + 5U;
-#elif TRIAL_DIVISION_LEVEL >= 3
-        // We combine the 2 and 3 multiple elimination steps.
-        const bitCapInt threadMin = ((nodeMin + threadRange * cpu) | 1U) + 2U;
-#else
         const bitCapInt threadMin = (nodeMin + threadRange * cpu) | 1U;
-#endif
         const bitCapInt threadMax = (threadMin + threadRange) | 1U;
 
         std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
@@ -458,17 +450,15 @@ int main()
                 base += base / 6U + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 5
-                // We combine the 2, 3 and 5 multiple elimination steps.
-                base += (base >> 2U) + (((base >> 2U) + base) << 1U) + threadMin;
-#elif TRIAL_DIVISION_LEVEL >= 3
-                // We combine the 2 and 3 multiple elimination steps.
+                // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
+                base += (base >> 2U) + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 3
                 // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
-                // Then, make this odd, when added to the minimum.
-                base += (base << 1U) + threadMin;
-#else
+                base += (base >> 1U) + 1U;
+#endif
                 // Make this odd, when added to the minimum.
                 base += base + threadMin;
-#endif
 
 #if IS_RSA_SEMIPRIME
                 if ((toFactor % base) == 0U) {
