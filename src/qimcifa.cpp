@@ -37,7 +37,7 @@
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division.
 // (This might be too high for 56-bit keys. Try ~73, in that case.)
-#define TRIAL_DIVISION_LEVEL 197
+#define TRIAL_DIVISION_LEVEL 199
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
