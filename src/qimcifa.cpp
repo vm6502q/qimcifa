@@ -300,7 +300,7 @@ int main()
     const bitCapInt fullMaxBase = toFactor / nextPrime;
 #endif
     const bitCapInt nodeRange =
-        ((((baseNumerator * (fullMaxBase - fullMinBase)) / baseDenominator) + (nodeCount - 1U)) / nodeCount);
+        ((((baseNumerator * (fullMaxBase + 1U - fullMinBase)) / baseDenominator) + (nodeCount - 1U)) / nodeCount);
     const bitCapInt nodeMin = (fullMinBase + nodeRange * nodeId) | 1U;
     const bitCapInt nodeMax = (nodeMin + nodeRange) | 1U;
 
@@ -327,7 +327,7 @@ int main()
         const int BASE_TRIALS = 1U << 16U;
 
         // Round the range length up.
-        const bitCapInt threadRange = ((nodeMax - nodeMin) + (cpuCount - 1)) / cpuCount;
+        const bitCapInt threadRange = (nodeMax - nodeMin + cpuCount) / cpuCount;
 #if TRIAL_DIVISION_LEVEL >= 5
         // We combine the 2, 3 and 5 multiple elimination steps.
         const bitCapInt threadMin = ((nodeMin + threadRange * cpu) | 1U) + 5U;
