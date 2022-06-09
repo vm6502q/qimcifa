@@ -36,7 +36,7 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division.
-#define TRIAL_DIVISION_LEVEL 43
+#define TRIAL_DIVISION_LEVEL 41
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -56,18 +56,12 @@
 #elif QBCAPPOW < 8U
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapInt boost::multiprecision::uint128_t
-#define longBitCapInt                                                                                                  \
-    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,                                     \
-        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
 #define ONE_BCI 1ULL
 #else
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapInt                                                                                                      \
     boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1ULL << QBCAPPOW, 1ULL << QBCAPPOW,           \
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-#define longBitCapInt                                                                                                  \
-    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1ULL << (QBCAPPOW + 1U),                      \
-        1ULL << (QBCAPPOW + 1U), boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
 #define ONE_BCI 1ULL
 #endif
 
@@ -180,7 +174,7 @@ inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-inline longBitCapInt divceil(const longBitCapInt& left, const longBitCapInt& right) {
+inline bitCapInt divceil(const bitCapInt& left, const bitCapInt& right) {
     return (left + right - 1U) / right;
 }
 
@@ -253,8 +247,6 @@ int main()
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199 };
 
-    longBitCapInt baseNumerator = 1U;
-    longBitCapInt baseDenominator = 1U;
     bitCapInt currentPrime = 2U;
     size_t primeIndex = 0;
     while (currentPrime <= TRIAL_DIVISION_LEVEL) {
@@ -266,8 +258,6 @@ int main()
         }
 #endif
 
-        baseDenominator *= currentPrime;
-        baseNumerator *= currentPrime - 1U;
         primeIndex++;
         if (primeIndex >= trialDivisionPrimes.size()) {
             break;
@@ -307,8 +297,26 @@ int main()
     // We include potential factors as high as toFactor / nextPrime.
     const bitCapInt fullMaxBase = toFactor / currentPrime;
 #endif
-    const bitCapInt nodeRange =
-        (bitCapInt)divceil(divceil(baseNumerator * (fullMaxBase + 1U - fullMinBase), baseDenominator), nodeCount);
+
+    bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
+    currentPrime = 2U;
+    primeIndex = 0;
+    while (currentPrime <= TRIAL_DIVISION_LEVEL) {
+        // The truncation here is correct.
+        fullRange *= currentPrime - 1U;
+        fullRange /= currentPrime;
+
+        primeIndex++;
+        if (primeIndex >= trialDivisionPrimes.size()) {
+            break;
+        }
+        currentPrime = trialDivisionPrimes[primeIndex];
+    }
+    if (primeIndex >= trialDivisionPrimes.size()) {
+        primeIndex = trialDivisionPrimes.size() - 1U;
+    }
+
+    const bitCapInt nodeRange = divceil(fullRange, nodeCount);
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const bitCapInt nodeMax = nodeMin + nodeRange;
 
