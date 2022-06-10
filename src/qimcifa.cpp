@@ -78,12 +78,10 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = baseDist[0U](rand_gen);
-#if (QBCAPWORDS > 2U) && (!IS_RSA_SEMIPRIME || (QBCAPWORDS > 4U))
             for (size_t i = 1U; i < baseDist.size(); ++i) {
                 base <<= WORD_SIZE;
                 base |= baseDist[i](rand_gen);
             }
-#endif
 
 #if TRIAL_DIVISION_LEVEL >= 7
             for (size_t i = primeIndex; i > 2U; --i) {
@@ -222,9 +220,7 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
         { 16U, { 16411U, 131071U } },
         { 28U, { 67108879U, 536870909U } },
         { 32U, { 1073741827U, 8589934583U } },
-#if QBCAPWORDS >= 4U
         { 64U, { 4611686018427388039ULL, bitCapInt{ "36893488147419103183" } } }
-#endif
     };
 
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
