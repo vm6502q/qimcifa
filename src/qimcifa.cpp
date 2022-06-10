@@ -35,12 +35,10 @@
 #define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
-// Set the ceiling on prime factors to check via trial division.
-// (Try ~199 for 64-bit keys.)
-// (This might be too high for 56-bit keys. Try ~73, in that case.)
-#define TRIAL_DIVISION_LEVEL 73
 // Use GMP library, or else Boost alternative
 #define USE_GMP 0
+// Override automatic TRIAL_DIVISION_LEVEL (0 is no override)
+#define TRIAL_DIVISION_LEVEL_OVERRIDE 0
 
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
@@ -49,6 +47,20 @@
 #endif
 
 namespace Qimcifa {
+
+unsigned pickTrialDivisionLevel(size_t qubitCount) {
+#if TRIAL_DIVISION_LEVEL_OVERRIDE > 0
+    return TRIAL_DIVISION_LEVEL_OVERRIDE;
+#else
+    unsigned TRIAL_DIVISION_LEVEL;
+    if (qubitCount < 60) {
+        TRIAL_DIVISION_LEVEL = 73;
+    } else {
+        TRIAL_DIVISION_LEVEL = 199;
+    }
+    return TRIAL_DIVISION_LEVEL;
+#endif
+}
 
 template <typename bitCapInt>
 void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message,
@@ -95,12 +107,10 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
                 base |= baseDist[i](rand_gen);
             }
 
-#if TRIAL_DIVISION_LEVEL >= 7
             for (size_t i = primeIndex; i > 2U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base += base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
-#endif
 
             // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
             base += (base >> 2U) + 1U;
@@ -203,11 +213,10 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
         7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
 
-    const unsigned minTrialDivisionLevel = (5U > TRIAL_DIVISION_LEVEL) ? 5U : TRIAL_DIVISION_LEVEL;
-
+    const unsigned TRIAL_DIVISION_LEVEL = pickTrialDivisionLevel(qubitCount);
     unsigned currentPrime = 2U;
     size_t primeIndex = 0;
-    while (currentPrime <= minTrialDivisionLevel) {
+    while (currentPrime <= TRIAL_DIVISION_LEVEL) {
 #if !IS_RSA_SEMIPRIME
         if ((toFactor % currentPrime) == 0) {
             std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
@@ -249,7 +258,7 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     currentPrime = 2U;
     primeIndex = 0;
-    while (currentPrime <= minTrialDivisionLevel) {
+    while (currentPrime <= TRIAL_DIVISION_LEVEL) {
         // The truncation here is correct.
         fullRange *= currentPrime - 1U;
         fullRange /= currentPrime;
@@ -300,7 +309,7 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
         // Align the lower limit to a multiple of ALL trial division factors.
         currentPrime = 2U;
         primeIndex = 0;
-        while (currentPrime <= minTrialDivisionLevel) {
+        while (currentPrime <= TRIAL_DIVISION_LEVEL) {
 
             threadMin = (threadMin / currentPrime) * currentPrime;
 
@@ -374,9 +383,9 @@ int main()
     }
 #endif
 
-    const unsigned minTrialDivisionLevel = (5U > TRIAL_DIVISION_LEVEL) ? 5U : TRIAL_DIVISION_LEVEL;
+    const unsigned TRIAL_DIVISION_LEVEL = pickTrialDivisionLevel(qubitCount);
     size_t primeFactorBits = 1U;
-    p = minTrialDivisionLevel >> 1U;
+    p = TRIAL_DIVISION_LEVEL >> 1U;
     while (p) {
         p >>= 1U;
         ++primeFactorBits;
