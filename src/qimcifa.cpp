@@ -62,15 +62,21 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, std::mt19937& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
-    const size_t WORD_SIZE = sizeof(WORD) << 3U;
+    size_t WORD_SIZE = sizeof(WORD) << 3U;
+    const size_t BITCAPINT_SIZE = sizeof(bitCapInt) << 3U;
     typedef std::uniform_int_distribution<WORD> rand_dist;
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
 
     std::vector<rand_dist> baseDist;
-    while (range) {
+    if (WORD_SIZE < BITCAPINT_SIZE) {
+        while (range) {
+            baseDist.push_back(rand_dist(0U, (WORD)range));
+            range >>= WORD_SIZE;
+        }
+    } else  {
         baseDist.push_back(rand_dist(0U, (WORD)range));
-        range >>= WORD_SIZE;
+        WORD_SIZE = 0;
     }
     std::reverse(baseDist.begin(), baseDist.end());
 
@@ -220,7 +226,7 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
         { 16U, { 16411U, 131071U } },
         { 28U, { 67108879U, 536870909U } },
         { 32U, { 1073741827U, 8589934583U } },
-        { 64U, { 4611686018427388039ULL, bitCapInt{ "36893488147419103183" } } }
+        // { 64U, { 4611686018427388039ULL, bitCapInt{ "36893488147419103183" } } }
     };
 
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
@@ -377,7 +383,10 @@ int main()
         ++primeFactorBits;
     }
     const size_t QBCAPBITS = primeFactorBits + (((qubitCount >> 5U) + 1U) << 5U);
-    if (QBCAPBITS < 128) {
+    if (QBCAPBITS < 64) {
+        typedef uint64_t bitCapInt;
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
+    } else if (QBCAPBITS < 128) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<128, 128,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
