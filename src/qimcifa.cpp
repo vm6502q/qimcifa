@@ -66,16 +66,6 @@
 #define ONE_BCI 1ULL
 #endif
 
-#if (QBCAPPOW < 6U) || (IS_RSA_SEMIPRIME && (QBCAPPOW < 7U))
-#define WORD uint32_t
-#define WORD_SIZE 32U
-#else
-#define WORD uint64_t
-#define WORD_SIZE 64U
-#endif
-#define HALF_WORD uint32_t
-#define HALF_WORD_SIZE 32
-
 namespace Qimcifa {
 
 #if QBCAPPOW == 7U
@@ -175,25 +165,7 @@ inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-inline bitCapInt divceil(const bitCapInt& left, const bitCapInt& right) {
-    return (left + right - 1U) / right;
-}
-
-typedef std::uniform_int_distribution<WORD> rand_dist;
-typedef std::uniform_int_distribution<HALF_WORD> rand_dist_half;
-
-std::vector<rand_dist> randRange(bitCapInt range)
-{
-    --range;
-    std::vector<rand_dist> distToReturn;
-    while (range) {
-        distToReturn.push_back(rand_dist(0U, (WORD)range));
-        range >>= WORD_SIZE;
-    }
-    std::reverse(distToReturn.begin(), distToReturn.end());
-
-    return distToReturn;
-}
+inline bitCapInt divceil(const bitCapInt& left, const bitCapInt& right) { return (left + right - 1U) / right; }
 
 void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
@@ -207,6 +179,76 @@ void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string me
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
+template <typename WORD>
+bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, size_t primeIndex,
+    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, std::mt19937& rand_gen,
+    const std::vector<bitCapInt>& trialDivisionPrimes, std::atomic<bool>& isFinished)
+{
+    typedef std::uniform_int_distribution<WORD> rand_dist;
+    // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
+    const int BASE_TRIALS = 1U << 16U;
+
+    std::vector<rand_dist> baseDist;
+    while (range) {
+        baseDist.push_back(rand_dist(0U, (WORD)range));
+        range >>= 32U;
+    }
+    std::reverse(baseDist.begin(), baseDist.end());
+
+    for (;;) {
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+            // Choose a base at random, >1 and <toFactor.
+            bitCapInt base = baseDist[0U](rand_gen);
+#if (QBCAPPOW > 6U) && (!IS_RSA_SEMIPRIME || (QBCAPPOW > 7U))
+            for (size_t i = 1U; i < baseDist.size(); ++i) {
+                base <<= 32U;
+                base |= baseDist[i](rand_gen);
+            }
+#endif
+
+#if TRIAL_DIVISION_LEVEL >= 7
+            for (size_t i = primeIndex; i > 2U; --i) {
+                base += base / (trialDivisionPrimes[i] - 1U) + 1U;
+            }
+#endif
+#if TRIAL_DIVISION_LEVEL >= 5
+            // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
+            base += (base >> 2U) + 1U;
+#endif
+#if TRIAL_DIVISION_LEVEL >= 3
+            // We combine the 2 and 3 multiple removal steps.
+            // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
+            // Then, make this odd, when added to the minimum.
+            base = (((base << 1U) + base) & ~1U) + threadMin;
+#else
+            // Make this odd, when added to the minimum.
+            base = (base << 1U) + threadMin;
+#endif
+
+#if IS_RSA_SEMIPRIME
+            if ((toFactor % base) == 0U) {
+                isFinished = true;
+                printSuccess(base, toFactor / base, toFactor, "Base has common factor: Found ", iterClock);
+                return true;
+            }
+#else
+            bitCapInt testFactor = gcd(toFactor, base);
+            if (testFactor != 1U) {
+                isFinished = true;
+                printSuccess(testFactor, toFactor / testFactor, toFactor, "Base has common factor: Found ", iterClock);
+                return true;
+            }
+#endif
+        }
+
+        // Check if finished, between batches.
+        if (isFinished) {
+            return true;
+        }
+    }
+
+    return true;
+}
 } // namespace Qimcifa
 
 using namespace Qimcifa;
@@ -329,7 +371,7 @@ int main()
         { 28U, { 67108879U, 536870909U } },
         { 32U, { 1073741827U, 8589934583U } },
 #if QBCAPPOW > 6
-        { 64U, { 4611686018427388039ULL, bitCapInt{"36893488147419103183"} } }
+        { 64U, { 4611686018427388039ULL, bitCapInt{ "36893488147419103183" } } }
 #endif
     };
 
@@ -382,82 +424,19 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
-    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &trialDivisionPrimes, &rand_gen, &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
+    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &trialDivisionPrimes, &rand_gen,
+                              &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
-        // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-        const int BASE_TRIALS = 1U << 16U;
-
-        std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
-
-        for (;;) {
-            for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-                // Choose a base at random, >1 and <toFactor.
-                bitCapInt base = baseDist[0U](rand_gen);
-#if (QBCAPPOW > 6U) && (!IS_RSA_SEMIPRIME || (QBCAPPOW > 7U))
-                for (size_t i = 1U; i < baseDist.size(); ++i) {
-                    base <<= WORD_SIZE;
-                    base |= baseDist[i](rand_gen);
-                }
-#endif
-
-#if TRIAL_DIVISION_LEVEL >= 19
-                for (size_t i = primeIndex; i > 6U; --i) {
-                    base += base / (trialDivisionPrimes[i] - 1U) + 1U;
-                }
-#endif
-#if TRIAL_DIVISION_LEVEL >= 17
-                // Make this NOT a multiple of 17, by adding it to itself divided by 16, + 1.
-                base += (base >> 4U) + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 13
-                // Make this NOT a multiple of 13, by adding it to itself divided by 12, + 1.
-                base += base / 12U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 11
-                // Make this NOT a multiple of 11, by adding it to itself divided by 10, + 1.
-                base += base / 10U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 7
-                // Make this NOT a multiple of 7, by adding it to itself divided by 6, + 1.
-                base += base / 6U + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 5
-                // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
-                base += (base >> 2U) + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 3
-                // We combine the 2 and 3 multiple removal steps.
-                // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
-                // Then, make this odd, when added to the minimum.
-                base = (((base << 1U) + base) & ~1U) + threadMin;
-#else
-                // Make this odd, when added to the minimum.
-                base = (base << 1U) + threadMin;
-#endif
-
-#if IS_RSA_SEMIPRIME
-                if ((toFactor % base) == 0U) {
-                    isFinished = true;
-                    printSuccess(base, toFactor / base, toFactor, "Base has common factor: Found ", iterClock);
-                    return;
-                }
-#else
-                bitCapInt testFactor = gcd(toFactor, base);
-                if (testFactor != 1U) {
-                    isFinished = true;
-                    printSuccess(
-                        testFactor, toFactor / testFactor, toFactor, "Base has common factor: Found ", iterClock);
-                    return;
-                }
-#endif
-            }
-
-            // Check if finished, between batches.
-            if (isFinished) {
-                return;
-            }
+        // Define the RNG type based on 32-bit boundary.
+        bitCapInt range = threadMax - (threadMin + 1U);
+        if (range >= (1ULL << 32U)) {
+            waitForSuccess<uint32_t>(
+                toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+        } else {
+            waitForSuccess<uint64_t>(
+                toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
         }
     };
 
