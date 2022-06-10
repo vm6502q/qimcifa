@@ -46,8 +46,8 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #endif
 
-#define TD_INTERCEPT 1.69
-#define TD_SLOPE 0.0971
+#define TD_LINEAR_SCALE 57.2
+#define TD_EXP_SCALE 0.0199
 
 namespace Qimcifa {
 
@@ -76,8 +76,11 @@ unsigned pickTrialDivisionLevel(size_t qubitCount) {
     if (qubitCount <= 70) {
         return 233;
     }
+    if (qubitCount <= 72) {
+        return 233;
+    }
 
-    return (unsigned)(exp(TD_INTERCEPT + TD_SLOPE * qubitCount) + 0.5);
+    return (unsigned)(TD_LINEAR_SCALE * exp(TD_EXP_SCALE * qubitCount) + 0.5);
 #endif
 }
 
