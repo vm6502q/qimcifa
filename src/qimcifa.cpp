@@ -52,7 +52,38 @@ namespace Qimcifa {
 // trial division factors is linear. The complexity asymptote of "multiples elimination" (complement to trial
 // division by primes) is O(log), with the grant of primes table that scales linearly in query count for cost.
 // However, the O(log) asymptote is FAR practically slower, (at least for now). The empirical level follows:
-inline size_t pickTrialDivisionLevel(size_t qubitCount) { return ((3U * qubitCount) - 12U) / 4U; }
+inline size_t pickTrialDivisionLevel(size_t qubitCount) {
+#if TRIAL_DIVISION_LEVEL_OVERRIDE > 0
+    return TRIAL_DIVISION_LEVEL_OVERRIDE;
+#else
+    if (qubitCount <= 58) {
+        return 59;
+    }
+    if (qubitCount <= 60) {
+        return 191;
+    }
+    if (qubitCount <= 62) {
+        return 193;
+    }
+    if (qubitCount <= 64) {
+        return 199;
+    }
+    if (qubitCount <= 66) {
+        return 211;
+    }
+    if (qubitCount <= 68) {
+        return 229;
+    }
+    if (qubitCount <= 70) {
+        return 233;
+    }
+    if (qubitCount <= 72) {
+        return 233;
+    }
+
+    return ((3U * qubitCount) - 12U) / 4U;
+#endif
+}
 
 template <typename bitCapInt>
 void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message,
