@@ -31,6 +31,8 @@
 #include <map>
 #include <mutex>
 
+#include <boost/multiprecision/cpp_int.hpp>
+
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
 #define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
@@ -38,135 +40,10 @@
 // Set the ceiling on prime factors to check via trial division.
 // (This might be too high for 56-bit keys. Try ~73, in that case.)
 #define TRIAL_DIVISION_LEVEL 199
-// The maximum number of bits in Boost big integers is 2^QBCAPPOW.
-// (2^7, only, needs custom std::cout << operator implementation.)
-#define QBCAPPOW 7U
-
-#if QBCAPPOW < 32U
-#define bitLenInt uint32_t
-#else
-#define bitLenInt uint64_t
-#endif
-
-#if QBCAPPOW < 6U
-#define bitCapInt uint32_t
-#define ONE_BCI 1UL
-#elif QBCAPPOW < 7U
-#define bitCapInt uint64_t
-#define ONE_BCI 1ULL
-#elif QBCAPPOW < 8U
-#include <boost/multiprecision/cpp_int.hpp>
-#define bitCapInt boost::multiprecision::uint128_t
-#define ONE_BCI 1ULL
-#else
-#include <boost/multiprecision/cpp_int.hpp>
-#define bitCapInt                                                                                                      \
-    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1ULL << QBCAPPOW, 1ULL << QBCAPPOW,           \
-        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-#define ONE_BCI 1ULL
-#endif
 
 namespace Qimcifa {
 
-#if QBCAPPOW == 7U
-std::ostream& operator<<(std::ostream& os, bitCapInt b)
-{
-    if (b == 0) {
-        os << "0";
-        return os;
-    }
-
-    // Calculate the base-10 digits, from lowest to highest.
-    std::vector<std::string> digits;
-    while (b) {
-        digits.push_back(std::to_string((unsigned char)(b % 10U)));
-        b /= 10U;
-    }
-
-    // Reversing order, print the digits from highest to lowest.
-    for (size_t i = digits.size() - 1U; i > 0; --i) {
-        os << digits[i];
-    }
-    // Avoid the need for a signed comparison.
-    os << digits[0];
-
-    return os;
-}
-
-std::istream& operator>>(std::istream& is, bitCapInt& b)
-{
-    // Get the whole input string at once.
-    std::string input;
-    is >> input;
-
-    // Start the output address value at 0.
-    b = 0;
-    for (size_t i = 0; i < input.size(); ++i) {
-        // Left shift by 1 base-10 digit.
-        b *= 10;
-        // Add the next lowest base-10 digit.
-        b += (input[i] - 48U);
-    }
-
-    return is;
-}
-#endif
-
-// Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
-
-inline bitLenInt log2(const bitCapInt& n)
-{
-#if __GNUC__ && QBCAPPOW < 7
-// Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
-#if QBCAPPOW < 6
-    return (bitLenInt)((sizeof(unsigned int) << 3U) - __builtin_clz((unsigned int)n) - 1U);
-#else
-    return (bitLenInt)((sizeof(unsigned long long) << 3U) - __builtin_clzll((unsigned long long)n) - 1U);
-#endif
-#else
-    bitLenInt pow = 0U;
-    bitCapInt p = n >> 1U;
-    while (p) {
-        p >>= 1U;
-        ++pow;
-    }
-    return pow;
-#endif
-}
-
-// Source:
-// https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
-inline bitCapInt uipow(bitCapInt base, bitCapInt exp)
-{
-    bitCapInt result = 1U;
-    for (;;) {
-        if (base & 1U) {
-            result *= base;
-        }
-        exp >>= 1U;
-        if (!exp) {
-            break;
-        }
-        base *= base;
-    }
-
-    return result;
-}
-
-inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
-{
-    while (n2) {
-        const bitCapInt t = n1;
-        n1 = n2;
-        n2 = t % n2;
-    }
-
-    return n1;
-}
-
-inline bitCapInt divceil(const bitCapInt& left, const bitCapInt& right) { return (left + right - 1U) / right; }
-
+template <typename bitCapInt>
 void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
@@ -179,11 +56,12 @@ void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string me
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
-template <typename WORD>
+template <typename WORD, typename bitCapInt>
 bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, size_t primeIndex,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, std::mt19937& rand_gen,
     const std::vector<bitCapInt>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
+    const size_t WORD_SIZE = sizeof(WORD) << 3U;
     typedef std::uniform_int_distribution<WORD> rand_dist;
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
@@ -191,7 +69,7 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
     std::vector<rand_dist> baseDist;
     while (range) {
         baseDist.push_back(rand_dist(0U, (WORD)range));
-        range >>= 32U;
+        range >>= WORD_SIZE;
     }
     std::reverse(baseDist.begin(), baseDist.end());
 
@@ -199,9 +77,9 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = baseDist[0U](rand_gen);
-#if (QBCAPPOW > 6U) && (!IS_RSA_SEMIPRIME || (QBCAPPOW > 7U))
+#if (QBCAPWORDS > 2U) && (!IS_RSA_SEMIPRIME || (QBCAPWORDS > 4U))
             for (size_t i = 1U; i < baseDist.size(); ++i) {
-                base <<= 32U;
+                base <<= WORD_SIZE;
                 base |= baseDist[i](rand_gen);
             }
 #endif
@@ -228,14 +106,20 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
 #if IS_RSA_SEMIPRIME
             if ((toFactor % base) == 0U) {
                 isFinished = true;
-                printSuccess(base, toFactor / base, toFactor, "Base has common factor: Found ", iterClock);
+                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Base has common factor: Found ", iterClock);
                 return true;
             }
 #else
-            bitCapInt testFactor = gcd(toFactor, base);
-            if (testFactor != 1U) {
+            // Find GCD
+            bitCapInt n1 = toFactor, n2 = base;
+            while (n2) {
+                const bitCapInt t = n1;
+                n1 = n2;
+                n2 = t % n2;
+            }
+            if (n1 != 1U) {
                 isFinished = true;
-                printSuccess(testFactor, toFactor / testFactor, toFactor, "Base has common factor: Found ", iterClock);
+                printSuccess<bitCapInt>(n1, toFactor / n1, toFactor, "Base has common factor: Found ", iterClock);
                 return true;
             }
 #endif
@@ -249,42 +133,9 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
 
     return true;
 }
-} // namespace Qimcifa
 
-using namespace Qimcifa;
-
-int main()
+template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId)
 {
-    bitCapInt toFactor;
-    size_t nodeCount = 1U;
-    size_t nodeId = 0U;
-
-    std::cout << "Number to factor: ";
-    std::cin >> toFactor;
-
-    const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
-    std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
-
-#if IS_DISTRIBUTED
-    std::cout << "You can split this work across nodes, without networking!" << std::endl;
-    do {
-        std::cout << "Number of nodes (>=1): ";
-        std::cin >> nodeCount;
-        if (!nodeCount) {
-            std::cout << "Invalid node count choice!" << std::endl;
-        }
-    } while (!nodeCount);
-    if (nodeCount > 1U) {
-        do {
-            std::cout << "Which node is this? (0-" << (nodeCount - 1U) << "):";
-            std::cin >> nodeId;
-            if (nodeId >= nodeCount) {
-                std::cout << "Invalid node ID choice!" << std::endl;
-            }
-        } while (nodeId >= nodeCount);
-    }
-#endif
-
     auto iterClock = std::chrono::high_resolution_clock::now();
 
     // First 1000 primes
@@ -366,20 +217,20 @@ int main()
     }
 
 #if IS_RSA_SEMIPRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = {
+    std::map<uint32_t, const std::vector<bitCapInt>> primeDict = {
         { 16U, { 16411U, 131071U } },
         { 28U, { 67108879U, 536870909U } },
         { 32U, { 1073741827U, 8589934583U } },
-#if QBCAPPOW > 6
+#if QBCAPWORDS >= 4U
         { 64U, { 4611686018427388039ULL, bitCapInt{ "36893488147419103183" } } }
 #endif
     };
 
-    const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
+    const uint32_t primeBits = (qubitCount + 1U) >> 1U;
     const bitCapInt fullMinBase =
-        primeDict[primeBits].size() ? primeDict[primeBits][0] : ((ONE_BCI << (primeBits - 2U)) | 1U);
+        primeDict[primeBits].size() ? primeDict[primeBits][0] : ((1ULL << (primeBits - 2U)) | 1U);
     const bitCapInt fullMaxBase =
-        primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << (primeBits + 1U)) - 1U);
+        primeDict[primeBits].size() ? primeDict[primeBits][1] : ((1ULL << (primeBits + 1U)) - 1U);
 #elif TRIAL_DIVISION_LEVEL < 2
     const bitCapInt fullMinBase = 2U;
     // We include potential factors as high as toFactor / nextPrime.
@@ -413,7 +264,7 @@ int main()
         primeIndex = trialDivisionPrimes.size() - 1U;
     }
 
-    const bitCapInt nodeRange = divceil(fullRange, nodeCount);
+    const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const bitCapInt nodeMax = nodeMin + nodeRange;
 
@@ -424,23 +275,23 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
-    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &trialDivisionPrimes, &rand_gen,
-                              &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
+    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, qubitCount, &trialDivisionPrimes,
+                              &rand_gen, &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
         // Define the RNG type based on 32-bit boundary.
         bitCapInt range = threadMax - (threadMin + 1U);
         if (range >= (1ULL << 32U)) {
-            waitForSuccess<uint32_t>(
+            waitForSuccess<uint32_t, bitCapInt>(
                 toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
         } else {
-            waitForSuccess<uint64_t>(
+            waitForSuccess<uint64_t, bitCapInt>(
                 toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
         }
     };
 
-    const bitCapInt threadRange = divceil(nodeMax - nodeMin, cpuCount);
+    const bitCapInt threadRange = (cpuCount + nodeMax - (nodeMin - 1U)) / cpuCount;
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         bitCapInt threadMin = (nodeMin + threadRange * cpu) | 1U;
@@ -473,4 +324,90 @@ int main()
     }
 
     return 0;
+}
+} // namespace Qimcifa
+
+using namespace Qimcifa;
+
+int main()
+{
+    typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
+        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+        bitCapIntInput;
+    bitCapIntInput toFactor;
+    size_t nodeCount = 1U;
+    size_t nodeId = 0U;
+
+    std::cout << "Number to factor: ";
+    std::cin >> toFactor;
+
+    uint32_t qubitCount = 0;
+    bitCapIntInput p = toFactor >> 1U;
+    while (p) {
+        p >>= 1U;
+        ++qubitCount;
+    }
+    // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
+    if (!(toFactor && !(toFactor & (toFactor - 1ULL)))) {
+        qubitCount++;
+    }
+    std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
+
+#if IS_DISTRIBUTED
+    std::cout << "You can split this work across nodes, without networking!" << std::endl;
+    do {
+        std::cout << "Number of nodes (>=1): ";
+        std::cin >> nodeCount;
+        if (!nodeCount) {
+            std::cout << "Invalid node count choice!" << std::endl;
+        }
+    } while (!nodeCount);
+    if (nodeCount > 1U) {
+        do {
+            std::cout << "Which node is this? (0-" << (nodeCount - 1U) << "):";
+            std::cin >> nodeId;
+            if (nodeId >= nodeCount) {
+                std::cout << "Invalid node ID choice!" << std::endl;
+            }
+        } while (nodeId >= nodeCount);
+    }
+#endif
+
+    const size_t QBCAPBITS = (((qubitCount >> 5U) + 1U) << 5U);
+    if (QBCAPBITS < 128) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<128, 128,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            bitCapInt;
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
+    } else if (QBCAPBITS < 128) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<128, 128,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            bitCapInt;
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
+    } else if (QBCAPBITS < 192) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            bitCapInt;
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
+    } else if (QBCAPBITS < 256) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            bitCapInt;
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
+    } else if (QBCAPBITS < 512) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            bitCapInt;
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
+    } else if (QBCAPBITS < 1024) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            bitCapInt;
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
+    } else if (QBCAPBITS < 2048) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            bitCapInt;
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
+    }
 }
