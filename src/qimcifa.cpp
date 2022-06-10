@@ -31,8 +31,6 @@
 #include <map>
 #include <mutex>
 
-#include <boost/multiprecision/cpp_int.hpp>
-
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
 #define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
@@ -41,6 +39,14 @@
 // (Try ~199 for 64-bit keys.)
 // (This might be too high for 56-bit keys. Try ~73, in that case.)
 #define TRIAL_DIVISION_LEVEL 73
+// Use GMP library, or else Boost alternative
+#define USE_GMP 0
+
+#if USE_GMP
+#include <boost/multiprecision/gmp.hpp>
+#else
+#include <boost/multiprecision/cpp_int.hpp>
+#endif
 
 namespace Qimcifa {
 
@@ -322,9 +328,13 @@ using namespace Qimcifa;
 
 int main()
 {
+#if USE_GMP
+    typedef boost::multiprecision::number<boost::multiprecision::backends::gmp_int> bitCapIntInput;
+#else
     typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
         bitCapIntInput;
+#endif
     bitCapIntInput toFactor;
     size_t nodeCount = 1U;
     size_t nodeId = 0U;
@@ -375,10 +385,13 @@ int main()
     if (QBCAPBITS < 64) {
         typedef uint64_t bitCapInt;
         return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
+#if USE_GMP
+    } else {
+        return mainBody<bitCapIntInput>(toFactor, qubitCount, nodeCount, nodeId);
+    }
+#else
     } else if (QBCAPBITS < 128) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<128, 128,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            bitCapInt;
+        typedef boost::multiprecision::uint128_t bitCapInt;
         return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
     } else if (QBCAPBITS < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
@@ -406,4 +419,5 @@ int main()
             bitCapInt;
         return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
     }
+#endif
 }
