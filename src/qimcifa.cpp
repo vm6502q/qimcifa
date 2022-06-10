@@ -38,8 +38,9 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division.
+// (Try ~199 for 64-bit keys.)
 // (This might be too high for 56-bit keys. Try ~73, in that case.)
-#define TRIAL_DIVISION_LEVEL 199
+#define TRIAL_DIVISION_LEVEL 73
 
 namespace Qimcifa {
 
@@ -373,13 +374,14 @@ int main()
     }
 #endif
 
-    const size_t QBCAPBITS = (((qubitCount >> 5U) + 1U) << 5U);
+    size_t primeFactorBits = 1U;
+    p = TRIAL_DIVISION_LEVEL >> 1U;
+    while (p) {
+        p >>= 1U;
+        ++primeFactorBits;
+    }
+    const size_t QBCAPBITS = primeFactorBits + (((qubitCount >> 5U) + 1U) << 5U);
     if (QBCAPBITS < 128) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<128, 128,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId);
-    } else if (QBCAPBITS < 128) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<128, 128,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
