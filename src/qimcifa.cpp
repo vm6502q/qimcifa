@@ -60,7 +60,7 @@ void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string me
 template <typename WORD, typename bitCapInt>
 bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, size_t primeIndex,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, std::mt19937& rand_gen,
-    const std::vector<unsigned int>& trialDivisionPrimes, std::atomic<bool>& isFinished)
+    const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     const size_t WORD_SIZE = sizeof(WORD) << 3U;
     typedef std::uniform_int_distribution<WORD> rand_dist;
@@ -141,7 +141,7 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
 
     // First 1000 primes
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
-    const std::vector<unsigned int> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
         311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439,
@@ -196,7 +196,7 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
         7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
 
-    unsigned int currentPrime = 2U;
+    unsigned currentPrime = 2U;
     size_t primeIndex = 0;
     while (currentPrime <= TRIAL_DIVISION_LEVEL) {
 #if !IS_RSA_SEMIPRIME
