@@ -40,7 +40,7 @@
 // Set the ceiling on prime factors to check via trial division.
 // (Try ~199 for 64-bit keys.)
 // (This might be too high for 56-bit keys. Try ~73, in that case.)
-#define TRIAL_DIVISION_LEVEL 199
+#define TRIAL_DIVISION_LEVEL 73
 
 namespace Qimcifa {
 
@@ -91,22 +91,19 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
 
 #if TRIAL_DIVISION_LEVEL >= 7
             for (size_t i = primeIndex; i > 2U; --i) {
+                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base += base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 #endif
-#if TRIAL_DIVISION_LEVEL >= 5
+
             // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
             base += (base >> 2U) + 1U;
-#endif
-#if TRIAL_DIVISION_LEVEL >= 3
+
             // We combine the 2 and 3 multiple removal steps.
             // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
             // Then, make this odd, when added to the minimum.
             base = (((base << 1U) + base) & ~1U) + threadMin;
-#else
-            // Make this odd, when added to the minimum.
-            base = (base << 1U) + threadMin;
-#endif
+
 
 #if IS_RSA_SEMIPRIME
             if ((toFactor % base) == 0U) {
@@ -200,9 +197,11 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
         7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
 
+    const unsigned minTrialDivisionLevel = (5U > TRIAL_DIVISION_LEVEL) ? 5U : TRIAL_DIVISION_LEVEL;
+
     unsigned currentPrime = 2U;
     size_t primeIndex = 0;
-    while (currentPrime <= TRIAL_DIVISION_LEVEL) {
+    while (currentPrime <= minTrialDivisionLevel) {
 #if !IS_RSA_SEMIPRIME
         if ((toFactor % currentPrime) == 0) {
             std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
@@ -234,14 +233,6 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
         primeDict[primeBits].size() ? primeDict[primeBits][0] : ((1ULL << (primeBits - 2U)) | 1U);
     const bitCapInt fullMaxBase =
         primeDict[primeBits].size() ? primeDict[primeBits][1] : ((1ULL << (primeBits + 1U)) - 1U);
-#elif TRIAL_DIVISION_LEVEL < 2
-    const bitCapInt fullMinBase = 2U;
-    // We include potential factors as high as toFactor / nextPrime.
-    const bitCapInt fullMaxBase = toFactor >> 1U;
-#elif TRIAL_DIVISION_LEVEL < 3
-    const bitCapInt fullMinBase = 3U;
-    // We include potential factors as high as toFactor / nextPrime.
-    const bitCapInt fullMaxBase = toFactor / 3U;
 #else
     // We include potential factors as low as the next odd number after the highest trial division prime.
     const bitCapInt fullMinBase = currentPrime;
@@ -252,7 +243,7 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     currentPrime = 2U;
     primeIndex = 0;
-    while (currentPrime <= TRIAL_DIVISION_LEVEL) {
+    while (currentPrime <= minTrialDivisionLevel) {
         // The truncation here is correct.
         fullRange *= currentPrime - 1U;
         fullRange /= currentPrime;
@@ -303,7 +294,7 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
         // Align the lower limit to a multiple of ALL trial division factors.
         currentPrime = 2U;
         primeIndex = 0;
-        while (currentPrime <= TRIAL_DIVISION_LEVEL) {
+        while (currentPrime <= minTrialDivisionLevel) {
 
             threadMin = (threadMin / currentPrime) * currentPrime;
 
@@ -314,10 +305,7 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
             currentPrime = trialDivisionPrimes[primeIndex];
         }
 
-        threadMin |= 1U;
-#if TRIAL_DIVISION_LEVEL >= 3
-        threadMin += 2U;
-#endif
+        threadMin = (threadMin | 1U) + 2U;
 
         futures[cpu] = std::async(std::launch::async, workerFn, threadMin, threadMax);
     }
@@ -376,8 +364,9 @@ int main()
     }
 #endif
 
+    const unsigned minTrialDivisionLevel = (5U > TRIAL_DIVISION_LEVEL) ? 5U : TRIAL_DIVISION_LEVEL;
     size_t primeFactorBits = 1U;
-    p = TRIAL_DIVISION_LEVEL >> 1U;
+    p = minTrialDivisionLevel >> 1U;
     while (p) {
         p >>= 1U;
         ++primeFactorBits;
