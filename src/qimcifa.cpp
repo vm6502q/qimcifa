@@ -46,6 +46,8 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #endif
 
+#define INV_PHI 0.6180339887498948
+
 namespace Qimcifa {
 
 unsigned pickTrialDivisionLevel(size_t qubitCount) {
@@ -53,11 +55,19 @@ unsigned pickTrialDivisionLevel(size_t qubitCount) {
     return TRIAL_DIVISION_LEVEL_OVERRIDE;
 #else
     unsigned TRIAL_DIVISION_LEVEL;
-    if (qubitCount < 60) {
-        TRIAL_DIVISION_LEVEL = 73;
-    } else {
+    if (qubitCount < 55) {
+        TRIAL_DIVISION_LEVEL = 31;
+    } else if (qubitCount < 60) {
+        TRIAL_DIVISION_LEVEL = 67;
+    } else if (qubitCount < 65) {
         TRIAL_DIVISION_LEVEL = 199;
+    } else if (qubitCount < 75) {
+        TRIAL_DIVISION_LEVEL = 223;
+    } else {
+        TRIAL_DIVISION_LEVEL = 241;
+        // Or higher
     }
+
     return TRIAL_DIVISION_LEVEL;
 #endif
 }
