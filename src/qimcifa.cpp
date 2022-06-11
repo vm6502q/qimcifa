@@ -116,20 +116,14 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     size_t WORD_SIZE = sizeof(WORD) << 3U;
-    const size_t BITCAPINT_SIZE = sizeof(bitCapInt) << 3U;
     typedef std::uniform_int_distribution<WORD> rand_dist;
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
 
     std::vector<rand_dist> baseDist;
-    if (WORD_SIZE < BITCAPINT_SIZE) {
-        while (range) {
-            baseDist.push_back(rand_dist(0U, (WORD)range));
-            range >>= WORD_SIZE;
-        }
-    } else  {
+    while (range) {
         baseDist.push_back(rand_dist(0U, (WORD)range));
-        WORD_SIZE = 0;
+        range >>= WORD_SIZE;
     }
     std::reverse(baseDist.begin(), baseDist.end());
 
