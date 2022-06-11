@@ -57,28 +57,39 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount) {
     return TRIAL_DIVISION_LEVEL_OVERRIDE;
 #else
     if (qubitCount <= 58) {
-        return 59;
+        // 59
+        return 16;
     }
     if (qubitCount <= 60) {
-        return 191;
+        // 191
+        return 42;
     }
     if (qubitCount <= 62) {
-        return 193;
+        // 193
+        return 43;
     }
     if (qubitCount <= 64) {
-        return 199;
+        // 199
+        return 45;
     }
     if (qubitCount <= 66) {
-        return 211;
+        // 211
+        return 46;
     }
     if (qubitCount <= 68) {
-        return 229;
+        // 229
+        return 49;
     }
     if (qubitCount <= 70) {
-        return 233;
+        // 233
+        return 50;
     }
     if (qubitCount <= 72) {
-        return 233;
+        // 233
+        return 50;
+    }
+    if (qubitCount <= 74) {
+        return 52;
     }
 
     return ((3U * qubitCount) - 12U) / 4U;
@@ -366,6 +377,11 @@ int main()
         7481, 7487, 7489, 7499, 7507, 7517, 7523, 7529, 7537, 7541, 7547, 7549, 7559, 7561, 7573, 7577, 7583, 7589,
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
         7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
+
+    // Print primes table by index:
+    // for (size_t i = 0; i < trialDivisionPrimes.size(); ++i) {
+    //     std::cout << i << ": " << trialDivisionPrimes[i] << ", ";
+    // }
 
     bitCapIntInput toFactor;
     size_t nodeCount = 1U;
