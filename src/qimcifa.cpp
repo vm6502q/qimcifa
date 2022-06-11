@@ -31,14 +31,7 @@
 #include <map>
 #include <mutex>
 
-// Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
-#define IS_RSA_SEMIPRIME 1
-// Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
-#define IS_DISTRIBUTED 1
-// Use GMP library, or else Boost alternative
-#define USE_GMP 0
-// Override automatic TRIAL_DIVISION_LEVEL (0 is no override)
-#define TRIAL_DIVISION_LEVEL_OVERRIDE 0
+#include "config.h"
 
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
@@ -54,7 +47,7 @@ namespace Qimcifa {
 // However, the O(log) asymptote is FAR practically slower, (at least for now). The empirical level follows:
 inline size_t pickTrialDivisionLevel(size_t qubitCount)
 {
-    if (TRIAL_DIVISION_LEVEL_OVERRIDE > 0) {
+    if (TRIAL_DIVISION_LEVEL_OVERRIDE > -1) {
         return TRIAL_DIVISION_LEVEL_OVERRIDE;
     }
     if (qubitCount <= 66) {

@@ -4,6 +4,12 @@ project (qimcifa VERSION 0.1.0 DESCRIPTION "Quantum-inspired Monte Carlo integer
 # Installation commands
 include (GNUInstallDirs)
 
+set(IS_RSA_SEMIPRIME 1)
+set(IS_DISTRIBUTED 1)
+set(USE_GMP 0)
+set(TRIAL_DIVISION_LEVEL_OVERRIDE -1)
+
+configure_file(include/common/config.h.in include/common/config.h @ONLY)
 include_directories ("include" "include/common")
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
 
@@ -12,8 +18,11 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -O3")
 add_executable (qimcifa
     src/qimcifa.cpp
     )
-target_link_libraries (qimcifa pthread)
-# target_link_libraries (qimcifa pthread gmp)
+if (USE_GMP)
+    target_link_libraries (qimcifa pthread gmp)
+else (USE_GMP)
+    target_link_libraries (qimcifa pthread)
+endif (USE_GMP)
 
 # Options used when building the project
 find_package (OpenCL)

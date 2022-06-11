@@ -1,0 +1,8 @@
+// Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
+#cmakedefine IS_RSA_SEMIPRIME 1
+// Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
+#cmakedefine IS_DISTRIBUTED 1
+// Use GMP arbitrary precision integers, (or use Boost alternative, if turned off).
+#cmakedefine USE_GMP 0
+// Override automatic TRIAL_DIVISION_LEVEL (-1 is no override)
+#cmakedefine TRIAL_DIVISION_LEVEL_OVERRIDE -1
