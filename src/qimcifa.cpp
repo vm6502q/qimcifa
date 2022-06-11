@@ -52,49 +52,28 @@ namespace Qimcifa {
 // trial division factors is linear. The complexity asymptote of "multiples elimination" (complement to trial
 // division by primes) is O(log), with the grant of primes table that scales linearly in query count for cost.
 // However, the O(log) asymptote is FAR practically slower, (at least for now). The empirical level follows:
-inline size_t pickTrialDivisionLevel(size_t qubitCount) {
-#if TRIAL_DIVISION_LEVEL_OVERRIDE > 0
-    return TRIAL_DIVISION_LEVEL_OVERRIDE;
-#else
-    if (qubitCount <= 58) {
-        // 73
-        return 20;
-    }
-    if (qubitCount <= 60) {
-        // 191
-        return 42;
-    }
-    if (qubitCount <= 62) {
-        // 193
-        return 43;
-    }
-    if (qubitCount <= 64) {
-        // 199
-        return 45;
+inline size_t pickTrialDivisionLevel(size_t qubitCount)
+{
+    if (TRIAL_DIVISION_LEVEL_OVERRIDE > 0) {
+        return TRIAL_DIVISION_LEVEL_OVERRIDE;
     }
     if (qubitCount <= 66) {
-        // 211
-        return 46;
+        return 44;
     }
     if (qubitCount <= 68) {
-        // 227
         return 48;
     }
     if (qubitCount <= 70) {
-        // 233
         return 50;
     }
     if (qubitCount <= 72) {
-        // 233
         return 50;
     }
     if (qubitCount <= 74) {
-        // 241
         return 52;
     }
 
     return ((3U * qubitCount) - 12U) / 4U;
-#endif
 }
 
 template <typename bitCapInt>
@@ -110,20 +89,88 @@ void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string me
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
+template <typename bitCapInt>
+bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
+    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
+{
+#if IS_RSA_SEMIPRIME
+    if ((toFactor % toTest) == 0U) {
+        isFinished = true;
+        printSuccess<bitCapInt>(toTest, toFactor / toTest, toFactor, "Base has common factor: Found ", iterClock);
+        return true;
+    }
+#else
+    // Find GCD
+    bitCapInt n1 = toFactor, n2 = toTest;
+    while (n2) {
+        const bitCapInt t = n1;
+        n1 = n2;
+        n2 = t % n2;
+    }
+    if (n1 != 1U) {
+        isFinished = true;
+        printSuccess<bitCapInt>(n1, toFactor / n1, toFactor, "Base has common factor: Found ", iterClock);
+        return true;
+    }
+#endif
+    return false;
+}
+
 template <typename WORD, typename bitCapInt>
-bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, size_t primeIndex,
+bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, size_t primeIndex,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, std::mt19937& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
-    size_t WORD_SIZE = sizeof(WORD) << 3U;
-    typedef std::uniform_int_distribution<WORD> rand_dist;
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
+    typedef std::uniform_int_distribution<WORD> rand_dist;
+    rand_dist baseDist(0U, (WORD)range);
+
+    for (;;) {
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+            // Choose a base at random, >1 and <toFactor.
+            bitCapInt base = baseDist(rand_gen);
+
+            for (size_t i = primeIndex; i > 2U; --i) {
+                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
+                base += base / (trialDivisionPrimes[i] - 1U) + 1U;
+            }
+
+            // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
+            base += (base >> 2U) + 1U;
+
+            // We combine the 2 and 3 multiple removal steps.
+            // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
+            // Then, make this odd, when added to the minimum.
+            base = (base & ~1U) + (base << 1U) + threadMin;
+
+            if (checkSuccess(toFactor, base, isFinished, iterClock)) {
+                return true;
+            }
+        }
+
+        // Check if finished, between batches.
+        if (isFinished) {
+            return true;
+        }
+    }
+
+    return true;
+}
+
+template <typename bitCapInt>
+bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt range, bitCapInt threadMin,
+    size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, std::mt19937& rand_gen,
+    const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
+{
+    // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
+    const int BASE_TRIALS = 1U << 16U;
+    typedef std::uniform_int_distribution<uint64_t> rand_dist;
 
     std::vector<rand_dist> baseDist;
     while (range) {
-        baseDist.push_back(rand_dist(0U, (WORD)range));
-        range >>= WORD_SIZE;
+        baseDist.push_back(rand_dist(0U, (uint64_t)range));
+        range >>= wordBitCount;
     }
     std::reverse(baseDist.begin(), baseDist.end());
 
@@ -132,7 +179,7 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = baseDist[0U](rand_gen);
             for (size_t i = 1U; i < baseDist.size(); ++i) {
-                base <<= WORD_SIZE;
+                base <<= wordBitCount;
                 base |= baseDist[i](rand_gen);
             }
 
@@ -149,27 +196,9 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
             // Then, make this odd, when added to the minimum.
             base = (base & ~1U) + (base << 1U) + threadMin;
 
-
-#if IS_RSA_SEMIPRIME
-            if ((toFactor % base) == 0U) {
-                isFinished = true;
-                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Base has common factor: Found ", iterClock);
+            if (checkSuccess(toFactor, base, isFinished, iterClock)) {
                 return true;
             }
-#else
-            // Find GCD
-            bitCapInt n1 = toFactor, n2 = base;
-            while (n2) {
-                const bitCapInt t = n1;
-                n1 = n2;
-                n2 = t % n2;
-            }
-            if (n1 != 1U) {
-                isFinished = true;
-                printSuccess<bitCapInt>(n1, toFactor / n1, toFactor, "Base has common factor: Found ", iterClock);
-                return true;
-            }
-#endif
         }
 
         // Check if finished, between batches.
@@ -181,7 +210,9 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
     return true;
 }
 
-template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId, const std::vector<unsigned>& trialDivisionPrimes)
+template <typename bitCapInt>
+int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId,
+    const std::vector<unsigned>& trialDivisionPrimes)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
     const unsigned TRIAL_DIVISION_LEVEL = trialDivisionPrimes[pickTrialDivisionLevel(qubitCount)];
@@ -208,9 +239,7 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
 
 #if IS_RSA_SEMIPRIME
     std::map<uint32_t, const std::vector<bitCapInt>> primeDict = {
-        { 16U, { 16411U, 131071U } },
-        { 28U, { 67108879U, 536870909U } },
-        { 32U, { 1073741827U, 8589934583U } },
+        { 16U, { 16411U, 131071U } }, { 28U, { 67108879U, 536870909U } }, { 32U, { 1073741827U, 8589934583U } },
         // { 64U, { 4611686018427388039ULL, bitCapInt{ "36893488147419103183" } } }
     };
 
@@ -262,12 +291,21 @@ template <typename bitCapInt> int mainBody(bitCapInt toFactor, size_t qubitCount
 
         // Define the RNG type based on 32-bit boundary.
         bitCapInt range = threadMax - (threadMin + 1U);
-        if (range >= (1ULL << 32U)) {
-            waitForSuccess<uint32_t, bitCapInt>(
+        unsigned rangeLog2 = 0U;
+        bitCapInt p = range >> 1U;
+        while (p) {
+            p >>= 1U;
+            ++rangeLog2;
+        }
+        if (rangeLog2 < 32U) {
+            singleWordLoop<uint32_t, bitCapInt>(
+                toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+        } else if (rangeLog2 < 64U) {
+            singleWordLoop<uint64_t, bitCapInt>(
                 toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
         } else {
-            waitForSuccess<uint64_t, bitCapInt>(
-                toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+            multiWordLoop<bitCapInt>(
+                64U, toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
         }
     };
 
