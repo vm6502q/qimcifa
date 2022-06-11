@@ -4,10 +4,10 @@ project (qimcifa VERSION 0.1.0 DESCRIPTION "Quantum-inspired Monte Carlo integer
 # Installation commands
 include (GNUInstallDirs)
 
-set(IS_RSA_SEMIPRIME 1)
-set(IS_DISTRIBUTED 1)
-set(USE_GMP 0)
-set(TRIAL_DIVISION_LEVEL_OVERRIDE -1)
+option (IS_RSA_SEMIPRIME "Optimize for RSA semiprime numbers, only. (Might restrict bounds too far on certain RSA semiprimes.)" ON)
+option (IS_DISTRIBUTED "Enable node distribution configuraiton dialog." ON)
+option (USE_GMP "Use GMP library instead of Boost for arbitrary precision integers." OFF)
+option (TRIAL_DIVISION_LEVEL_OVERRIDE "Override the trial division level to always match this option. (-1 is off.)" -1)
 
 configure_file(include/common/config.h.in include/common/config.h @ONLY)
 include_directories ("include" "include/common")

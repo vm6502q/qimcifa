@@ -47,9 +47,11 @@ namespace Qimcifa {
 // However, the O(log) asymptote is FAR practically slower, (at least for now). The empirical level follows:
 inline size_t pickTrialDivisionLevel(size_t qubitCount)
 {
-    if (TRIAL_DIVISION_LEVEL_OVERRIDE > -1) {
+#if defined(TRIAL_DIVISION_LEVEL_OVERRIDE)
+    if (TRIAL_DIVISION_LEVEL_OVERRIDE >= 0) {
         return TRIAL_DIVISION_LEVEL_OVERRIDE;
     }
+#endif
     if (qubitCount <= 66) {
         return 44;
     }

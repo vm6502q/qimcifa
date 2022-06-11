@@ -5,4 +5,4 @@
 // Use GMP arbitrary precision integers, (or use Boost alternative, if turned off).
 #cmakedefine USE_GMP 0
 // Override automatic TRIAL_DIVISION_LEVEL (-1 is no override)
-#cmakedefine TRIAL_DIVISION_LEVEL_OVERRIDE -1
+#cmakedefine TRIAL_DIVISION_LEVEL_OVERRIDE @TRIAL_DIVISION_LEVEL_OVERRIDE@
