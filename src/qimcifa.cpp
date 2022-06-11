@@ -87,24 +87,22 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
         return true;
     }
 
-    if (p != 1U) {
-        return false;
-    }
+    toTest -= (p - 1U);
 
     // Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
-    // Binary search for floor(sqrt(p))
-    bitCapInt start = 1U, end = p >> 1U, ans = 0U;
+    // Binary search for floor(sqrt(toTest))
+    bitCapInt start = 1U, end = toTest >> 1U, ans = 0U;
     do {
         const bitCapInt mid = (start + end) >> 1U;
 
-        // If p is a perfect square
+        // If toTest is a perfect square
         const bitCapInt sqr = mid * mid;
-        if (sqr == p) {
+        if (sqr == toTest) {
             ans = mid;
             break;
         }
 
-        if (sqr < p) {
+        if (sqr < toTest) {
             // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
             start = mid + 1U;
             ans = mid;
@@ -115,10 +113,10 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
     } while (start <= end);
 
     // base = a^r = 1 mod N
-    p = ans;
+    toTest = ans;
 
     // Find GCD
-    bitCapInt f1 = toFactor, n = p + 1U;
+    bitCapInt f1 = toFactor, n = toTest + 1U;
     while (n) {
         const bitCapInt t = f1;
         f1 = n;
@@ -126,7 +124,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
     }
 
     bitCapInt f2 = toFactor;
-    n = p - 1U;
+    n = toTest - 1U;
     while (n) {
         const bitCapInt t = f2;
         f2 = n;
@@ -143,7 +141,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
         // Inform the other threads on this node that we've succeeded and are done:
         isFinished = true;
-        printSuccess<bitCapInt>(toTest, toFactor / toTest, toFactor, "Success (on r difference of squares): Found ", iterClock);
+        printSuccess<bitCapInt>(f1, f2, toFactor, "Success (on r difference of squares): Found ", iterClock);
         return true;
     }
 #else
