@@ -52,6 +52,9 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
         return TRIAL_DIVISION_LEVEL_OVERRIDE;
     }
 #endif
+    if (qubitCount <= 56) {
+        return 43;
+    }
     if (qubitCount <= 66) {
         return 44;
     }
