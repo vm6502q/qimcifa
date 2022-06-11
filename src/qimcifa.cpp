@@ -315,7 +315,7 @@ using namespace Qimcifa;
 int main()
 {
 #if USE_GMP
-    typedef boost::multiprecision::number<boost::multiprecision::backends::gmp_int> bitCapIntInput;
+    typedef boost::multiprecision::mpz_int bitCapIntInput;
 #else
     typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
