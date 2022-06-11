@@ -57,8 +57,8 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount) {
     return TRIAL_DIVISION_LEVEL_OVERRIDE;
 #else
     if (qubitCount <= 58) {
-        // 59
-        return 16;
+        // 73
+        return 20;
     }
     if (qubitCount <= 60) {
         // 191
@@ -153,7 +153,7 @@ bool waitForSuccess(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
             // We combine the 2 and 3 multiple removal steps.
             // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
             // Then, make this odd, when added to the minimum.
-            base = (((base << 1U) + base) & ~1U) + threadMin;
+            base = (base & ~1U) + (base << 1U) + threadMin;
 
 
 #if IS_RSA_SEMIPRIME
