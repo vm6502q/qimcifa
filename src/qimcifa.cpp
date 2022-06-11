@@ -36,7 +36,7 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Use GMP library, or else Boost alternative
-#define USE_GMP 0
+#define USE_GMP 1
 // Override automatic TRIAL_DIVISION_LEVEL (0 is no override)
 #define TRIAL_DIVISION_LEVEL_OVERRIDE 0
 

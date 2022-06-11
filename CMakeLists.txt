@@ -12,8 +12,8 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -O3")
 add_executable (qimcifa
     src/qimcifa.cpp
     )
-target_link_libraries (qimcifa pthread)
-# target_link_libraries (qimcifa pthread gmp)
+# target_link_libraries (qimcifa pthread)
+target_link_libraries (qimcifa pthread gmp)
 
 # Options used when building the project
 find_package (OpenCL)
