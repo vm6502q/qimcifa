@@ -104,8 +104,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
     // If we're lucky enough that the above is true, for a^2 = toTest and (b^2 mod N) = remainder,
     // then we can immediately find a factor.
 
-    toTest *= toTest;
-    bitCapInt remainder = toTest % toFactor;
+    bitCapInt remainder = (toTest * toTest) % toFactor;
 
     // The sqrt() algorithm is adapted from Gaurav Ahirwar's suggestion on
     // https://www.geeksforgeeks.org/square-root-of-an-integer/
