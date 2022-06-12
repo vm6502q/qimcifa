@@ -90,7 +90,7 @@ void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string me
 }
 
 template <typename bitCapInt>
-bool checkDifferenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
+bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
     // Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
@@ -115,6 +115,10 @@ bool checkDifferenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
             end = mid - 1U;
         }
     } while (start <= end);
+    if (end > start) {
+        // Must be a perfect square.
+        return false;
+    }
 
     // base = a^r = 1 mod N
     toTest = ans;
@@ -151,7 +155,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
     }
 
 #if !IS_RSA_SEMIPRIME
-    if ((n == 1U) && checkDifferenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
+    if ((n == 1U) && checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
         return true;
     }
 
