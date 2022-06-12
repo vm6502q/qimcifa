@@ -81,74 +81,75 @@ template <typename bitCapInt>
 bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
+    bitCapInt n2 = toFactor % toTest;
+    if (n2 == 1U) {
+        // Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
+        // Binary search for floor(sqrt(toTest))
+        bitCapInt start = 1U, end = toTest >> 1U, ans = 0U;
+        do {
+            const bitCapInt mid = (start + end) >> 1U;
+
+            // If toTest is a perfect square
+            const bitCapInt sqr = mid * mid;
+            if (sqr == toTest) {
+                ans = mid;
+                break;
+            }
+
+            if (sqr < toTest) {
+                // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
+                start = mid + 1U;
+                ans = mid;
+            } else {
+                // If mid*mid is greater than p
+                end = mid - 1U;
+            }
+        } while (start <= end);
+
+        // base = a^r = 1 mod N
+        toTest = ans;
+
+        // Find GCD
+        bitCapInt f1 = toFactor;
+        n2 = toTest + 1U;
+        while (n2) {
+            const bitCapInt t = f1;
+            f1 = n2;
+            n2 = t % n2;
+        }
+
+        bitCapInt f2 = toFactor;
+        n2 = toTest - 1U;
+        while (n2) {
+            const bitCapInt t = f2;
+            f2 = n2;
+            n2 = t % n2;
+        }
+
+        bitCapInt fmul = f1 * f2;
+        while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
+            fmul = f1;
+            f1 *= f2;
+            f2 = toFactor / (fmul * f2);
+            fmul = f1 * f2;
+        }
+        if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+            // Inform the other threads on this node that we've succeeded and are done:
+            isFinished = true;
+            printSuccess<bitCapInt>(f1, f2, toFactor, "Success (on r difference of squares): Found ", iterClock);
+            return true;
+        }
+    }
+
 #if IS_RSA_SEMIPRIME
-    bitCapInt p = toFactor % toTest;
-    if (p == 0U) {
+    if (n2 == 0U) {
         isFinished = true;
         printSuccess<bitCapInt>(toTest, toFactor / toTest, toFactor, "Base has common factor: Found ", iterClock);
         return true;
     }
-
-    toTest -= (p - 1U);
-
-    // Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
-    // Binary search for floor(sqrt(toTest))
-    bitCapInt start = 1U, end = toTest >> 1U, ans = 0U;
-    do {
-        const bitCapInt mid = (start + end) >> 1U;
-
-        // If toTest is a perfect square
-        const bitCapInt sqr = mid * mid;
-        if (sqr == toTest) {
-            ans = mid;
-            break;
-        }
-
-        if (sqr < toTest) {
-            // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
-            start = mid + 1U;
-            ans = mid;
-        } else {
-            // If mid*mid is greater than p
-            end = mid - 1U;
-        }
-    } while (start <= end);
-
-    // base = a^r = 1 mod N
-    toTest = ans;
-
-    // Find GCD
-    bitCapInt f1 = toFactor, n = toTest + 1U;
-    while (n) {
-        const bitCapInt t = f1;
-        f1 = n;
-        n = t % n;
-    }
-
-    bitCapInt f2 = toFactor;
-    n = toTest - 1U;
-    while (n) {
-        const bitCapInt t = f2;
-        f2 = n;
-        n = t % n;
-    }
-
-    bitCapInt fmul = f1 * f2;
-    while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
-        fmul = f1;
-        f1 *= f2;
-        f2 = toFactor / (fmul * f2);
-        fmul = f1 * f2;
-    }
-    if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
-        // Inform the other threads on this node that we've succeeded and are done:
-        isFinished = true;
-        printSuccess<bitCapInt>(f1, f2, toFactor, "Success (on r difference of squares): Found ", iterClock);
-        return true;
-    }
 #else
+    bitCapInt n1 = toTest;
     // Find GCD
-    bitCapInt n1 = toFactor, n2 = toTest;
     while (n2) {
         const bitCapInt t = n1;
         n1 = n2;
@@ -449,8 +450,7 @@ int main()
         7283, 7297, 7307, 7309, 7321, 7331, 7333, 7349, 7351, 7369, 7393, 7411, 7417, 7433, 7451, 7457, 7459, 7477,
         7481, 7487, 7489, 7499, 7507, 7517, 7523, 7529, 7537, 7541, 7547, 7549, 7559, 7561, 7573, 7577, 7583, 7589,
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
-        7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919
-    };
+        7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
 
     // Print primes table by index:
     // for (size_t i = 0; i < trialDivisionPrimes.size(); ++i) {
