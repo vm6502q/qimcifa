@@ -115,7 +115,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
             end = mid - 1U;
         }
     } while (start <= end);
-    if (end > start) {
+    if (start > end) {
         // Must be a perfect square.
         return false;
     }
