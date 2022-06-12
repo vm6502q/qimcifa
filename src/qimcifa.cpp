@@ -66,8 +66,14 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
         return TRIAL_DIVISION_LEVEL_OVERRIDE;
     }
 #endif
+    if (qubitCount <= 56) {
+        return 41;
+    }
     if (qubitCount <= 58) {
         return 42;
+    }
+    if (qubitCount <= 62) {
+        return 43;
     }
     if (qubitCount <= 66) {
         return 44;
@@ -90,17 +96,20 @@ void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string me
 }
 
 template <typename bitCapInt>
-bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, bitCapInt remainder,
-    std::atomic<bool>& isFinished, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
+bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
+    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
     // The basic idea is "congruence of squares":
     // a^2 = b^2 mod N
     // If we're lucky enough that the above is true, for a^2 = toTest and (b^2 mod N) = remainder,
     // then we can immediately find a factor.
 
+    toTest *= toTest;
+    bitCapInt remainder = toTest % toFactor;
+
     // The sqrt() algorithm is adapted from Gaurav Ahirwar's suggestion on
     // https://www.geeksforgeeks.org/square-root-of-an-integer/
-    // It's a binary search for floor(sqrt(toTest))
+    // It's a binary search for floor(sqrt(toTest)).
 
     bitCapInt start = 1U, end = remainder >> 1U, ans = 0U;
     // If a^2 = 1 mod N, then b = 1.
@@ -134,34 +143,6 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, bitCapInt re
         remainder = ans;
     }
 
-    start = 1U, end = toTest >> 1U, ans = 0U;
-    do {
-        const bitCapInt mid = (start + end) >> 1U;
-
-        // If toTest is a perfect square
-        const bitCapInt sqr = mid * mid;
-        if (sqr == toTest) {
-            ans = mid;
-            break;
-        }
-
-        if (sqr < toTest) {
-            // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
-            start = mid + 1U;
-            ans = mid;
-        } else {
-            // If mid*mid is greater than p
-            end = mid - 1U;
-        }
-    } while (start <= end);
-    if (start > end) {
-        // Must be a perfect square.
-        return false;
-    }
-
-    // a^2 = b^2 mod N
-    toTest = ans;
-
     bitCapInt f1 = gcd<bitCapInt>(toTest + remainder, toFactor);
     bitCapInt f2 = gcd<bitCapInt>(toTest - remainder, toFactor);
     bitCapInt fmul = f1 * f2;
@@ -185,26 +166,24 @@ template <typename bitCapInt>
 bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
-    bitCapInt n = toFactor % toTest;
-
-    if (n == 0U) {
+#if IS_RSA_SEMIPRIME
+    if ((toFactor % toTest) == 0U) {
         isFinished = true;
         printSuccess<bitCapInt>(toTest, toFactor / toTest, toFactor, "Guessed exact factor: Found ", iterClock);
         return true;
     }
-
-    if ((n != toTest) && checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, n, isFinished, iterClock)) {
-        return true;
-    }
-
-#if !IS_RSA_SEMIPRIME
-    n = gcd(toTest, n);
+#else
+    bitCapInt n = gcd(toTest, n);
     if (n != 1U) {
         isFinished = true;
         printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Guess has common factor: Found ", iterClock);
         return true;
     }
 #endif
+
+    if (checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
+        return true;
+    }
 
     return false;
 }
