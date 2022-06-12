@@ -94,8 +94,8 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, bitCapInt re
     std::atomic<bool>& isFinished, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
     // The basic idea is "congruence of squares":
-    // base = a^2 = b^2 mod N
-    // If we're lucky enough that the above is true, for a^2=toTest and b^2=remainder,
+    // a^2 = b^2 mod N
+    // If we're lucky enough that the above is true, for a^2 = toTest and (b^2 mod N) = remainder,
     // then we can immediately find a factor.
 
     // The sqrt() algorithm is adapted from Gaurav Ahirwar's suggestion on
@@ -159,7 +159,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, bitCapInt re
         return false;
     }
 
-    // base = a^2 = b^2 mod N
+    // a^2 = b^2 mod N
     toTest = ans;
 
     bitCapInt f1 = gcd<bitCapInt>(toTest + remainder, toFactor);
