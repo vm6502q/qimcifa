@@ -43,6 +43,18 @@
 
 namespace Qimcifa {
 
+template <typename bitCapInt>
+bitCapInt gcd(bitCapInt n1, bitCapInt n2)
+{
+    while (n2) {
+        const bitCapInt t = n1;
+        n1 = n2;
+        n2 = t % n2;
+    }
+
+    return n1;
+}
+
 // Count of distinct primes increases logarithmically, over the integers increasing from 0. The cost of additional
 // trial division factors is linear. The complexity asymptote of "multiples elimination" (complement to trial
 // division by primes) is O(log), with the grant of a primes table that scales linearly in query count for cost.
@@ -107,23 +119,8 @@ bool checkDifferenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
     // base = a^r = 1 mod N
     toTest = ans;
 
-    // Find GCD
-    bitCapInt f1 = toFactor;
-    bitCapInt n = toTest + 1U;
-    while (n) {
-        const bitCapInt t = f1;
-        f1 = n;
-        n = t % n;
-    }
-
-    bitCapInt f2 = toFactor;
-    n = toTest - 1U;
-    while (n) {
-        const bitCapInt t = f2;
-        f2 = n;
-        n = t % n;
-    }
-
+    bitCapInt f1 = gcd<bitCapInt>(toTest + 1U, toFactor);
+    bitCapInt f2 = gcd<bitCapInt>(toTest - 1U, toFactor);
     bitCapInt fmul = f1 * f2;
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
         fmul = f1;
@@ -145,31 +142,27 @@ template <typename bitCapInt>
 bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
-    bitCapInt n2 = toFactor % toTest;
-    if (n2 == 1U) {
-        checkDifferenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock);
-    }
+    bitCapInt n = toFactor % toTest;
 
-#if IS_RSA_SEMIPRIME
-    if (n2 == 0U) {
+    if (n == 0U) {
         isFinished = true;
         printSuccess<bitCapInt>(toTest, toFactor / toTest, toFactor, "Base has common factor: Found ", iterClock);
         return true;
     }
-#else
-    bitCapInt n1 = toTest;
-    // Find GCD
-    while (n2) {
-        const bitCapInt t = n1;
-        n1 = n2;
-        n2 = t % n2;
+
+    if (n == 1U) {
+        checkDifferenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock);
     }
-    if (n1 != 1U) {
+
+#if !IS_RSA_SEMIPRIME
+    n = gcd(toTest, n);
+    if (n != 1U) {
         isFinished = true;
         printSuccess<bitCapInt>(n1, toFactor / n1, toFactor, "Base has common factor: Found ", iterClock);
         return true;
     }
 #endif
+
     return false;
 }
 
