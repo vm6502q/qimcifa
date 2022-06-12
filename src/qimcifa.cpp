@@ -291,9 +291,6 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         }
         currentPrime = trialDivisionPrimes[primeIndex];
     }
-    if (primeIndex >= trialDivisionPrimes.size()) {
-        primeIndex = trialDivisionPrimes.size() - 1U;
-    }
 
 #if IS_RSA_SEMIPRIME
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
@@ -301,6 +298,9 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     const bitCapInt fullMaxBase = ((1ULL << (primeBits + 1U)) - 1U);
 #else
     // We include potential factors as low as the next odd number after the highest trial division prime.
+    if (primeIndex >= trialDivisionPrimes.size()) {
+        currentPrime = trialDivisionPrimes.back() + 2U;
+    }
     const bitCapInt fullMinBase = currentPrime;
     // We include potential factors as high as toFactor / nextPrime.
     const bitCapInt fullMaxBase = toFactor / currentPrime;
