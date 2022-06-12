@@ -66,20 +66,8 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
         return TRIAL_DIVISION_LEVEL_OVERRIDE;
     }
 #endif
-    if (qubitCount <= 56) {
-        return 40;
-    }
-    if (qubitCount <= 58) {
-        return 42;
-    }
-    if (qubitCount <= 62) {
-        return 43;
-    }
-    if (qubitCount <= 66) {
-        return 44;
-    }
 
-    return (qubitCount + 1U) / 2U + 14U;
+    return (qubitCount + 1U) / 2U + 10U;
 }
 
 template <typename bitCapInt>
