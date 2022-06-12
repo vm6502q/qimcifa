@@ -67,7 +67,7 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
     }
 #endif
     if (qubitCount <= 58) {
-        return 43;
+        return 42;
     }
     if (qubitCount <= 66) {
         return 44;
@@ -90,8 +90,8 @@ void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string me
 }
 
 template <typename bitCapInt>
-bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
-    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
+bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, bitCapInt remainder,
+    std::atomic<bool>& isFinished, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
     // Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
     // Binary search for floor(sqrt(toTest))
@@ -120,11 +120,42 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
         return false;
     }
 
-    // base = a^r = 1 mod N
+    // base = a^2 = b^2 mod N
     toTest = ans;
 
-    bitCapInt f1 = gcd<bitCapInt>(toTest + 1U, toFactor);
-    bitCapInt f2 = gcd<bitCapInt>(toTest - 1U, toFactor);
+    // If a^2 = 1 mod N, then b = 1.
+    if (remainder > 1U) {
+        // Otherwise, find b = sqrt(b^2).
+        start = 1U, end = remainder >> 1U, ans = 0U;
+        do {
+            const bitCapInt mid = (start + end) >> 1U;
+
+            // If toTest is a perfect square
+            const bitCapInt sqr = mid * mid;
+            if (sqr == toTest) {
+                ans = mid;
+                break;
+            }
+
+            if (sqr < toTest) {
+                // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
+                start = mid + 1U;
+                ans = mid;
+            } else {
+                // If mid*mid is greater than p
+                end = mid - 1U;
+            }
+        } while (start <= end);
+        if (start > end) {
+            // Must be a perfect square.
+            return false;
+        }
+
+        remainder = ans;
+    }
+
+    bitCapInt f1 = gcd<bitCapInt>(toTest + remainder, toFactor);
+    bitCapInt f2 = gcd<bitCapInt>(toTest - remainder, toFactor);
     bitCapInt fmul = f1 * f2;
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
         fmul = f1;
@@ -135,7 +166,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
         // Inform the other threads on this node that we've succeeded and are done:
         isFinished = true;
-        printSuccess<bitCapInt>(f1, f2, toFactor, "Guessed power of Carmichael function value: Found ", iterClock);
+        printSuccess<bitCapInt>(f1, f2, toFactor, "Guessed congruence of squares: Found ", iterClock);
         return true;
     }
 
@@ -154,11 +185,11 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
         return true;
     }
 
-#if !IS_RSA_SEMIPRIME
-    if ((n == 1U) && checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
+    if ((n != toTest) && checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, n, isFinished, iterClock)) {
         return true;
     }
 
+#if !IS_RSA_SEMIPRIME
     n = gcd(toTest, n);
     if (n != 1U) {
         isFinished = true;
