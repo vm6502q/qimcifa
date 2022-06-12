@@ -78,67 +78,76 @@ void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string me
 }
 
 template <typename bitCapInt>
+bool checkDifferenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
+    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
+{
+    // Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
+    // Binary search for floor(sqrt(toTest))
+    bitCapInt start = 1U, end = toTest >> 1U, ans = 0U;
+    do {
+        const bitCapInt mid = (start + end) >> 1U;
+
+        // If toTest is a perfect square
+        const bitCapInt sqr = mid * mid;
+        if (sqr == toTest) {
+            ans = mid;
+            break;
+        }
+
+        if (sqr < toTest) {
+            // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
+            start = mid + 1U;
+            ans = mid;
+        } else {
+            // If mid*mid is greater than p
+            end = mid - 1U;
+        }
+    } while (start <= end);
+
+    // base = a^r = 1 mod N
+    toTest = ans;
+
+    // Find GCD
+    bitCapInt f1 = toFactor;
+    bitCapInt n = toTest + 1U;
+    while (n) {
+        const bitCapInt t = f1;
+        f1 = n;
+        n = t % n;
+    }
+
+    bitCapInt f2 = toFactor;
+    n = toTest - 1U;
+    while (n) {
+        const bitCapInt t = f2;
+        f2 = n;
+        n = t % n;
+    }
+
+    bitCapInt fmul = f1 * f2;
+    while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
+        fmul = f1;
+        f1 *= f2;
+        f2 = toFactor / (fmul * f2);
+        fmul = f1 * f2;
+    }
+    if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+        // Inform the other threads on this node that we've succeeded and are done:
+        isFinished = true;
+        printSuccess<bitCapInt>(f1, f2, toFactor, "Success (on r difference of squares): Found ", iterClock);
+        return true;
+    }
+
+    return false;
+}
+
+template <typename bitCapInt>
 bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
     bitCapInt n2 = toFactor % toTest;
     if (n2 == 1U) {
-        // Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
-        // Binary search for floor(sqrt(toTest))
-        bitCapInt start = 1U, end = toTest >> 1U, ans = 0U;
-        do {
-            const bitCapInt mid = (start + end) >> 1U;
-
-            // If toTest is a perfect square
-            const bitCapInt sqr = mid * mid;
-            if (sqr == toTest) {
-                ans = mid;
-                break;
-            }
-
-            if (sqr < toTest) {
-                // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
-                start = mid + 1U;
-                ans = mid;
-            } else {
-                // If mid*mid is greater than p
-                end = mid - 1U;
-            }
-        } while (start <= end);
-
-        // base = a^r = 1 mod N
-        toTest = ans;
-
-        // Find GCD
-        bitCapInt f1 = toFactor;
-        n2 = toTest + 1U;
-        while (n2) {
-            const bitCapInt t = f1;
-            f1 = n2;
-            n2 = t % n2;
-        }
-
-        bitCapInt f2 = toFactor;
-        n2 = toTest - 1U;
-        while (n2) {
-            const bitCapInt t = f2;
-            f2 = n2;
-            n2 = t % n2;
-        }
-
-        bitCapInt fmul = f1 * f2;
-        while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
-            fmul = f1;
-            f1 *= f2;
-            f2 = toFactor / (fmul * f2);
-            fmul = f1 * f2;
-        }
-        if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
-            // Inform the other threads on this node that we've succeeded and are done:
-            isFinished = true;
-            printSuccess<bitCapInt>(f1, f2, toFactor, "Success (on r difference of squares): Found ", iterClock);
-            return true;
-        }
+        checkDifferenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock);
     }
 
 #if IS_RSA_SEMIPRIME
