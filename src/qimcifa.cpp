@@ -158,7 +158,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
     n = gcd(toTest, n);
     if (n != 1U) {
         isFinished = true;
-        printSuccess<bitCapInt>(n1, toFactor / n1, toFactor, "Base has common factor: Found ", iterClock);
+        printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Base has common factor: Found ", iterClock);
         return true;
     }
 #endif
