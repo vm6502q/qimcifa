@@ -171,7 +171,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
         return true;
     }
 #else
-    bitCapInt n = gcd(toTest, n);
+    bitCapInt n = gcd(toTest, toFactor);
     if (n != 1U) {
         isFinished = true;
         printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Guess has common factor: Found ", iterClock);
