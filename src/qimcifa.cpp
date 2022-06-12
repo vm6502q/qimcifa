@@ -111,11 +111,10 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
     // https://www.geeksforgeeks.org/square-root-of-an-integer/
     // It's a binary search for floor(sqrt(toTest)).
 
-    bitCapInt start = 1U, end = remainder >> 1U, ans = 0U;
     // If a^2 = 1 mod N, then b = 1.
     if (remainder > 1U) {
         // Otherwise, find b = sqrt(b^2).
-        start = 1U, end = remainder >> 1U, ans = 0U;
+        bitCapInt start = 1U, end = remainder >> 1U, ans = 0U;
         do {
             const bitCapInt mid = (start + end) >> 1U;
 
