@@ -131,7 +131,7 @@ bool checkDifferenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
         // Inform the other threads on this node that we've succeeded and are done:
         isFinished = true;
-        printSuccess<bitCapInt>(f1, f2, toFactor, "Success (on r difference of squares): Found ", iterClock);
+        printSuccess<bitCapInt>(f1, f2, toFactor, "Guessed power of Carmichael function value: Found ", iterClock);
         return true;
     }
 
@@ -146,7 +146,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
 
     if (n == 0U) {
         isFinished = true;
-        printSuccess<bitCapInt>(toTest, toFactor / toTest, toFactor, "Base has common factor: Found ", iterClock);
+        printSuccess<bitCapInt>(toTest, toFactor / toTest, toFactor, "Guessed exact factor: Found ", iterClock);
         return true;
     }
 
@@ -158,7 +158,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
     n = gcd(toTest, n);
     if (n != 1U) {
         isFinished = true;
-        printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Base has common factor: Found ", iterClock);
+        printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Guess has common factor: Found ", iterClock);
         return true;
     }
 #endif
