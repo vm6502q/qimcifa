@@ -322,9 +322,14 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     currentPrime = 2U;
     primeIndex = 0;
     while (currentPrime <= TRIAL_DIVISION_LEVEL) {
-        // The truncation here is correct.
+        // The truncation without ceil() here would be exactly correct,
+        // if we were aligned to a perfect factor of all trial division.
         fullRange *= currentPrime - 1U;
+        bitCapInt remainder = fullRange % currentPrime;
         fullRange /= currentPrime;
+        if (remainder) {
+            ++fullRange;
+        }
 
         primeIndex++;
         if (primeIndex >= trialDivisionPrimes.size()) {
