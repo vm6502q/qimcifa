@@ -150,8 +150,8 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
         return true;
     }
 
-    if (n == 1U) {
-        checkDifferenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock);
+    if ((n == 1U) && checkDifferenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
+        return true;
     }
 
 #if !IS_RSA_SEMIPRIME
