@@ -67,7 +67,7 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
     }
 #endif
     if (qubitCount <= 56) {
-        return 41;
+        return 40;
     }
     if (qubitCount <= 58) {
         return 42;
