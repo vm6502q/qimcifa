@@ -93,36 +93,16 @@ template <typename bitCapInt>
 bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, bitCapInt remainder,
     std::atomic<bool>& isFinished, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
-    // Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
-    // Binary search for floor(sqrt(toTest))
-    bitCapInt start = 1U, end = toTest >> 1U, ans = 0U;
-    do {
-        const bitCapInt mid = (start + end) >> 1U;
-
-        // If toTest is a perfect square
-        const bitCapInt sqr = mid * mid;
-        if (sqr == toTest) {
-            ans = mid;
-            break;
-        }
-
-        if (sqr < toTest) {
-            // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
-            start = mid + 1U;
-            ans = mid;
-        } else {
-            // If mid*mid is greater than p
-            end = mid - 1U;
-        }
-    } while (start <= end);
-    if (start > end) {
-        // Must be a perfect square.
-        return false;
-    }
-
+    // The basic idea is "congruence of squares":
     // base = a^2 = b^2 mod N
-    toTest = ans;
+    // If we're lucky enough that the above is true, for a^2=toTest and b^2=remainder,
+    // then we can immediately find a factor.
 
+    // The sqrt() algorithm is adapted from Gaurav Ahirwar's suggestion on
+    // https://www.geeksforgeeks.org/square-root-of-an-integer/
+    // It's a binary search for floor(sqrt(toTest))
+
+    bitCapInt start = 1U, end = remainder >> 1U, ans = 0U;
     // If a^2 = 1 mod N, then b = 1.
     if (remainder > 1U) {
         // Otherwise, find b = sqrt(b^2).
@@ -153,6 +133,34 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, bitCapInt re
 
         remainder = ans;
     }
+
+    start = 1U, end = toTest >> 1U, ans = 0U;
+    do {
+        const bitCapInt mid = (start + end) >> 1U;
+
+        // If toTest is a perfect square
+        const bitCapInt sqr = mid * mid;
+        if (sqr == toTest) {
+            ans = mid;
+            break;
+        }
+
+        if (sqr < toTest) {
+            // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
+            start = mid + 1U;
+            ans = mid;
+        } else {
+            // If mid*mid is greater than p
+            end = mid - 1U;
+        }
+    } while (start <= end);
+    if (start > end) {
+        // Must be a perfect square.
+        return false;
+    }
+
+    // base = a^2 = b^2 mod N
+    toTest = ans;
 
     bitCapInt f1 = gcd<bitCapInt>(toTest + remainder, toFactor);
     bitCapInt f2 = gcd<bitCapInt>(toTest - remainder, toFactor);
