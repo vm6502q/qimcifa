@@ -17,6 +17,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "config.h"
+
 #include <chrono>
 #include <cmath>
 #include <iomanip> // For setw
@@ -31,7 +33,7 @@
 #include <map>
 #include <mutex>
 
-#include "config.h"
+#include <boost/random.hpp>
 
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
@@ -163,7 +165,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
 
 template <typename WORD, typename bitCapInt>
 bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, size_t primeIndex,
-    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, std::mt19937& rand_gen,
+    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
@@ -205,7 +207,7 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
 
 template <typename bitCapInt>
 bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt range, bitCapInt threadMin,
-    size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, std::mt19937& rand_gen,
+    size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
@@ -316,7 +318,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     const bitCapInt nodeMax = nodeMin + nodeRange;
 
     std::random_device rand_dev;
-    std::mt19937 rand_gen(rand_dev());
+    boost::taus88 rand_gen(rand_dev());
 
     const unsigned cpuCount = std::thread::hardware_concurrency();
     std::atomic<bool> isFinished;
