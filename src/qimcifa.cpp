@@ -83,6 +83,7 @@ void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string me
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
+#if IS_SQUARES_CONGRUENCE_CHECK
 template <typename bitCapInt>
 bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
@@ -147,6 +148,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
 
     return false;
 }
+#endif
 
 template <typename bitCapInt>
 bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
@@ -167,9 +169,11 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
     }
 #endif
 
+#if IS_SQUARES_CONGRUENCE_CHECK
     if (checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
         return true;
     }
+#endif
 
     return false;
 }

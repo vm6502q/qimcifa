@@ -6,6 +6,7 @@ include (GNUInstallDirs)
 
 option (IS_RSA_SEMIPRIME "Optimize for RSA semiprime numbers, only. (Might restrict bounds too far on certain RSA semiprimes.)" ON)
 option (IS_DISTRIBUTED "Enable node distribution configuraiton dialog." ON)
+option (IS_SQUARES_CONGRUENCE_CHECK "Optionally additionally check random number generator outputs for factoring via congruence of squares." OFF)
 option (USE_GMP "Use GMP library instead of Boost for arbitrary precision integers." OFF)
 option (TRIAL_DIVISION_LEVEL_OVERRIDE "Override the trial division level to always match this option. (-1 is off.)" -1)
 
