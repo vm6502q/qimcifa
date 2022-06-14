@@ -430,42 +430,48 @@ inline void bi_not_ip(BigInteger* left)
 }
 
 
-#if 0
 // "School book multiplication" (on half words)
 // Complexity - O(x^2)
-void bi_mul(const BigInteger* left, const BigInteger* right, BigInteger* result)
+BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
 {
     int maxI = BIG_INTEGER_WORD_SIZE << 1;
-    const BIG_INTEGER_WORD m = (1ULL << (BIG_INTEGER_WORD_BITS >> 1U)) - 1ULL;
+    const BIG_INTEGER_WORD wordSize = BIG_INTEGER_WORD_BITS >> 1U;
+    const BIG_INTEGER_WORD m = (1ULL << wordSize) - 1ULL;
 
-    bi_set_0(result);
+    BigInteger result = bi_create(0);
     for (int i = 0; i < maxI; ++i) {
         BIG_INTEGER_WORD carry = 0;
         int i2 = i >> 1;
         for (int j = 0; j < (maxI - i); ++j) {
             int j2 = j >> 1;
             if (((i & 1) == 0) && ((j & 1) == 0)) {
-                BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] & m) + (result->bits[i2 + j2] & m) + carry;
-                carry = temp >> 32;
-                result->bits[i2 + j2] |= temp & m;
+                BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] & m) + (result.bits[i2 + j2] & m) + carry;
+                carry = temp >> wordSize;
+                result.bits[i2 + j2] &= ~m;
+                result.bits[i2 + j2] |= temp & m;
             } else if (((i & 1) == 0) && ((j & 1) == 1)) {
-                BIG_INTEGER_WORD temp = (right->bits[j2] >> 32) * (left->bits[i2] & m) + (result->bits[i2 + j2] >> 32) + carry;
-                carry = temp >> 32;
-                result->bits[i2 + j2] |= (temp & m) << 32;
+                BIG_INTEGER_WORD temp = (right->bits[j2] >> wordSize) * (left->bits[i2] & m) + (result.bits[i2 + j2] >> wordSize) + carry;
+                carry = temp >> wordSize;
+                result.bits[i2 + j2] &= ~(m << wordSize);
+                result.bits[i2 + j2] |= (temp & m) << wordSize;
             } else if (((i & 1) == 1) && ((j & 1) == 0)) {
-                BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] >> 32) + (result->bits[i2 + j2] >> 32) + carry;
-                carry = temp >> 32;
-                result->bits[i2 + j2] |= (temp & m) << 32;
+                BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] >> wordSize) + (result.bits[i2 + j2] >> wordSize) + carry;
+                carry = temp >> wordSize;
+                result.bits[i2 + j2] &= ~(m << wordSize);
+                result.bits[i2 + j2] |= (temp & m) << wordSize;
             } else {
-                BIG_INTEGER_WORD temp = (right->bits[j2] >> 32) * (left->bits[i2] >> 32) + (result->bits[i2 + j2 + 1] & m) + carry;
-                carry = temp >> 32;
-                result->bits[i2 + j2 + 1] |= temp & m;
+                BIG_INTEGER_WORD temp = (right->bits[j2] >> wordSize) * (left->bits[i2] >> wordSize) + (result.bits[i2 + j2 + 1] & m) + carry;
+                carry = temp >> wordSize;
+                result.bits[i2 + j2 + 1] &= ~m;
+                result.bits[i2 + j2 + 1] |= temp & m;
             }
         }
     }
-}
-#endif
 
+    return result;
+}
+
+#if 0
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
 BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
@@ -499,6 +505,7 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
 
     return result;
 }
+#endif
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
