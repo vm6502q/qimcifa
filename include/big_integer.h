@@ -444,22 +444,23 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
         int i2 = i >> 1;
         for (int j = 0; j < (maxI - i); ++j) {
             int j2 = j >> 1;
+            int i2j2 = i2 + j2;
             if (((i & 1) == 0) && ((j & 1) == 0)) {
-                BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] & m) + (result.bits[i2 + j2] & m) + carry;
+                BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] & m) + (result.bits[i2j2] & m) + carry;
                 carry = temp >> wordSize;
-                result.bits[i2 + j2] = (result.bits[i2 + j2] & ~m) | (temp & m);
+                result.bits[i2j2] = (result.bits[i2j2] & ~m) | (temp & m);
             } else if (((i & 1) == 0) && ((j & 1) == 1)) {
-                BIG_INTEGER_WORD temp = (right->bits[j2] >> wordSize) * (left->bits[i2] & m) + (result.bits[i2 + j2] >> wordSize) + carry;
+                BIG_INTEGER_WORD temp = (right->bits[j2] >> wordSize) * (left->bits[i2] & m) + (result.bits[i2j2] >> wordSize) + carry;
                 carry = temp >> wordSize;
-                result.bits[i2 + j2] = (result.bits[i2 + j2] & ~(m << wordSize)) | ((temp & m) << wordSize);
+                result.bits[i2j2] = (result.bits[i2j2] & ~(m << wordSize)) | ((temp & m) << wordSize);
             } else if (((i & 1) == 1) && ((j & 1) == 0)) {
-                BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] >> wordSize) + (result.bits[i2 + j2] >> wordSize) + carry;
+                BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] >> wordSize) + (result.bits[i2j2] >> wordSize) + carry;
                 carry = temp >> wordSize;
-                result.bits[i2 + j2] = (result.bits[i2 + j2] & ~(m << wordSize)) | ((temp & m) << wordSize);
+                result.bits[i2j2] = (result.bits[i2j2] & ~(m << wordSize)) | ((temp & m) << wordSize);
             } else {
-                BIG_INTEGER_WORD temp = (right->bits[j2] >> wordSize) * (left->bits[i2] >> wordSize) + (result.bits[i2 + j2 + 1] & m) + carry;
+                BIG_INTEGER_WORD temp = (right->bits[j2] >> wordSize) * (left->bits[i2] >> wordSize) + (result.bits[i2j2 + 1] & m) + carry;
                 carry = temp >> wordSize;
-                result.bits[i2 + j2 + 1] = (result.bits[i2 + j2 + 1] & ~m) | (temp & m);
+                result.bits[i2j2 + 1] = (result.bits[i2j2 + 1] & ~m) | (temp & m);
             }
         }
     }
