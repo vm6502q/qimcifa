@@ -245,7 +245,7 @@ int main()
     } while (!nodeCount);
     if (nodeCount > 1U) {
         do {
-            std::cout << "Which node is this? (0-" << (int)(nodeCount - 1U) << "):";
+            std::cout << "Which node is this? (0-" << (int)(nodeCount - 1U) << "): ";
             std::cin >> nodeId;
             if (nodeId >= nodeCount) {
                 std::cout << "Invalid node ID choice!" << std::endl;

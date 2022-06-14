@@ -41,23 +41,25 @@
 #define WORD uint64_t
 #define bitsInByte 8U
 
+#define TRIAL_DIVISION_LEVEL_OVERRIDE 25
+
 #define bci_create(a) bi_create(a)
 #define bci_copy(a, o) bi_copy(&(a), o)
 #define bci_set_0(a) bi_set_0(a)
 #define bci_increment(l, r) bi_increment(l, r)
 #define bci_add_ip(l, r) bi_add_ip(l, &(r))
-#define bci_add(l, r, o) bi_add(&(l), &(r), o)
+#define bci_add(l, r) bi_add(&(l), &(r))
 #define bci_decrement(l, r) bi_decrement(l, r)
-#define bci_sub(l, r, o) bi_sub(&(l), &(r), o)
+#define bci_sub(l, r) bi_sub(&(l), &(r))
 #define bci_sub_ip(l, r) bi_sub_ip(l, &(r))
-#define bci_mul(l, r, o) bi_mul(&(l), &(r), o)
+#define bci_mul(l, r) bi_mul(&(l), &(r))
 #define bci_div(l, r, o) bi_div_mod(&(l), &(r), o, NULL)
 #define bci_mod(l, r, o) bi_div_mod(&(l), &(r), NULL, o)
-#define bci_lshift(l, r, o) bi_lshift(&(l), r, o)
+#define bci_lshift(l, r) bi_lshift(&(l), r)
 #define bci_lshift_ip(l, r) bi_lshift_ip(l, r)
-#define bci_rshift(l, r, o) bi_rshift(&(l), r, o)
+#define bci_rshift(l, r) bi_rshift(&(l), r)
 #define bci_rshift_ip(l, r) bi_rshift_ip(l, r)
-#define bci_and(l, r, o) bi_and(&(l), &(r), o)
+#define bci_and(l, r) bi_and(&(l), &(r))
 #define bci_eq(l, r) (bi_compare(&(l), &(r)) == 0)
 #define bci_neq(l, r) (bi_compare(&(l), &(r)) != 0)
 #define bci_lt(l, r) (bi_compare(&(l), &(r)) < 0)
@@ -107,8 +109,6 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
 
 std::istream& operator>>(std::istream& is, bitCapInt& b)
 {
-    bitCapInt t;
-
     // Get the whole input string at once.
     std::string input;
     is >> input;
@@ -117,8 +117,7 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
     bi_set_0(&b);
     for (size_t i = 0; i < input.size(); ++i) {
         // Left shift by 1 base-10 digit.
-        bci_copy(b, &t);
-        bci_mul(t, BIG_INT_10, &b);
+        b = bci_mul(b, BIG_INT_10);
         // Add the next lowest base-10 digit.
         bci_increment(&b, input[i] - 48U);
     }
@@ -129,10 +128,8 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
 bool isPowerOfTwo(const bitCapInt& x)
 {
-    bitCapInt t1;
-    bci_sub(x, ONE_BCI, &t1);
-    bitCapInt t2;
-    bci_and(x, t1, &t2);
+    bitCapInt t1 = bci_sub(x, ONE_BCI);
+    bitCapInt t2 = bci_and(x, t1);
 
     return bci_neq_0(x) && bci_eq_0(t2);
 }
@@ -163,7 +160,7 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
     }
 #endif
 
-    return (qubitCount + 1U) / 2U;
+    return (qubitCount + 1U) / 2U + 10U;
 }
 
 void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message,
@@ -198,8 +195,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
     if (bci_gt_1(remainder)) {
         // Otherwise, find b = sqrt(b^2).
         bitCapInt start = bci_create(1U);
-        bitCapInt end;
-        bci_rshift(remainder, 1U, &end);
+        bitCapInt end = bci_rshift(remainder, 1U);
         bitCapInt ans = bci_create(1U);
         bitCapInt mid, sqr;
         do {
@@ -292,32 +288,28 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
     typedef std::uniform_int_distribution<WORD> rand_dist;
     rand_dist baseDist(0U, bci_low64(range));
 
-    bitCapInt base, prime, t;
-
     for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bci_set_0(&base);
-            bci_low64(base) = baseDist(rand_gen);
+            bitCapInt t, base = bci_create(baseDist(rand_gen));
 
             for (size_t i = primeIndex; i > 2U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                bci_copy(base, &t);
-                bci_low64(prime) = (trialDivisionPrimes[i] - 1U);
+                bitCapInt prime = bci_create(trialDivisionPrimes[i] - 1U);
                 bci_div(base, prime, &t);
                 bci_add_ip(&base, t);
                 bci_increment(&base, 1U);
             }
 
             // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
-            bci_rshift(base, 2U, &t);
+            t = bci_rshift(base, 2U);
             bci_add_ip(&base, t);
             bci_increment(&base, 1U);
 
             // We combine the 2 and 3 multiple removal steps.
             // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
             // Then, make this odd, when added to the minimum.
-            bci_lshift(base, 1U, &t);
+            t = bci_lshift(base, 1U);
             bci_low64(base) &= ~1U;
             bci_add_ip(&base, t);
             bci_add_ip(&base, threadMin);
@@ -351,36 +343,32 @@ bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt ra
     }
     std::reverse(baseDist.begin(), baseDist.end());
 
-    bitCapInt base, prime, t;
-
     for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bci_set_0(&base);
-            bci_low64(base) = baseDist[0](rand_gen);
+            bitCapInt t, base = bci_create(baseDist[0](rand_gen));
             for (size_t i = 1U; i < baseDist.size(); ++i) {
                 bci_lshift_ip(&base, wordBitCount);
-                bci_low64(base) |= baseDist[i](rand_gen);
+                bci_low64(base) = baseDist[i](rand_gen);
             }
 
             for (size_t i = primeIndex; i > 2U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                bci_copy(base, &t);
-                bci_low64(prime) = (trialDivisionPrimes[i] - 1U);
+                bitCapInt prime = bci_create(trialDivisionPrimes[i] - 1U);
                 bci_div(base, prime, &t);
                 bci_add_ip(&base, t);
                 bci_increment(&base, 1U);
             }
 
             // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
-            bci_rshift(base, 2U, &t);
+            t = bci_rshift(base, 2U);
             bci_add_ip(&base, t);
             bci_increment(&base, 1U);
 
             // We combine the 2 and 3 multiple removal steps.
             // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
             // Then, make this odd, when added to the minimum.
-            bci_lshift(base, 1U, &t);
+            t = bci_lshift(base, 1U);
             bci_low64(base) &= ~1U;
             bci_add_ip(&base, t);
             bci_add_ip(&base, threadMin);
@@ -402,14 +390,19 @@ bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt ra
 int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
+    bitCapInt t;
+    bitCapInt currentPrimeBci = bci_create(0);
     auto iterClock = std::chrono::high_resolution_clock::now();
     const unsigned TRIAL_DIVISION_LEVEL = trialDivisionPrimes[pickTrialDivisionLevel(qubitCount)];
     unsigned currentPrime = 2U;
     size_t primeIndex = 0;
     while (currentPrime <= TRIAL_DIVISION_LEVEL) {
 #if !IS_RSA_SEMIPRIME
-        if ((toFactor % currentPrime) == 0) {
-            std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
+        bci_low64(currentPrimeBci) = currentPrime;
+        bci_mod(toFactor, currentPrimeBci, &t);
+        if (bci_eq_0(t)) {
+            bci_div(toFactor, currentPrimeBci, &t);
+            std::cout << "Factors: " << currentPrime << " * " << t << " = " << toFactor
                       << std::endl;
             return 0;
         }
@@ -436,22 +429,21 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     if (primeIndex >= trialDivisionPrimes.size()) {
         currentPrime = trialDivisionPrimes.back() + 2U;
     }
-    const bitCapInt fullMinBase = currentPrime;
+    const bitCapInt fullMinBase = bci_create(currentPrime);
     // We include potential factors as high as toFactor / nextPrime.
-    const bitCapInt fullMaxBase = toFactor / currentPrime;
+    bitCapInt fullMaxBase;
+    bci_div(toFactor, currentPrime, &fullMaxBase);
 #endif
 
-    bitCapInt fullRange;
-    bci_sub(fullMaxBase, fullMinBase, &fullRange);
+    bitCapInt fullRange = bci_sub(fullMaxBase, fullMinBase);
     bci_increment(&fullRange, 1U);
-    bitCapInt currentPrimeBci, t;
     currentPrime = 2U;
     primeIndex = 0;
     while (currentPrime <= TRIAL_DIVISION_LEVEL) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
         bci_low64(currentPrimeBci) = currentPrime - 1U;
-        bci_mul(fullRange, currentPrimeBci, &t);
+        t = bci_mul(fullRange, currentPrimeBci);
         bci_low64(currentPrimeBci) = currentPrime;
         bci_div(t, currentPrimeBci, &fullRange);
 
@@ -473,12 +465,10 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     bci_increment(&t, nodeCount - 1U);
     bci_div(t, nodeCountBci, &nodeRange);
 
-    bitCapInt nodeMin;
-    bci_mul(nodeRange, nodeIdBci, &nodeMin);
+    bitCapInt nodeMin = bci_mul(nodeRange, nodeIdBci);
     bci_add_ip(&nodeMin, fullMinBase);
 
-    bitCapInt nodeMax;
-    bci_add(nodeMin, nodeRange, &nodeMax);
+    bitCapInt nodeMax = bci_add(nodeMin, nodeRange);
 
     std::random_device rand_dev;
     boost::taus88 rand_gen(rand_dev());
@@ -493,8 +483,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         // and compilers differ on lambda expression capture of constants.
 
         // Define the RNG type based on 32-bit boundary.
-        bitCapInt range;
-        bci_sub(threadMax, threadMin, &range);
+        bitCapInt range = bci_sub(threadMax, threadMin);
         bci_decrement(&range, 1U);
         unsigned rangeLog2 = log2(range);
         if (rangeLog2 < 64U) {
@@ -510,7 +499,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     bitCapInt cpuBci = bci_create(0);
 
     bitCapInt threadRange;
-    bci_sub(nodeMax, nodeMin, &t);
+    t = bci_sub(nodeMax, nodeMin);
     bci_increment(&t, cpuCount - 1U);
     bci_div(t, cpuCountBci, &threadRange);
 
@@ -519,10 +508,10 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         bci_low64(cpuBci) = cpu;
 
-        bci_mul(threadRange, cpuBci, &threadMin);
+        threadMin = bci_mul(threadRange, cpuBci);
         bci_add_ip(&threadMin, nodeMin);
         bci_low64(threadMin) |= 1U;
-        bci_add(threadMin, threadRange, &threadMax);
+        threadMax = bci_add(threadMin, threadRange);
 
         // Align the lower limit to a multiple of ALL trial division factors.
         currentPrime = 2U;
@@ -531,7 +520,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
             bci_low64(currentPrimeBci) = currentPrime;
 
             bci_div(threadMin, currentPrimeBci, &t);
-            bci_mul(t, currentPrimeBci, &threadMin);
+            threadMin = bci_mul(t, currentPrimeBci);
 
             primeIndex++;
             if (primeIndex >= trialDivisionPrimes.size()) {
@@ -645,7 +634,7 @@ int main()
     } while (!nodeCount);
     if (nodeCount > 1U) {
         do {
-            std::cout << "Which node is this? (0-" << (nodeCount - 1U) << "):";
+            std::cout << "Which node is this? (0-" << (nodeCount - 1U) << "): ";
             std::cin >> nodeId;
             if (nodeId >= nodeCount) {
                 std::cout << "Invalid node ID choice!" << std::endl;
