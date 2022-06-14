@@ -53,8 +53,11 @@
 #define bci_sub(l, r) bi_sub(&(l), &(r))
 #define bci_sub_ip(l, r) bi_sub_ip(l, &(r))
 #define bci_mul(l, r) bi_mul(&(l), &(r))
+#define bci_mul_small(l, r) bi_mul_small(&(l), r)
 #define bci_div(l, r, o) bi_div_mod(&(l), &(r), o, NULL)
+#define bci_div_small(l, r, o) bi_div_mod_small(&(l), r, o, NULL)
 #define bci_mod(l, r, o) bi_div_mod(&(l), &(r), NULL, o)
+#define bci_mod_small(l, r, o) bi_div_mod_small(&(l), r, NULL, o)
 #define bci_lshift(l, r) bi_lshift(&(l), r)
 #define bci_lshift_ip(l, r) bi_lshift_ip(l, r)
 #define bci_rshift(l, r) bi_rshift(&(l), r)
@@ -79,7 +82,6 @@ namespace Qimcifa {
 
 const bitCapInt ZERO_BCI = bci_create(0U);
 const bitCapInt ONE_BCI = bci_create(1U);
-const bitCapInt BIG_INT_10 = bci_create(10U);
 
 std::ostream& operator<<(std::ostream& os, bitCapInt b)
 {
@@ -90,7 +92,7 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
     while (bci_neq_0(b)) {
         digits.push_back(std::to_string((unsigned char)(bci_low64(b) % 10U)));
         bci_copy(b, &t);
-        bci_div(t, BIG_INT_10, &b);
+        bci_div_small(t, 10, &b);
     }
 
     if (digits.size() == 0) {
@@ -117,7 +119,7 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
     bi_set_0(&b);
     for (size_t i = 0; i < input.size(); ++i) {
         // Left shift by 1 base-10 digit.
-        b = bci_mul(b, BIG_INT_10);
+        b = bci_mul_small(b, 10);
         // Add the next lowest base-10 digit.
         bci_increment(&b, input[i] - 48U);
     }
@@ -185,7 +187,8 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
     // then we can immediately find a factor.
 
     bitCapInt remainder, t;
-    bci_mul(toTest, toTest, &t) bci_mod(t, toFactor, &remainder);
+    bci_mul(toTest, toTest, &t);
+    bci_mod(t, toFactor, &remainder);
 
     // The sqrt() algorithm is adapted from Gaurav Ahirwar's suggestion on
     // https://www.geeksforgeeks.org/square-root-of-an-integer/
@@ -202,8 +205,8 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
             bci_add(start, end, &mid);
             bci_rshift_ip(&mid, 1U;)
 
-                // If toTest is a perfect square
-                bci_mul(mid, mid, &sqr);
+            // If toTest is a perfect square
+            bci_mul(mid, mid, &sqr);
             int cmp = bci_compare(sqr, toTest);
             if (cmp == 0) {
                 bci_copy(mid, &ans);
@@ -295,8 +298,7 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
 
             for (size_t i = primeIndex; i > 2U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                bitCapInt prime = bci_create(trialDivisionPrimes[i] - 1U);
-                bci_div(base, prime, &t);
+                bci_div_small(base, trialDivisionPrimes[i] - 1U, &t);
                 bci_add_ip(&base, t);
                 bci_increment(&base, 1U);
             }
@@ -354,8 +356,7 @@ bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt ra
 
             for (size_t i = primeIndex; i > 2U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                bitCapInt prime = bci_create(trialDivisionPrimes[i] - 1U);
-                bci_div(base, prime, &t);
+                bci_div_small(base, trialDivisionPrimes[i] - 1U, &t);
                 bci_add_ip(&base, t);
                 bci_increment(&base, 1U);
             }
@@ -391,17 +392,15 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     bitCapInt t;
-    bitCapInt currentPrimeBci = bci_create(0);
     auto iterClock = std::chrono::high_resolution_clock::now();
     const unsigned TRIAL_DIVISION_LEVEL = trialDivisionPrimes[pickTrialDivisionLevel(qubitCount)];
     unsigned currentPrime = 2U;
     size_t primeIndex = 0;
     while (currentPrime <= TRIAL_DIVISION_LEVEL) {
 #if !IS_RSA_SEMIPRIME
-        bci_low64(currentPrimeBci) = currentPrime;
-        bci_mod(toFactor, currentPrimeBci, &t);
+        bci_mod_small(toFactor, currentPrime, &t);
         if (bci_eq_0(t)) {
-            bci_div(toFactor, currentPrimeBci, &t);
+            bci_div_small(toFactor, currentPrime, &t);
             std::cout << "Factors: " << currentPrime << " * " << t << " = " << toFactor
                       << std::endl;
             return 0;
@@ -432,7 +431,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     const bitCapInt fullMinBase = bci_create(currentPrime);
     // We include potential factors as high as toFactor / nextPrime.
     bitCapInt fullMaxBase;
-    bci_div(toFactor, currentPrime, &fullMaxBase);
+    bci_div_small(toFactor, currentPrime, &fullMaxBase);
 #endif
 
     bitCapInt fullRange = bci_sub(fullMaxBase, fullMinBase);
@@ -442,10 +441,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     while (currentPrime <= TRIAL_DIVISION_LEVEL) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
-        bci_low64(currentPrimeBci) = currentPrime - 1U;
-        t = bci_mul(fullRange, currentPrimeBci);
-        bci_low64(currentPrimeBci) = currentPrime;
-        bci_div(t, currentPrimeBci, &fullRange);
+        t = bci_mul_small(fullRange, currentPrime - 1U);
+        bci_div_small(t, currentPrime, &fullRange);
 
         primeIndex++;
         if (primeIndex >= trialDivisionPrimes.size()) {
@@ -457,13 +454,12 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         primeIndex = trialDivisionPrimes.size() - 1U;
     }
 
-    const bitCapInt nodeCountBci = bci_create(nodeCount);
     const bitCapInt nodeIdBci = bci_create(nodeId);
 
     bitCapInt nodeRange;
     bci_copy(fullRange, &t);
     bci_increment(&t, nodeCount - 1U);
-    bci_div(t, nodeCountBci, &nodeRange);
+    bci_div_small(t, nodeCount, &nodeRange);
 
     bitCapInt nodeMin = bci_mul(nodeRange, nodeIdBci);
     bci_add_ip(&nodeMin, fullMinBase);
@@ -495,13 +491,12 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         }
     };
 
-    const bitCapInt cpuCountBci = bci_create(cpuCount);
     bitCapInt cpuBci = bci_create(0);
 
     bitCapInt threadRange;
     t = bci_sub(nodeMax, nodeMin);
     bci_increment(&t, cpuCount - 1U);
-    bci_div(t, cpuCountBci, &threadRange);
+    bci_div_small(t, cpuCount, &threadRange);
 
     bitCapInt threadMin, threadMax;
     std::vector<std::future<void>> futures(cpuCount);
@@ -517,10 +512,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         currentPrime = 2U;
         primeIndex = 0;
         while (currentPrime <= TRIAL_DIVISION_LEVEL) {
-            bci_low64(currentPrimeBci) = currentPrime;
-
-            bci_div(threadMin, currentPrimeBci, &t);
-            threadMin = bci_mul(t, currentPrimeBci);
+            bci_div_small(threadMin, currentPrime, &t);
+            threadMin = bci_mul_small(t, currentPrime);
 
             primeIndex++;
             if (primeIndex >= trialDivisionPrimes.size()) {

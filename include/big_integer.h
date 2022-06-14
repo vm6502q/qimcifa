@@ -41,6 +41,8 @@
 #define BIG_INTEGER_WORD_BITS 64
 #define BIG_INTEGER_WORD_POWER 6
 #define BIG_INTEGER_WORD unsigned long
+#define BIG_INTEGER_HALF_WORD unsigned
+#define BIG_INTEGER_HALF_WORD_BITS 32
 #define BIG_INTEGER_BITS 128
 
 typedef struct BigInteger {
@@ -429,22 +431,71 @@ inline void bi_not_ip(BigInteger* left)
     }
 }
 
-
 // "School book multiplication" (on half words)
+// Complexity - O(x^2)
+BigInteger bi_mul_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right)
+{
+    int maxI = BIG_INTEGER_WORD_SIZE << 1;
+    const BIG_INTEGER_WORD wordSize = BIG_INTEGER_HALF_WORD_BITS;
+    const BIG_INTEGER_WORD m = (1ULL << wordSize) - 1ULL;
+
+    BigInteger result = bi_create(0);
+    BIG_INTEGER_WORD carry = 0;
+    for (int i = 0; i < maxI; ++i) {
+        const int i2 = i >> 1;
+        if (i & 1) {
+            BIG_INTEGER_WORD temp = right * (left->bits[i2] >> wordSize) + carry;
+            carry = temp >> wordSize;
+            result.bits[i2] |= (temp & m) << wordSize;
+        } else {
+            BIG_INTEGER_WORD temp = right * (left->bits[i2] & m) + carry;
+            carry = temp >> wordSize;
+            result.bits[i2] |= temp & m;
+        }
+    }
+
+    return result;
+}
+
+// "Schoolbook multiplication" (on half words)
 // Complexity - O(x^2)
 BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
 {
+    if (right->bits[0] < (1ULL << BIG_INTEGER_HALF_WORD_BITS)) {
+        int wordSize = 0;
+        for (wordSize = 0; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
+            if (right->bits[wordSize]) {
+                break;
+            }
+        }
+        if (wordSize >= BIG_INTEGER_WORD_SIZE) {
+            return bi_mul_small(left, (BIG_INTEGER_HALF_WORD)(right->bits[0]));
+        }
+    }
+
+    if (left->bits[0] < (1ULL << BIG_INTEGER_HALF_WORD_BITS)) {
+        int wordSize = 0;
+        for (wordSize = 0; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
+            if (left->bits[wordSize]) {
+                break;
+            }
+        }
+        if (wordSize >= BIG_INTEGER_WORD_SIZE) {
+            return bi_mul_small(right, (BIG_INTEGER_HALF_WORD)(left->bits[0]));
+        }
+    }
+
     int maxI = BIG_INTEGER_WORD_SIZE << 1;
-    const BIG_INTEGER_WORD wordSize = BIG_INTEGER_WORD_BITS >> 1U;
+    const BIG_INTEGER_WORD wordSize = BIG_INTEGER_HALF_WORD_BITS;
     const BIG_INTEGER_WORD m = (1ULL << wordSize) - 1ULL;
 
     BigInteger result = bi_create(0);
     for (int i = 0; i < maxI; ++i) {
         BIG_INTEGER_WORD carry = 0;
-        int i2 = i >> 1;
+        const int i2 = i >> 1;
         for (int j = 0; j < (maxI - i); ++j) {
-            int j2 = j >> 1;
-            int i2j2 = i2 + j2;
+            const int j2 = j >> 1;
+            const int i2j2 = i2 + j2;
             if (((i & 1) == 0) && ((j & 1) == 0)) {
                 BIG_INTEGER_WORD temp = (right->bits[j2] & m) * (left->bits[i2] & m) + (result.bits[i2j2] & m) + carry;
                 carry = temp >> wordSize;
@@ -504,6 +555,37 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
 }
 #endif
 
+// "Schoolbook division" (on half words)
+// Complexity - O(x^2)
+void bi_div_mod_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right, BigInteger* quotient, BigInteger* rmndr)
+{
+    const BIG_INTEGER_WORD wordSize = BIG_INTEGER_WORD_BITS >> 1U;
+    const BIG_INTEGER_WORD m = (1ULL << wordSize) - 1ULL;
+
+    if (quotient) {
+        bi_set_0(quotient);
+    }
+    BIG_INTEGER_WORD carry = 0;
+    for (int i = (BIG_INTEGER_WORD_SIZE << 1) - 1; i >= 0; --i) {
+        const int i2 = i >> 1;
+        carry <<= wordSize;
+        if (i & 1) {
+            carry |= left->bits[i2] >> wordSize;
+            quotient->bits[i2] |= (carry / right) << wordSize;
+        } else {
+            carry |= left->bits[i2] & m;
+            quotient->bits[i2] |= (carry / right);
+        }
+        if (carry > right) {
+            carry -= carry % right;
+        }
+    }
+    if (rmndr) {
+        bi_set_0(rmndr);
+        rmndr->bits[0] = carry;
+    }
+}
+
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
 void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quotient, BigInteger* rmndr)
@@ -538,6 +620,20 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
     }
 
     // Otherwise, past this point, left > right.
+
+    if (right->bits[0] < (1ULL << BIG_INTEGER_HALF_WORD_BITS)) {
+        int wordSize = 0;
+        for (wordSize = 0; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
+            if (right->bits[wordSize]) {
+                break;
+            }
+        }
+        if (wordSize >= BIG_INTEGER_WORD_SIZE) {
+            // We can use the small division variant.
+            bi_div_mod_small(left, (BIG_INTEGER_HALF_WORD)(right->bits[0]), quotient, rmndr);
+            return;
+        }
+    }
 
     int rightLog2 = bi_log2(right);
     if (rightLog2 == 0) {
