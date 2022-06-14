@@ -431,7 +431,7 @@ inline void bi_not_ip(BigInteger* left)
     }
 }
 
-// "School book multiplication" (on half words)
+// "Schoolbook multiplication" (on half words)
 // Complexity - O(x^2)
 BigInteger bi_mul_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right)
 {

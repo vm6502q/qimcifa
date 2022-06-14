@@ -41,8 +41,6 @@
 #define WORD uint64_t
 #define bitsInByte 8U
 
-#define TRIAL_DIVISION_LEVEL_OVERRIDE 25
-
 #define bci_create(a) bi_create(a)
 #define bci_copy(a, o) bi_copy(&(a), o)
 #define bci_set_0(a) bi_set_0(a)
