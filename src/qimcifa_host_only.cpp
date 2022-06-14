@@ -78,7 +78,6 @@
 
 namespace Qimcifa {
 
-const bitCapInt ZERO_BCI = bci_create(0U);
 const bitCapInt ONE_BCI = bci_create(1U);
 
 std::ostream& operator<<(std::ostream& os, bitCapInt b)
