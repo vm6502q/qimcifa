@@ -319,7 +319,11 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 
     // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
     // other QEngineOCL instances, until we're done queueing it.
+#if IS_RSA_SEMIPRIME
+    OCLDeviceCall ocl = deviceContext->Reserve(OCL_API_QIMCIFA_RSA_BATCH);
+#else
     OCLDeviceCall ocl = deviceContext->Reserve(OCL_API_QIMCIFA_BATCH);
+#endif
 
     ocl.call.setArg(0, *rngSeedBufferPtr);
     ocl.call.setArg(1, *primesBufferPtr);

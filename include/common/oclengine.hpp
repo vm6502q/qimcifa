@@ -45,7 +45,8 @@ typedef std::shared_ptr<std::vector<cl::Event>> EventVecPtr;
 
 enum OCLAPI {
     OCL_API_UNKNOWN = 0,
-    OCL_API_QIMCIFA_BATCH
+    OCL_API_QIMCIFA_BATCH,
+    OCL_API_QIMCIFA_RSA_BATCH
 };
 
 struct OCLKernelHandle {

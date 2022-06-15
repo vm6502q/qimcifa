@@ -38,7 +38,8 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t& dev)
 
 // clang-format off
 const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
-    OCLKernelHandle(OCL_API_QIMCIFA_BATCH, "qimcifa_batch")
+    OCLKernelHandle(OCL_API_QIMCIFA_BATCH, "qimcifa_batch"),
+    OCLKernelHandle(OCL_API_QIMCIFA_RSA_BATCH, "qimcifa_rsa_batch")
 };
 // clang-format on
 
