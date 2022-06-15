@@ -200,7 +200,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
         bitCapInt mid, sqr;
         do {
             bci_add(start, end, &mid);
-            bci_rshift_ip(&mid, 1U;)
+            bci_rshift_ip(&mid, 1U);
 
             // If toTest is a perfect square
             bci_mul(mid, mid, &sqr);
@@ -398,8 +398,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         bci_mod_small(toFactor, currentPrime, &t);
         if (bci_eq_0(t)) {
             bci_div_small(toFactor, currentPrime, &t);
-            std::cout << "Factors: " << currentPrime << " * " << t << " = " << toFactor
-                      << std::endl;
+            std::cout << "Factors: " << currentPrime << " * " << t << " = " << toFactor << std::endl;
             return 0;
         }
 #endif
@@ -468,8 +467,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     std::atomic<bool> isFinished;
     isFinished = false;
 
-    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, qubitCount, &trialDivisionPrimes,
-                              &rand_gen, &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, &trialDivisionPrimes, &rand_gen, &isFinished](
+                              bitCapInt threadMin, bitCapInt threadMax) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
@@ -486,8 +485,6 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         }
     };
 
-    bitCapInt cpuBci = bci_create(0);
-
     bitCapInt threadRange;
     t = bci_sub(nodeMax, nodeMin);
     bci_increment(&t, cpuCount - 1U);
@@ -496,9 +493,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     bitCapInt threadMin, threadMax;
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        bci_low64(cpuBci) = cpu;
-
-        threadMin = bci_mul(threadRange, cpuBci);
+        threadMin = bci_mul_small(threadRange, cpu);
         bci_add_ip(&threadMin, nodeMin);
         bci_low64(threadMin) |= 1U;
         threadMax = bci_add(threadMin, threadRange);

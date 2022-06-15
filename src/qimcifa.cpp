@@ -43,8 +43,7 @@
 
 namespace Qimcifa {
 
-template <typename bitCapInt>
-bitCapInt gcd(bitCapInt n1, bitCapInt n2)
+template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
     while (n2) {
         const bitCapInt t = n1;
@@ -340,8 +339,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     std::atomic<bool> isFinished;
     isFinished = false;
 
-    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, qubitCount, &trialDivisionPrimes,
-                              &rand_gen, &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, &trialDivisionPrimes, &rand_gen, &isFinished](
+                              bitCapInt threadMin, bitCapInt threadMax) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
