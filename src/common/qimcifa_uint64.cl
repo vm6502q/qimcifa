@@ -23,7 +23,6 @@
 // #include "big_integer.cl"
 
 #define bitCapInt BigInteger
-#define IS_RSA_SEMIPRIME 1
 
 bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
@@ -35,6 +34,16 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
         bi_div_mod(&t1, &t2, NULL, &n2);
     }
     return n1;
+}
+
+bool isPowerOfTwo(bitCapInt x)
+{
+    bitCapInt t;
+    bi_copy(&x, &t);
+    bi_decrement(&t, 1);
+    bi_and_ip(&t, &x);
+
+    return (bi_compare_0(&x) != 0) && (bi_compare_0(&t) == 0);
 }
 
 void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivisionPrimes, global unsigned* unsignedArgs, global bitCapInt* bitCapIntArgs, global bitCapInt* outputs)
@@ -68,6 +77,8 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     threadMin.bits[0] |= 1U;
     bitCapInt threadMax = bi_add(&threadMin, &threadRange);
 
+    const size_t rngWordCount = (bi_log2(&threadRange) >> 6) + (isPowerOfTwo(threadRange) ? 0 : 1);
+
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
     for (unsigned i = 0; i < primesLength; ++i) {
@@ -81,13 +92,9 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
-        t = bi_create(kiss09_ulong(rngState));
-#if 0
-        for (size_t i = 1; i < byteCount; i++) {
-            t <<= wordSize;
-            t |= kiss09_ulong(rngState);
+        for (size_t i = 0; i < rngWordCount; i++) {
+            t.bits[i] = kiss09_ulong(rngState);
         }
-#endif
         bitCapInt base;
         bi_div_mod(&t, &threadRange, NULL, &base);
 
@@ -158,6 +165,8 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
     threadMin.bits[0] |= 1U;
     bitCapInt threadMax = bi_add(&threadMin, &threadRange);
 
+    const size_t rngWordCount = (bi_log2(&threadRange) >> 6) + (isPowerOfTwo(threadRange) ? 0 : 1);
+
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
     for (unsigned i = 0; i < primesLength; ++i) {
@@ -171,13 +180,9 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
-        t = bi_create(kiss09_ulong(rngState));
-#if 0
-        for (size_t i = 1; i < byteCount; i++) {
-            t <<= wordSize;
-            t |= kiss09_ulong(rngState);
+        for (size_t i = 0; i < rngWordCount; i++) {
+            t.bits[i] = kiss09_ulong(rngState);
         }
-#endif
         bitCapInt base;
         bi_div_mod(&t, &threadRange, NULL, &base);
 
