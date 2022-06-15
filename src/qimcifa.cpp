@@ -66,7 +66,7 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
     }
 #endif
 
-    return (qubitCount + 1U) / 2U + 10U;
+    return (qubitCount + 1U) / 2U + 9U;
 }
 
 template <typename bitCapInt>
