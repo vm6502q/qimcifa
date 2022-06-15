@@ -75,8 +75,10 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     threadMin.bits[0] |= 1U;
     bitCapInt threadMax = bi_add(&threadMin, &threadRange);
 
-    const size_t rngBitCount = bi_log2(&threadRange);
-    const size_t rngWordCount = (rngBitCount < 64) ? 1 : ((rngBitCount >> 6) + (isPowerOfTwo(threadRange) ? 0 : 1));
+    const size_t rngBitCount = bi_log2(&threadRange) + (isPowerOfTwo(threadRange) ? 0 : 1);
+    const size_t rngWordCount = (rngBitCount < 64) ? 1 : (rngBitCount >> 6);
+    bitCapInt rngMax = bi_create(1);
+    bi_lshift_ip(&rngMax, rngBitCount);
 
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
@@ -91,12 +93,17 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
-        for (size_t i = 0; i < rngWordCount; i++) {
-            t.bits[i] = kiss09_ulong(rngState);
-        }
         for (size_t i = rngWordCount; i < BIG_INTEGER_WORD_SIZE; i++) {
             t.bits[i] = 0;
         }
+        do {
+            for (size_t i = 0; i < rngWordCount; i++) {
+                t.bits[i] = kiss09_ulong(rngState);
+            }
+            bitCapInt o;
+            bi_div_mod(&t, &rngMax, 0, &o);
+            bi_copy(&o, &t);
+        } while (bi_compare(&t, &threadRange) >= 0);
         bitCapInt base;
         bi_div_mod(&t, &threadRange, 0, &base);
 
@@ -169,6 +176,8 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
 
     const size_t rngBitCount = bi_log2(&threadRange);
     const size_t rngWordCount = (rngBitCount < 64) ? 1 : ((rngBitCount >> 6) + (isPowerOfTwo(threadRange) ? 0 : 1));
+    bitCapInt rngMax = bi_create(1);
+    bi_lshift_ip(&rngMax, rngBitCount);
 
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
@@ -183,12 +192,17 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
-        for (size_t i = 0; i < rngWordCount; i++) {
-            t.bits[i] = kiss09_ulong(rngState);
-        }
         for (size_t i = rngWordCount; i < BIG_INTEGER_WORD_SIZE; i++) {
             t.bits[i] = 0;
         }
+        do {
+            for (size_t i = 0; i < rngWordCount; i++) {
+                t.bits[i] = kiss09_ulong(rngState);
+            }
+            bitCapInt o;
+            bi_div_mod(&t, &rngMax, 0, &o);
+            bi_copy(&o, &t);
+        } while (bi_compare(&t, &threadRange) >= 0);
         bitCapInt base;
         bi_div_mod(&t, &threadRange, 0, &base);
 
