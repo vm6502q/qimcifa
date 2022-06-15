@@ -17,8 +17,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-// TODO: Consider this pseudocode, copied from qimcifa.cpp.
-
 // #include "kiss09.cl"
 // #include "big_integer.cl"
 
@@ -31,7 +29,7 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
         bi_copy(&n1, &t1);
         bi_copy(&n2, &t2);
         bi_copy(&n2, &n1);
-        bi_div_mod(&t1, &t2, NULL, &n2);
+        bi_div_mod(&t1, &t2, 0, &n2);
     }
     return n1;
 }
@@ -70,7 +68,7 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     bitCapInt threadRange;
     t = bi_sub(&nodeMax, &nodeMin);
     bi_increment(&t, threadCount - 1U);
-    bi_div_mod_small(&t, threadCount, &threadRange, NULL);
+    bi_div_mod_small(&t, threadCount, &threadRange, 0);
 
     bitCapInt threadMin = bi_mul_small(&threadRange, thread);
     bi_add_ip(&threadMin, &nodeMin);
@@ -84,7 +82,7 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     for (unsigned i = 0; i < primesLength; ++i) {
         unsigned currentPrime = trialDivisionPrimes[i];
         privPrimes[i] = currentPrime;
-        bi_div_mod_small(&threadMin, currentPrime, &t, NULL);
+        bi_div_mod_small(&threadMin, currentPrime, &t, 0);
         threadMin = bi_mul_small(&t, currentPrime);
     }
     threadMin.bits[0] |= 1;
@@ -96,11 +94,11 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
             t.bits[i] = kiss09_ulong(rngState);
         }
         bitCapInt base;
-        bi_div_mod(&t, &threadRange, NULL, &base);
+        bi_div_mod(&t, &threadRange, 0, &base);
 
         for (size_t i = primesLength - 1; i > 2; --i) {
             // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-            bi_div_mod_small(&base, privPrimes[i] - 1, &t, NULL);
+            bi_div_mod_small(&base, privPrimes[i] - 1, &t, 0);
             bi_add_ip(&base, &t);
             bi_increment(&base, 1);
         }
@@ -158,7 +156,7 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
     bitCapInt threadRange;
     t = bi_sub(&nodeMax, &nodeMin);
     bi_increment(&t, threadCount - 1U);
-    bi_div_mod_small(&t, threadCount, &threadRange, NULL);
+    bi_div_mod_small(&t, threadCount, &threadRange, 0);
 
     bitCapInt threadMin = bi_mul_small(&threadRange, thread);
     bi_add_ip(&threadMin, &nodeMin);
@@ -172,7 +170,7 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
     for (unsigned i = 0; i < primesLength; ++i) {
         unsigned currentPrime = trialDivisionPrimes[i];
         privPrimes[i] = currentPrime;
-        bi_div_mod_small(&threadMin, currentPrime, &t, NULL);
+        bi_div_mod_small(&threadMin, currentPrime, &t, 0);
         threadMin = bi_mul_small(&t, currentPrime);
     }
     threadMin.bits[0] |= 1;
@@ -184,11 +182,11 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
             t.bits[i] = kiss09_ulong(rngState);
         }
         bitCapInt base;
-        bi_div_mod(&t, &threadRange, NULL, &base);
+        bi_div_mod(&t, &threadRange, 0, &base);
 
         for (size_t i = primesLength - 1; i > 2; --i) {
             // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-            bi_div_mod_small(&base, privPrimes[i] - 1, &t, NULL);
+            bi_div_mod_small(&base, privPrimes[i] - 1, &t, 0);
             bi_add_ip(&base, &t);
             bi_increment(&base, 1);
         }
@@ -207,7 +205,7 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
         bi_add_ip(&base, &threadMin);
 
         bitCapInt n;
-        bi_div_mod(&toFactor, &base, NULL, &n);
+        bi_div_mod(&toFactor, &base, 0, &n);
         if (bi_compare_0(&n) == 0) {
             outputs[thread] = base;
 
