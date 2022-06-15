@@ -451,14 +451,12 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         primeIndex = trialDivisionPrimes.size() - 1U;
     }
 
-    const bitCapInt nodeIdBci = bci_create(nodeId);
-
     bitCapInt nodeRange;
     bci_copy(fullRange, &t);
     bci_increment(&t, nodeCount - 1U);
     bci_div_small(t, nodeCount, &nodeRange);
 
-    bitCapInt nodeMin = bci_mul(nodeRange, nodeIdBci);
+    bitCapInt nodeMin = bci_mul_small(nodeRange, nodeId);
     bci_add_ip(&nodeMin, fullMinBase);
 
     bitCapInt nodeMax = bci_add(nodeMin, nodeRange);

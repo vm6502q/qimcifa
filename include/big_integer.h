@@ -2,7 +2,7 @@
 //
 // (C) Daniel Strano and the Qimcifa contributors, 2022. All rights reserved.
 //
-// This header has adapted for OpenCL and C, from big_integer.c by Andre Azevedo.
+// This header has been adapted for OpenCL and C, from big_integer.c by Andre Azevedo.
 //
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
