@@ -75,8 +75,8 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     threadMin.bits[0] |= 1U;
     bitCapInt threadMax = bi_add(&threadMin, &threadRange);
 
-    const size_t rngBitCount = bi_log2(&threadRange);
-    const size_t rngWordCount = (rngBitCount < 64) ? 1 : ((rngBitCount >> 6) + (isPowerOfTwo(threadRange) ? 0 : 1));
+    const size_t rngBitCount = bi_log2(&threadRange) + (isPowerOfTwo(threadRange) ? 0 : 1);
+    const size_t rngWordCount = (rngBitCount < 64) ? 1 : ((rngBitCount >> 6) + 1);
 
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
@@ -167,8 +167,8 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
     threadMin.bits[0] |= 1U;
     bitCapInt threadMax = bi_add(&threadMin, &threadRange);
 
-    const size_t rngBitCount = bi_log2(&threadRange);
-    const size_t rngWordCount = (rngBitCount < 64) ? 1 : ((rngBitCount >> 6) + (isPowerOfTwo(threadRange) ? 0 : 1));
+    const size_t rngBitCount = bi_log2(&threadRange) + (isPowerOfTwo(threadRange) ? 0 : 1);
+    const size_t rngWordCount = (rngBitCount < 64) ? 1 : ((rngBitCount >> 6) + 1);
 
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
