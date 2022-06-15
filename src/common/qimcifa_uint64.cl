@@ -81,13 +81,15 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
-        bitCapInt base = bi_create(kiss09_ulong(rngState));
+        t = bi_create(kiss09_ulong(rngState));
 #if 0
         for (size_t i = 1; i < byteCount; i++) {
-            base <<= wordSize;
-            base |= kiss09_ulong(rngState);
+            t <<= wordSize;
+            t |= kiss09_ulong(rngState);
         }
 #endif
+        bitCapInt base;
+        bi_div_mod(&t, &threadRange, NULL, &base);
 
         for (size_t i = primesLength - 1; i > 2; --i) {
             // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.

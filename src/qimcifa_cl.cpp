@@ -355,8 +355,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     }
 
     bitCapInt f2;
-    bci_mod(toFactor, testFactor, &f2);
-    std::cout << "Success: " << testFactor << " * " << f2 << std::endl;
+    bci_div(toFactor, testFactor, &f2);
+    std::cout << "Success: " << testFactor << " * " << f2 << " = " << toFactor << std::endl;
     const double clockFactor = 1.0 / 1000.0; // Report in ms
     auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
