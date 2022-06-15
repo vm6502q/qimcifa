@@ -135,7 +135,7 @@ bool isPowerOfTwo(const bitCapInt& x)
 
 bitLenInt log2(const bitCapInt& n) { return bi_log2(&n); }
 
-void gcd(bitCapInt n1, bitCapInt n2, bitCapInt* result)
+bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
     bitCapInt t1, t2;
     while (bci_neq_0(n2)) {
@@ -144,7 +144,7 @@ void gcd(bitCapInt n1, bitCapInt n2, bitCapInt* result)
         bci_copy(n2, &n1);
         bci_mod(t1, t2, &n2);
     }
-    bci_copy(n1, result);
+    return n1;
 }
 
 // Count of distinct primes increases logarithmically, over the integers increasing from 0. The cost of additional
@@ -250,8 +250,8 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
 bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
-    bitCapInt n;
 #if IS_RSA_SEMIPRIME
+    bitCapInt n;
     bci_mod(toFactor, toTest, &n);
     if (bci_eq_0(n)) {
         isFinished = true;
@@ -260,7 +260,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
         return true;
     }
 #else
-    gcd(toTest, toFactor, &n);
+    bitCapInt n = gcd(toTest, toFactor);
     if (bci_neq_1(n)) {
         isFinished = true;
         bitCapInt n2;
