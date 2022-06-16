@@ -25,11 +25,6 @@ else (USE_GMP)
     target_link_libraries (qimcifa pthread)
 endif (USE_GMP)
 
-add_executable (qimcifa_host_only
-    src/qimcifa_host_only.cpp
-    )
-target_link_libraries (qimcifa_host_only pthread)
-
 # Options used when building the project
 find_package (OpenCL)
 if (OpenCL_FOUND)
