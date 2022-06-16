@@ -200,7 +200,7 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, bi
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = baseDist(rand_gen) + threadMin;
 
-            for (size_t i = primeIndex; i > 1U; --i) {
+            for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base += base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
