@@ -41,6 +41,9 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #endif
 
+// WARNING: Override is set!
+#define TRIAL_DIVISION_LEVEL_OVERRIDE 3
+
 namespace Qimcifa {
 
 template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
@@ -178,7 +181,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
 }
 
 template <typename WORD, typename bitCapInt>
-bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, size_t primeIndex,
+bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, bitCapInt fullMinBase, size_t primeIndex,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
@@ -190,7 +193,7 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
     for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = baseDist(rand_gen);
+            bitCapInt base = baseDist(rand_gen) + threadMin;
 
             for (size_t i = primeIndex; i > 2U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
@@ -199,11 +202,12 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
 
             // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
             base += (base >> 2U) + 1U;
-
-            // We combine the 2 and 3 multiple removal steps.
             // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
-            // Then, make this odd, when added to the minimum.
-            base = (base & ~1U) + (base << 1U) + threadMin;
+            base += (base >> 1U) + 1U;
+            // Then, make this odd.
+            base = (base << 1U) | 1U;
+            // Shift the range.
+            base += fullMinBase;
 
             if (checkSuccess(toFactor, base, isFinished, iterClock)) {
                 return true;
@@ -220,7 +224,7 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
 }
 
 template <typename bitCapInt>
-bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt range, bitCapInt threadMin,
+bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, bitCapInt fullMinBase,
     size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
@@ -243,6 +247,7 @@ bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt ra
                 base <<= wordBitCount;
                 base |= baseDist[i](rand_gen);
             }
+            base += threadMin;
 
             for (size_t i = primeIndex; i > 2U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
@@ -251,11 +256,12 @@ bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt ra
 
             // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
             base += (base >> 2U) + 1U;
-
-            // We combine the 2 and 3 multiple removal steps.
             // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
-            // Then, make this odd, when added to the minimum.
-            base = (base & ~1U) + (base << 1U) + threadMin;
+            base += (base >> 1U) + 1U;
+            // Then, make this odd.
+            base = (base << 1U) | 1U;
+            // Shift the range.
+            base += fullMinBase;
 
             if (checkSuccess(toFactor, base, isFinished, iterClock)) {
                 return true;
@@ -296,15 +302,24 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 
 #if IS_RSA_SEMIPRIME
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
-    const bitCapInt fullMinBase = ((1ULL << (primeBits - 2U)) | 1U);
+    bitCapInt fullMinBase = ((1ULL << (primeBits - 2U)) | 1U);
     const bitCapInt fullMaxBase = ((1ULL << (primeBits + 1U)) - 1U);
 #else
     // We include potential factors as low as the next odd number after the highest trial division prime.
     currentPrime += 2U;
-    const bitCapInt fullMinBase = currentPrime;
+    bitCapInt fullMinBase = currentPrime;
     // We include potential factors as high as toFactor / nextPrime.
     const bitCapInt fullMaxBase = toFactor / currentPrime;
 #endif
+
+    primeIndex = TRIAL_DIVISION_LEVEL;
+    while (primeIndex >= 0) {
+        // The truncation here is a conservative bound, but it's exact if we
+        // happen to be aligned to a perfect factor of all trial division.
+        currentPrime = trialDivisionPrimes[primeIndex];
+        fullMinBase = (fullMinBase / currentPrime) * currentPrime;
+        --primeIndex;
+    }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     primeIndex = TRIAL_DIVISION_LEVEL;
@@ -312,8 +327,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
         currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange *= currentPrime - 1U;
-        fullRange /= currentPrime;
+        fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
     primeIndex = TRIAL_DIVISION_LEVEL;
@@ -329,7 +343,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     std::atomic<bool> isFinished;
     isFinished = false;
 
-    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, &trialDivisionPrimes, &rand_gen, &isFinished](
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &rand_gen, &isFinished](
                               bitCapInt threadMin, bitCapInt threadMax) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
@@ -344,32 +358,21 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         }
         if (rangeLog2 < 32U) {
             singleWordLoop<uint32_t, bitCapInt>(
-                toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+                toFactor, range, threadMin, fullMinBase, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
         } else if (rangeLog2 < 64U) {
             singleWordLoop<uint64_t, bitCapInt>(
-                toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+                toFactor, range, threadMin, fullMinBase, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
         } else {
             multiWordLoop<bitCapInt>(
-                64U, toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+                64U, toFactor, range, threadMin, fullMinBase, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
         }
     };
 
     const bitCapInt threadRange = (cpuCount + nodeMax - (nodeMin - 1U)) / cpuCount;
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        bitCapInt threadMin = nodeMin + threadRange * cpu;
-        bitCapInt threadMax = threadMin + threadRange;
-
-        // Align the lower limit to a multiple of ALL trial division factors.
-        primeIndex = TRIAL_DIVISION_LEVEL;
-        while (primeIndex >= 0) {
-            currentPrime = trialDivisionPrimes[primeIndex];
-            threadMin = (threadMin / currentPrime) * currentPrime;
-            --primeIndex;
-        }
-
-        threadMin = (threadMin | 1U) + 2U;
-
+        const bitCapInt threadMin = (nodeMin + threadRange * cpu) | 1U;
+        const bitCapInt threadMax = threadMin + nodeRange;
         futures[cpu] = std::async(std::launch::async, workerFn, threadMin, threadMax);
     }
 
