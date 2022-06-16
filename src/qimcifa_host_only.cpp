@@ -167,7 +167,7 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
         return 2;
     }
 
-    return (qubitCount + 1U) / 2U - 26;
+    return (qubitCount - 56) / 2 + 2;
 }
 
 void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message,
@@ -408,6 +408,15 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 #if IS_RSA_SEMIPRIME
     int primeIndex = TRIAL_DIVISION_LEVEL;
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
+
+    const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
+    bitCapInt fullMinBase = bci_create(1);
+    bci_lshift_ip(&fullMinBase, primeBits - 2U);
+    bci_increment(&fullMinBase, 1U);
+
+    bitCapInt fullMaxBase = bci_create(1);
+    bci_lshift_ip(&fullMaxBase, primeBits + 1U);
+    bci_decrement(&fullMaxBase, 1U);
 #else
     int primeIndex = 0;
     unsigned currentPrime;
@@ -421,23 +430,10 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         }
         ++primeIndex;
     }
-#endif
 
-#if IS_RSA_SEMIPRIME
-    const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    bitCapInt fullMinBase = bci_create(1);
-    bci_lshift_ip(&fullMinBase, primeBits - 2U);
-    bci_increment(&fullMinBase, 1U);
-
-    bitCapInt fullMaxBase = bci_create(1);
-    bci_lshift_ip(&fullMaxBase, primeBits + 1U);
-    bci_decrement(&fullMaxBase, 1U);
-#else
     // We include potential factors as low as the next odd number after the highest trial division prime.
-    if (primeIndex >= trialDivisionPrimes.size()) {
-        currentPrime = trialDivisionPrimes.back() + 2U;
-    }
-    const bitCapInt fullMinBase = bci_create(currentPrime);
+    currentPrime += 2U;
+    bitCapInt fullMinBase = bci_create(currentPrime);
     // We include potential factors as high as toFactor / nextPrime.
     bitCapInt fullMaxBase;
     bci_div_small(toFactor, currentPrime, &fullMaxBase);

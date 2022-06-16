@@ -66,11 +66,7 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
     }
 #endif
 
-    if (qubitCount < 56) {
-        return 2;
-    }
-
-    return (qubitCount + 1U) / 2U - 26;
+    return qubitCount / 2 + 10;
 }
 
 template <typename bitCapInt>
@@ -287,9 +283,13 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 #if IS_RSA_SEMIPRIME
     int primeIndex = TRIAL_DIVISION_LEVEL;
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
+
+    const uint32_t primeBits = (qubitCount + 1U) >> 1U;
+    bitCapInt fullMinBase = ((1ULL << (primeBits - 2U)) | 1U);
+    const bitCapInt fullMaxBase = ((1ULL << (primeBits + 1U)) - 1U);
 #else
     int primeIndex = 0;
-    unsigned currentPrime;
+    unsigned currentPrime = 2;
     while (primeIndex <= TRIAL_DIVISION_LEVEL) {
         currentPrime = trialDivisionPrimes[primeIndex];
         if ((toFactor % currentPrime) == 0) {
@@ -299,13 +299,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         }
         ++primeIndex;
     }
-#endif
 
-#if IS_RSA_SEMIPRIME
-    const uint32_t primeBits = (qubitCount + 1U) >> 1U;
-    bitCapInt fullMinBase = ((1ULL << (primeBits - 2U)) | 1U);
-    const bitCapInt fullMaxBase = ((1ULL << (primeBits + 1U)) - 1U);
-#else
     // We include potential factors as low as the next odd number after the highest trial division prime.
     currentPrime += 2U;
     bitCapInt fullMinBase = currentPrime;
@@ -332,10 +326,6 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         --primeIndex;
     }
     primeIndex = TRIAL_DIVISION_LEVEL;
-
-    const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
-    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
-    const bitCapInt nodeMax = nodeMin + nodeRange;
 
     std::random_device rand_dev;
     boost::taus88 rand_gen(rand_dev());
@@ -369,7 +359,9 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         }
     };
 
-    const bitCapInt threadRange = (cpuCount + nodeMax - (nodeMin - 1U)) / cpuCount;
+    const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
+    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
+    const bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         const bitCapInt threadMin = nodeMin + threadRange * cpu;
