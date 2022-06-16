@@ -56,6 +56,7 @@
 #define bci_div_small(l, r, o) bi_div_mod_small(&(l), r, o, NULL)
 #define bci_mod(l, r, o) bi_div_mod(&(l), &(r), NULL, o)
 #define bci_mod_small(l, r, o) bi_div_mod_small(&(l), r, NULL, o)
+#define bci_div_mod_small(l, r, q, m) bi_div_mod_small(&(l), r, q, m)
 #define bci_lshift(l, r) bi_lshift(&(l), r)
 #define bci_lshift_ip(l, r) bi_lshift_ip(l, r)
 #define bci_rshift(l, r) bi_rshift(&(l), r)
@@ -76,23 +77,26 @@
 #define bci_gt_1(a) (bi_compare_1(&(a)) > 0)
 #define bci_low64(a) ((a).bits[0])
 
+// WARNING: Override is set!
+#define TRIAL_DIVISION_LEVEL_OVERRIDE 3
+
 namespace Qimcifa {
 
 const bitCapInt ONE_BCI = bci_create(1U);
 
 std::ostream& operator<<(std::ostream& os, bitCapInt b)
 {
-    bitCapInt t;
-
     // Calculate the base-10 digits, from lowest to highest.
     std::vector<std::string> digits;
     while (bci_neq_0(b)) {
-        digits.push_back(std::to_string((unsigned char)(bci_low64(b) % 10U)));
-        bci_copy(b, &t);
-        bci_div_small(t, 10, &b);
+        bitCapInt q, r;
+        bci_div_mod_small(b, 10, &q, &r);
+        digits.push_back(std::to_string(bci_low64(r)));
+        bci_copy(q, &b);
     }
 
     if (digits.size() == 0) {
+        os << "0";
         return os;
     }
 
@@ -159,7 +163,11 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
     }
 #endif
 
-    return (qubitCount + 1U) / 2U - 3U;
+    if (qubitCount < 56) {
+        return 2;
+    }
+
+    return (qubitCount + 1U) / 2U - 26;
 }
 
 void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message,
@@ -279,7 +287,7 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
     return false;
 }
 
-bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, size_t primeIndex,
+bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, bitCapInt fullMinBase, size_t primeIndex,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
@@ -292,6 +300,7 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt t, base = bci_create(baseDist(rand_gen));
+            bci_add_ip(&base, threadMin);
 
             for (size_t i = primeIndex; i > 2U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
@@ -305,13 +314,15 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
             bci_add_ip(&base, t);
             bci_increment(&base, 1U);
 
-            // We combine the 2 and 3 multiple removal steps.
             // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
-            // Then, make this odd, when added to the minimum.
-            t = bci_lshift(base, 1U);
-            bci_low64(base) &= ~1U;
+            t = bci_rshift(base, 1U);
             bci_add_ip(&base, t);
-            bci_add_ip(&base, threadMin);
+            bci_increment(&base, 1U);
+
+            // Then, make this odd, when added to the minimum.
+            bci_lshift_ip(&base, 1U);
+            bci_low64(base) |= 1U;
+            bci_add_ip(&base, fullMinBase);
 
             if (checkSuccess(toFactor, base, isFinished, iterClock)) {
                 return true;
@@ -327,7 +338,7 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, si
     return true;
 }
 
-bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt range, bitCapInt threadMin,
+bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, bitCapInt fullMinBase,
     size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
@@ -350,6 +361,7 @@ bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt ra
                 bci_lshift_ip(&base, wordBitCount);
                 bci_low64(base) = baseDist[i](rand_gen);
             }
+            bci_add_ip(&base, threadMin);
 
             for (size_t i = primeIndex; i > 2U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
@@ -363,13 +375,15 @@ bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt ra
             bci_add_ip(&base, t);
             bci_increment(&base, 1U);
 
-            // We combine the 2 and 3 multiple removal steps.
             // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
-            // Then, make this odd, when added to the minimum.
-            t = bci_lshift(base, 1U);
-            bci_low64(base) &= ~1U;
+            t = bci_rshift(base, 1U);
             bci_add_ip(&base, t);
-            bci_add_ip(&base, threadMin);
+            bci_increment(&base, 1U);
+
+            // Then, make this odd, when added to the minimum.
+            bci_lshift_ip(&base, 1U);
+            bci_low64(base) |= 1U;
+            bci_add_ip(&base, fullMinBase);
 
             if (checkSuccess(toFactor, base, isFinished, iterClock)) {
                 return true;
@@ -429,6 +443,16 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     bci_div_small(toFactor, currentPrime, &fullMaxBase);
 #endif
 
+    primeIndex = TRIAL_DIVISION_LEVEL;
+    while (primeIndex >= 0) {
+        // The truncation here is a conservative bound, but it's exact if we
+        // happen to be aligned to a perfect factor of all trial division.
+        currentPrime = trialDivisionPrimes[primeIndex];
+        bci_div_small(fullMinBase, currentPrime, &t);
+        fullMinBase = bci_mul_small(t, currentPrime);
+        --primeIndex;
+    }
+
     bitCapInt fullRange = bci_sub(fullMaxBase, fullMinBase);
     bci_increment(&fullRange, 1U);
     primeIndex = TRIAL_DIVISION_LEVEL;
@@ -459,7 +483,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     std::atomic<bool> isFinished;
     isFinished = false;
 
-    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, &trialDivisionPrimes, &rand_gen, &isFinished](
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &rand_gen, &isFinished](
                               bitCapInt threadMin, bitCapInt threadMax) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
@@ -470,10 +494,10 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         unsigned rangeLog2 = log2(range);
         if (rangeLog2 < 64U) {
             singleWordLoop(
-                toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+                toFactor, range, threadMin, fullMinBase, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
         } else {
             multiWordLoop(
-                64U, toFactor, range, threadMin, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+                64U, toFactor, range, threadMin, fullMinBase, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
         }
     };
 

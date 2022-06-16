@@ -576,9 +576,7 @@ void bi_div_mod_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right, BigIn
             carry |= left->bits[i2] & m;
             quotient->bits[i2] |= (carry / right);
         }
-        if (carry > right) {
-            carry -= carry % right;
-        }
+        carry %= right;
     }
     if (rmndr) {
         bi_set_0(rmndr);

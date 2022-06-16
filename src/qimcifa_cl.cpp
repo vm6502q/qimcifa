@@ -130,6 +130,7 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
     }
 
     if (digits.size() == 0) {
+        os << "0";
         return os;
     }
 
@@ -184,7 +185,11 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
     }
 #endif
 
-    return (qubitCount + 1U) / 2U - 3U;
+    if (qubitCount < 56) {
+        return 2;
+    }
+
+    return (qubitCount + 1U) / 2U - 26;
 }
 
 int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId,
@@ -230,6 +235,16 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     bitCapInt fullMaxBase;
     bci_div_small(toFactor, currentPrime, &fullMaxBase);
 #endif
+
+    primeIndex = TRIAL_DIVISION_LEVEL;
+    while (primeIndex >= 0) {
+        // The truncation here is a conservative bound, but it's exact if we
+        // happen to be aligned to a perfect factor of all trial division.
+        currentPrime = trialDivisionPrimes[primeIndex];
+        bci_div_small(fullMinBase, currentPrime, &t);
+        fullMinBase = bci_mul_small(t, currentPrime);
+        --primeIndex;
+    }
 
     bitCapInt fullRange = bci_sub(fullMaxBase, fullMinBase);
     bci_increment(&fullRange, 1U);
@@ -354,7 +369,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 
     bitCapInt f2;
     bci_div(toFactor, testFactor, &f2);
-    std::cout << "Success: " << testFactor << " * " << f2 << std::endl;
+    std::cout << "Success: " << testFactor << " * " << f2 << " = " << toFactor << std::endl;
     const double clockFactor = 1.0 / 1000.0; // Report in ms
     auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;

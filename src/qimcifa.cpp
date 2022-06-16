@@ -41,9 +41,6 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #endif
 
-// WARNING: Override is set!
-#define TRIAL_DIVISION_LEVEL_OVERRIDE 3
-
 namespace Qimcifa {
 
 template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
@@ -69,7 +66,11 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
     }
 #endif
 
-    return (qubitCount + 1U) / 2U + 9U;
+    if (qubitCount < 56) {
+        return 2;
+    }
+
+    return (qubitCount + 1U) / 2U - 26;
 }
 
 template <typename bitCapInt>
@@ -371,7 +372,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     const bitCapInt threadRange = (cpuCount + nodeMax - (nodeMin - 1U)) / cpuCount;
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        const bitCapInt threadMin = (nodeMin + threadRange * cpu) | 1U;
+        const bitCapInt threadMin = nodeMin + threadRange * cpu;
         const bitCapInt threadMax = threadMin + nodeRange;
         futures[cpu] = std::async(std::launch::async, workerFn, threadMin, threadMax);
     }
