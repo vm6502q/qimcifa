@@ -67,13 +67,13 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
 #endif
 
 #if IS_RSA_SEMIPRIME
-    if (qubitCount < 56) {
-        return 2;
+    if (qubitCount < 64) {
+        return 1;
     }
 
-    return qubitCount / 2 - 26;
+    return (qubitCount >> 3U) - 6U;
 #else
-    return qubitCount / 2 + 10;
+    return (qubitCount >> 1U) + 10U;
 #endif
 }
 
@@ -200,17 +200,14 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, bi
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = baseDist(rand_gen) + threadMin;
 
-            for (size_t i = primeIndex; i > 2U; --i) {
+            for (size_t i = primeIndex; i > 1U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base += base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
-            // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
-            base += (base >> 2U) + 1U;
-            // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
-            base += (base >> 1U) + 1U;
             // Then, make this odd.
             base = (base << 1U) | 1U;
+
             // Shift the range.
             base += fullMinBase;
 
@@ -254,17 +251,14 @@ bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt ra
             }
             base += threadMin;
 
-            for (size_t i = primeIndex; i > 2U; --i) {
+            for (size_t i = primeIndex; i > 1U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base += base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
-            // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
-            base += (base >> 2U) + 1U;
-            // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
-            base += (base >> 1U) + 1U;
             // Then, make this odd.
             base = (base << 1U) | 1U;
+
             // Shift the range.
             base += fullMinBase;
 
@@ -498,9 +492,9 @@ int main()
     }
 #endif
 
-    const unsigned TRIAL_DIVISION_LEVEL = trialDivisionPrimes[pickTrialDivisionLevel(qubitCount)];
+    const unsigned highestPrime = trialDivisionPrimes[pickTrialDivisionLevel(qubitCount)];
     size_t primeFactorBits = 1U;
-    p = TRIAL_DIVISION_LEVEL >> 1U;
+    p = highestPrime >> 1U;
     while (p) {
         p >>= 1U;
         ++primeFactorBits;
