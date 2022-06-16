@@ -390,25 +390,24 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 {
     bitCapInt t;
     auto iterClock = std::chrono::high_resolution_clock::now();
-    const unsigned TRIAL_DIVISION_LEVEL = trialDivisionPrimes[pickTrialDivisionLevel(qubitCount)];
-    unsigned currentPrime = 2U;
-    size_t primeIndex = 0;
-    while (currentPrime <= TRIAL_DIVISION_LEVEL) {
-#if !IS_RSA_SEMIPRIME
+    const int TRIAL_DIVISION_LEVEL = pickTrialDivisionLevel(qubitCount);
+#if IS_RSA_SEMIPRIME
+    int primeIndex = TRIAL_DIVISION_LEVEL;
+    unsigned currentPrime = trialDivisionPrimes[primeIndex];
+#else
+    int primeIndex = 0;
+    unsigned currentPrime;
+    while (primeIndex <= TRIAL_DIVISION_LEVEL) {
+        currentPrime = trialDivisionPrimes[primeIndex];
         bci_mod_small(toFactor, currentPrime, &t);
         if (bci_eq_0(t)) {
             bci_div_small(toFactor, currentPrime, &t);
             std::cout << "Factors: " << currentPrime << " * " << t << " = " << toFactor << std::endl;
             return 0;
         }
-#endif
-
-        primeIndex++;
-        if (primeIndex >= trialDivisionPrimes.size()) {
-            break;
-        }
-        currentPrime = trialDivisionPrimes[primeIndex];
+        ++primeIndex;
     }
+#endif
 
 #if IS_RSA_SEMIPRIME
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
@@ -432,23 +431,16 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 
     bitCapInt fullRange = bci_sub(fullMaxBase, fullMinBase);
     bci_increment(&fullRange, 1U);
-    currentPrime = 2U;
-    primeIndex = 0;
-    while (currentPrime <= TRIAL_DIVISION_LEVEL) {
+    primeIndex = TRIAL_DIVISION_LEVEL;
+    while (primeIndex >= 0) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
+        currentPrime = trialDivisionPrimes[primeIndex];
         t = bci_mul_small(fullRange, currentPrime - 1U);
         bci_div_small(t, currentPrime, &fullRange);
-
-        primeIndex++;
-        if (primeIndex >= trialDivisionPrimes.size()) {
-            break;
-        }
-        currentPrime = trialDivisionPrimes[primeIndex];
+        --primeIndex;
     }
-    if (primeIndex >= trialDivisionPrimes.size()) {
-        primeIndex = trialDivisionPrimes.size() - 1U;
-    }
+    primeIndex = TRIAL_DIVISION_LEVEL;
 
     bitCapInt nodeRange;
     bci_copy(fullRange, &t);
@@ -499,17 +491,12 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         threadMax = bci_add(threadMin, threadRange);
 
         // Align the lower limit to a multiple of ALL trial division factors.
-        currentPrime = 2U;
-        primeIndex = 0;
-        while (currentPrime <= TRIAL_DIVISION_LEVEL) {
+        primeIndex = TRIAL_DIVISION_LEVEL;
+        while (primeIndex >= 0) {
+            currentPrime = trialDivisionPrimes[primeIndex];
             bci_div_small(threadMin, currentPrime, &t);
             threadMin = bci_mul_small(t, currentPrime);
-
-            primeIndex++;
-            if (primeIndex >= trialDivisionPrimes.size()) {
-                break;
-            }
-            currentPrime = trialDivisionPrimes[primeIndex];
+            --primeIndex;
         }
 
         bci_low64(threadMin) |= 1U;
