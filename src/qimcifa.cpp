@@ -67,8 +67,8 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
 #endif
 
 #if IS_RSA_SEMIPRIME
-    if (qubitCount < 64) {
-        return 1;
+    if (qubitCount < 56) {
+        return 0;
     }
 
     return (qubitCount >> 3U) - 6U;
