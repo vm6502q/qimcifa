@@ -80,7 +80,7 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
 
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
-    for (unsigned i = 0; i < primesLength; ++i) {
+    for (int i = primesLength - 1; i >= 0; --i) {
         unsigned currentPrime = trialDivisionPrimes[i];
         privPrimes[i] = currentPrime;
         bi_div_mod_small(&threadMin, currentPrime, &t, 0);
