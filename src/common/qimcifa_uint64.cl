@@ -55,8 +55,8 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     const unsigned primesLength = unsignedArgs[3];
     const bitCapInt toFactor = bitCapIntArgs[0];
     const bitCapInt nodeMin = bitCapIntArgs[1];
-    const bitCapInt nodeMax = bitCapIntArgs[2];
-    bitCapInt t;
+    const bitCapInt nodeRange = bitCapIntArgs[2];
+    const bitCapInt fullMinBase = bitCapIntArgs[3];
 
     const ulong4 rngLoad = vload4(thread, rngSeeds);
     kiss09_state rngState;
@@ -65,14 +65,13 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     rngState.y = rngLoad.z;
     rngState.z = rngLoad.w;
 
-    bitCapInt threadRange;
-    t = bi_sub(&nodeMax, &nodeMin);
+    bitCapInt t, threadRange;
+    bi_copy(&nodeRange, &t);
     bi_increment(&t, threadCount - 1U);
     bi_div_mod_small(&t, threadCount, &threadRange, 0);
 
     bitCapInt threadMin = bi_mul_small(&threadRange, thread);
     bi_add_ip(&threadMin, &nodeMin);
-    threadMin.bits[0] |= 1U;
     bitCapInt threadMax = bi_add(&threadMin, &threadRange);
 
     const size_t rngBitCount = bi_log2(&threadRange) + (isPowerOfTwo(threadRange) ? 0 : 1);
@@ -81,13 +80,8 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
     for (int i = primesLength - 1; i >= 0; --i) {
-        unsigned currentPrime = trialDivisionPrimes[i];
-        privPrimes[i] = currentPrime;
-        bi_div_mod_small(&threadMin, currentPrime, &t, 0);
-        threadMin = bi_mul_small(&t, currentPrime);
+        privPrimes[i] = trialDivisionPrimes[i];
     }
-    threadMin.bits[0] |= 1;
-    bi_increment(&threadMin, 2);
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
@@ -100,24 +94,15 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
         bitCapInt base;
         bi_div_mod(&t, &threadRange, 0, &base);
 
-        for (size_t i = primesLength - 1; i > 2; --i) {
+        for (size_t i = primesLength - 1; i > 0; --i) {
             // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
             bi_div_mod_small(&base, privPrimes[i] - 1, &t, 0);
             bi_add_ip(&base, &t);
             bi_increment(&base, 1);
         }
-
-        // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
-        t = bi_rshift(&base, 2);
-        bi_add_ip(&base, &t);
-        bi_increment(&base, 1);
-
-        // We combine the 2 and 3 multiple removal steps.
-        // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
         // Then, make this odd, when added to the minimum.
-        t = bi_lshift(&base, 1);
-        base.bits[0] &= ~1;
-        bi_add_ip(&base, &t);
+        bi_lshift_ip(&base, 1);
+        base.bits[0] |= 1;
         bi_add_ip(&base, &threadMin);
 
         bitCapInt n = gcd(base, toFactor);
@@ -147,8 +132,8 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
     const unsigned primesLength = unsignedArgs[3];
     const bitCapInt toFactor = bitCapIntArgs[0];
     const bitCapInt nodeMin = bitCapIntArgs[1];
-    const bitCapInt nodeMax = bitCapIntArgs[2];
-    bitCapInt t;
+    const bitCapInt nodeRange = bitCapIntArgs[2];
+    const bitCapInt fullMinBase = bitCapIntArgs[3];
 
     const ulong4 rngLoad = vload4(thread, rngSeeds);
     kiss09_state rngState;
@@ -157,14 +142,13 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
     rngState.y = rngLoad.z;
     rngState.z = rngLoad.w;
 
-    bitCapInt threadRange;
-    t = bi_sub(&nodeMax, &nodeMin);
+    bitCapInt t, threadRange;
+    bi_copy(&nodeRange, &t);
     bi_increment(&t, threadCount - 1U);
     bi_div_mod_small(&t, threadCount, &threadRange, 0);
 
     bitCapInt threadMin = bi_mul_small(&threadRange, thread);
     bi_add_ip(&threadMin, &nodeMin);
-    threadMin.bits[0] |= 1U;
     bitCapInt threadMax = bi_add(&threadMin, &threadRange);
 
     const size_t rngBitCount = bi_log2(&threadRange) + (isPowerOfTwo(threadRange) ? 0 : 1);
@@ -172,14 +156,9 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
 
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
-    for (unsigned i = 0; i < primesLength; ++i) {
-        unsigned currentPrime = trialDivisionPrimes[i];
-        privPrimes[i] = currentPrime;
-        bi_div_mod_small(&threadMin, currentPrime, &t, 0);
-        threadMin = bi_mul_small(&t, currentPrime);
+    for (int i = primesLength - 1; i >= 0; --i) {
+        privPrimes[i] = trialDivisionPrimes[i];
     }
-    threadMin.bits[0] |= 1;
-    bi_increment(&threadMin, 2);
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
         // Choose a base at random, >1 and <toFactor.
@@ -192,24 +171,15 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
         bitCapInt base;
         bi_div_mod(&t, &threadRange, 0, &base);
 
-        for (size_t i = primesLength - 1; i > 2; --i) {
+        for (size_t i = primesLength - 1; i > 0; --i) {
             // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
             bi_div_mod_small(&base, privPrimes[i] - 1, &t, 0);
             bi_add_ip(&base, &t);
             bi_increment(&base, 1);
         }
-
-        // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
-        t = bi_rshift(&base, 2);
-        bi_add_ip(&base, &t);
-        bi_increment(&base, 1);
-
-        // We combine the 2 and 3 multiple removal steps.
-        // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
         // Then, make this odd, when added to the minimum.
-        t = bi_lshift(&base, 1);
-        base.bits[0] &= ~1;
-        bi_add_ip(&base, &t);
+        bi_lshift_ip(&base, 1);
+        base.bits[0] |= 1;
         bi_add_ip(&base, &threadMin);
 
         bitCapInt n;

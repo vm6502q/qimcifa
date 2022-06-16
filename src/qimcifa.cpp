@@ -251,7 +251,7 @@ bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt ra
             }
             base += threadMin;
 
-            for (size_t i = primeIndex; i > 1U; --i) {
+            for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base += base / (trialDivisionPrimes[i] - 1U) + 1U;
             }

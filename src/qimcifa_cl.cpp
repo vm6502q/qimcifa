@@ -185,11 +185,15 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
     }
 #endif
 
+#if IS_RSA_SEMIPRIME
     if (qubitCount < 56) {
-        return 2;
+        return 0;
     }
 
-    return (qubitCount - 56) / 2 + 2;
+    return (qubitCount >> 3U) - 6U;
+#else
+    return (qubitCount >> 1U) + 10U;
+#endif
 }
 
 int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId,
@@ -201,6 +205,15 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 #if IS_RSA_SEMIPRIME
     int primeIndex = TRIAL_DIVISION_LEVEL;
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
+
+    const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
+    bitCapInt fullMinBase = bci_create(1);
+    bci_lshift_ip(&fullMinBase, primeBits - 2U);
+    bci_increment(&fullMinBase, 1U);
+
+    bitCapInt fullMaxBase = bci_create(1);
+    bci_lshift_ip(&fullMaxBase, primeBits + 1U);
+    bci_decrement(&fullMaxBase, 1U);
 #else
     int primeIndex = 0;
     unsigned currentPrime = 2U;
@@ -214,18 +227,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         }
         ++primeIndex;
     }
-#endif
 
-#if IS_RSA_SEMIPRIME
-    const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-    bitCapInt fullMinBase = bci_create(1);
-    bci_lshift_ip(&fullMinBase, primeBits - 2U);
-    bci_increment(&fullMinBase, 1U);
-
-    bitCapInt fullMaxBase = bci_create(1);
-    bci_lshift_ip(&fullMaxBase, primeBits + 1U);
-    bci_decrement(&fullMaxBase, 1U);
-#else
     // We include potential factors as low as the next odd number after the highest trial division prime.
     currentPrime += 2U;
     bitCapInt fullMinBase = bci_create(currentPrime);
@@ -265,8 +267,6 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     bitCapInt nodeMin = bci_mul_small(nodeRange, nodeId);
     bci_add_ip(&nodeMin, fullMinBase);
 
-    bitCapInt nodeMax = bci_add(nodeMin, nodeRange);
-
     const DeviceContextPtr deviceContext = OCLEngine::Instance().GetDeviceContextPtr(-1);
     const cl::Context context = deviceContext->context;
     const cl::CommandQueue queue = deviceContext->queue;
@@ -290,9 +290,9 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
 
-    const size_t bciArgsCount = 3U;
+    const size_t bciArgsCount = 4U;
     BufferPtr bciArgsBufferPtr = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapInt) * bciArgsCount);
-    bitCapInt bciArgs[3] = { toFactor, nodeMin, nodeMax };
+    bitCapInt bciArgs[4] = { toFactor, nodeMin, nodeRange, fullMinBase };
     error = queue.enqueueWriteBuffer(*bciArgsBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * bciArgsCount, bciArgs, NULL);
     if (error != CL_SUCCESS) {
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
