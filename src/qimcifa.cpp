@@ -66,7 +66,15 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
     }
 #endif
 
+#if IS_RSA_SEMIPRIME
+    if (qubitCount < 56) {
+        return 2;
+    }
+
+    return qubitCount / 2 - 26;
+#else
     return qubitCount / 2 + 10;
+#endif
 }
 
 template <typename bitCapInt>

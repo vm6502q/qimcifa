@@ -4,7 +4,7 @@ project (qimcifa VERSION 0.1.0 DESCRIPTION "Quantum-inspired Monte Carlo integer
 # Installation commands
 include (GNUInstallDirs)
 
-option (IS_RSA_SEMIPRIME "Optimize for RSA semiprime numbers, only. (Might restrict bounds too far on certain RSA semiprimes.)" OFF)
+option (IS_RSA_SEMIPRIME "Optimize for RSA semiprime numbers, only. (Might restrict bounds too far on certain RSA semiprimes.)" ON)
 option (IS_DISTRIBUTED "Enable node distribution configuraiton dialog." ON)
 option (IS_SQUARES_CONGRUENCE_CHECK "Optionally additionally check random number generator outputs for factoring via congruence of squares." OFF)
 option (USE_GMP "Use GMP library instead of Boost for arbitrary precision integers." OFF)
