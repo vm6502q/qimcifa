@@ -192,7 +192,7 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
 
     return (qubitCount >> 3U) - 6U;
 #else
-    return (qubitCount >> 1U) + 10U;
+    return (qubitCount >> 2U) + 24U;
 #endif
 }
 
