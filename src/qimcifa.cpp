@@ -195,7 +195,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt
 #endif
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-            if (checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
+            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, isFinished, iterClock)) {
                 return true;
             }
 #endif
@@ -260,7 +260,7 @@ bool multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bitCa
 #endif
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-            if (checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
+            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, isFinished, iterClock)) {
                 return true;
             }
 #endif
