@@ -157,34 +157,6 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
 }
 #endif
 
-template <typename bitCapInt>
-bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
-    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
-{
-#if IS_RSA_SEMIPRIME
-    if ((toFactor % toTest) == 0U) {
-        isFinished = true;
-        printSuccess<bitCapInt>(toTest, toFactor / toTest, toFactor, "Guessed exact factor: Found ", iterClock);
-        return true;
-    }
-#else
-    bitCapInt n = gcd(toTest, toFactor);
-    if (n != 1U) {
-        isFinished = true;
-        printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Guess has common factor: Found ", iterClock);
-        return true;
-    }
-#endif
-
-#if IS_SQUARES_CONGRUENCE_CHECK
-    if (checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
-        return true;
-    }
-#endif
-
-    return false;
-}
-
 template <typename WORD, typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
     const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
@@ -207,9 +179,26 @@ bool singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
 
-            if (checkSuccess(toFactor, base, isFinished, iterClock)) {
+#if IS_RSA_SEMIPRIME
+            if ((toFactor % base) == 0U) {
+                isFinished = true;
+                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Guessed exact factor: Found ", iterClock);
                 return true;
             }
+#else
+            bitCapInt n = gcd(base, toFactor);
+            if (n != 1U) {
+                isFinished = true;
+                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Guess has common factor: Found ", iterClock);
+                return true;
+            }
+#endif
+
+#if IS_SQUARES_CONGRUENCE_CHECK
+            if (checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
+                return true;
+            }
+#endif
         }
 
         // Check if finished, between batches.
@@ -255,9 +244,26 @@ bool multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bitCa
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
 
-            if (checkSuccess(toFactor, base, isFinished, iterClock)) {
+#if IS_RSA_SEMIPRIME
+            if ((toFactor % base) == 0U) {
+                isFinished = true;
+                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Guessed exact factor: Found ", iterClock);
                 return true;
             }
+#else
+            bitCapInt n = gcd(base, toFactor);
+            if (n != 1U) {
+                isFinished = true;
+                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Guess has common factor: Found ", iterClock);
+                return true;
+            }
+#endif
+
+#if IS_SQUARES_CONGRUENCE_CHECK
+            if (checkCongruenceOfSquares<bitCapInt>(toFactor, toTest, isFinished, iterClock)) {
+                return true;
+            }
+#endif
         }
 
         // Check if finished, between batches.
