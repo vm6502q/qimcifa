@@ -42,7 +42,7 @@ bool isPowerOfTwo(bitCapInt x)
     return (bi_compare_0(&x) != 0) && (bi_compare_0(&t) == 0);
 }
 
-void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivisionPrimes, global unsigned* unsignedArgs, global bitCapInt* bitCapIntArgs, global bitCapInt* outputs)
+void kernel qimcifa_batch(global ulong* rngSeeds, constant unsigned* trialDivisionPrimes, constant unsigned* unsignedArgs, constant bitCapInt* bitCapIntArgs, global bitCapInt* outputs)
 {
     //const unsigned wordSize = 64;
     const unsigned thread = get_global_id(0);
@@ -77,7 +77,7 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
     for (int i = primesLength - 1; i >= 0; --i) {
-        privPrimes[i] = trialDivisionPrimes[i];
+        privPrimes[i] = trialDivisionPrimes[i] - 1;
     }
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
@@ -93,7 +93,7 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
 
         for (size_t i = primesLength - 1; i > 0; --i) {
             // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-            bi_div_mod_small(&base, privPrimes[i] - 1, &t, 0);
+            bi_div_mod_small(&base, privPrimes[i], &t, 0);
             bi_add_ip(&base, &t);
             bi_increment(&base, 1);
         }
@@ -118,7 +118,7 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     rngSeeds[threadOffset + 3] = rngState.z;
 }
 
-void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivisionPrimes, global unsigned* unsignedArgs, global bitCapInt* bitCapIntArgs, global bitCapInt* outputs)
+void kernel qimcifa_rsa_batch(global ulong* rngSeeds, constant unsigned* trialDivisionPrimes, constant unsigned* unsignedArgs, constant bitCapInt* bitCapIntArgs, global bitCapInt* outputs)
 {
     //const unsigned wordSize = 64;
     const unsigned thread = get_global_id(0);
@@ -153,7 +153,7 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
     // Align the lower limit to a multiple of ALL trial division factors.
     unsigned privPrimes[64];
     for (int i = primesLength - 1; i >= 0; --i) {
-        privPrimes[i] = trialDivisionPrimes[i];
+        privPrimes[i] = trialDivisionPrimes[i] - 1;
     }
 
     for (size_t batchItem = 0; batchItem < batchSize; batchItem++) {
@@ -169,7 +169,7 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
 
         for (size_t i = primesLength - 1; i > 0; --i) {
             // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-            bi_div_mod_small(&base, privPrimes[i] - 1, &t, 0);
+            bi_div_mod_small(&base, privPrimes[i], &t, 0);
             bi_add_ip(&base, &t);
             bi_increment(&base, 1);
         }

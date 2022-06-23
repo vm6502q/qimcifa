@@ -219,8 +219,9 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     unsigned currentPrime = 2U;
     while (primeIndex <= TRIAL_DIVISION_LEVEL) {
         currentPrime = trialDivisionPrimes[primeIndex];
-        bci_mod_small(toFactor, currentPrime, &t);
-        if (bci_eq_0(t)) {
+        unsigned t2;
+        bci_mod_small(toFactor, currentPrime, &t2);
+        if (!t2) {
             bci_div_small(toFactor, currentPrime, &t);
             std::cout << "Factors: " << currentPrime << " * " << t << " = " << toFactor << std::endl;
             return 0;
@@ -302,7 +303,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     std::random_device rand_dev;
     boost::taus88 rand_gen(rand_dev());
 
-    BufferPtr rngSeedBufferPtr = MakeBuffer(context, CL_MEM_READ_WRITE, sizeof(bitCapInt) * itemCount * 4U);
+    BufferPtr rngSeedBufferPtr = MakeBuffer(context, CL_MEM_READ_WRITE, sizeof(uint64_t) * itemCount * 4U);
     std::unique_ptr<uint64_t[]> rngSeeds(new uint64_t[itemCount * 4]);
     rand_dist seedDist(0, 0xFFFFFFFFFFFFFFFF);
     rand_dist cSeedDist(0, 0x3FFFFFFFFFFFFFF);
@@ -312,7 +313,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         rngSeeds.get()[i * 4 + 2] = seedDist(rand_gen);
         rngSeeds.get()[i * 4 + 3] = seedDist(rand_gen);
     }
-    error = queue.enqueueWriteBuffer(*rngSeedBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount * 4U, rngSeeds.get(), NULL);
+    error = queue.enqueueWriteBuffer(*rngSeedBufferPtr, CL_TRUE, 0U, sizeof(uint64_t) * itemCount * 4U, rngSeeds.get(), NULL);
     if (error != CL_SUCCESS) {
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
