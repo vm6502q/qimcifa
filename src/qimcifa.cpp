@@ -204,11 +204,8 @@ bool singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt
                 base += base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
-            // Then, make this odd.
-            base = (base << 1U) | 1U;
-
-            // Shift the range.
-            base += fullMinBase;
+            // Make this odd, then shift the range.
+            base = ((base << 1U) | 1U) + fullMinBase;
 
             if (checkSuccess(toFactor, base, isFinished, iterClock)) {
                 return true;
@@ -255,11 +252,8 @@ bool multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bitCa
                 base += base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
-            // Then, make this odd.
-            base = (base << 1U) | 1U;
-
-            // Shift the range.
-            base += fullMinBase;
+            // Make this odd, then shift the range.
+            base = ((base << 1U) | 1U) + fullMinBase;
 
             if (checkSuccess(toFactor, base, isFinished, iterClock)) {
                 return true;
