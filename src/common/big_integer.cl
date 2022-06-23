@@ -124,7 +124,7 @@ inline void bi_add_ip(BigInteger* left, const BigInteger* right)
         BIG_INTEGER_WORD temp = left->bits[i];
         left->bits[i] += right->bits[i];
         int j = i;
-        while (left->bits[j] < temp) {
+        while ((j < BIG_INTEGER_MAX_WORD_INDEX) && (left->bits[j] < temp)) {
             temp = left->bits[++j]++;
         }
     }
@@ -150,7 +150,7 @@ inline void bi_sub_ip(BigInteger* left, const BigInteger* right)
         BIG_INTEGER_WORD temp = left->bits[i];
         left->bits[i] -= right->bits[i];
         int j = i;
-        while (left->bits[j] > temp) {
+        while ((j < BIG_INTEGER_MAX_WORD_INDEX) && (left->bits[j] > temp)) {
             temp = left->bits[++j]--;
         }
     }

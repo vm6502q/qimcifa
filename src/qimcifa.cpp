@@ -226,9 +226,9 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, bi
 }
 
 template <typename bitCapInt>
-bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, bitCapInt fullMinBase,
-    size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
-    const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
+bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt range, bitCapInt threadMin,
+    bitCapInt fullMinBase, size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock,
+    boost::taus88& rand_gen, const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
@@ -336,8 +336,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     std::atomic<bool> isFinished;
     isFinished = false;
 
-    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &rand_gen, &isFinished](
-                              bitCapInt threadMin, bitCapInt threadMax) {
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &rand_gen,
+                              &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
@@ -350,14 +350,14 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
             ++rangeLog2;
         }
         if (rangeLog2 < 32U) {
-            singleWordLoop<uint32_t, bitCapInt>(
-                toFactor, range, threadMin, fullMinBase, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+            singleWordLoop<uint32_t, bitCapInt>(toFactor, range, threadMin, fullMinBase, primeIndex, iterClock,
+                rand_gen, trialDivisionPrimes, isFinished);
         } else if (rangeLog2 < 64U) {
-            singleWordLoop<uint64_t, bitCapInt>(
-                toFactor, range, threadMin, fullMinBase, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+            singleWordLoop<uint64_t, bitCapInt>(toFactor, range, threadMin, fullMinBase, primeIndex, iterClock,
+                rand_gen, trialDivisionPrimes, isFinished);
         } else {
-            multiWordLoop<bitCapInt>(
-                64U, toFactor, range, threadMin, fullMinBase, primeIndex, iterClock, rand_gen, trialDivisionPrimes, isFinished);
+            multiWordLoop<bitCapInt>(64U, toFactor, range, threadMin, fullMinBase, primeIndex, iterClock, rand_gen,
+                trialDivisionPrimes, isFinished);
         }
     };
 
