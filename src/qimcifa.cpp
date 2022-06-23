@@ -186,8 +186,8 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
 }
 
 template <typename WORD, typename bitCapInt>
-bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, bitCapInt fullMinBase, size_t primeIndex,
-    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
+bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
+    const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
@@ -226,8 +226,8 @@ bool singleWordLoop(bitCapInt toFactor, bitCapInt range, bitCapInt threadMin, bi
 }
 
 template <typename bitCapInt>
-bool multiWordLoop(const unsigned wordBitCount, bitCapInt toFactor, bitCapInt range, bitCapInt threadMin,
-    bitCapInt fullMinBase, size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock,
+bool multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bitCapInt range, const bitCapInt& threadMin,
+    const bitCapInt& fullMinBase, const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock,
     boost::taus88& rand_gen, const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
