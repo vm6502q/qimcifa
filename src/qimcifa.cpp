@@ -192,8 +192,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
-    typedef std::uniform_int_distribution<WORD> rand_dist;
-    rand_dist baseDist(0U, range);
+    std::uniform_int_distribution<WORD> baseDist(0U, range);
 
     for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
