@@ -56,7 +56,16 @@ inline void bi_set_0(BigInteger* p)
     }
 }
 
-inline void bi_copy(const BigInteger* in, BigInteger* out)
+inline BigInteger bi_copy(const BigInteger* in)
+{
+    BigInteger result;
+    for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
+        result.bits[i] = in->bits[i];
+    }
+    return result;
+}
+
+inline void bi_copy_ip(const BigInteger* in, BigInteger* out)
 {
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         out->bits[i] = in->bits[i];
@@ -362,8 +371,7 @@ inline int bi_and_1(const BigInteger* left) { return left->bits[0] & 1; }
 
 inline BigInteger bi_and(const BigInteger* left, const BigInteger* right)
 {
-    BigInteger result;
-    bi_copy(left, &result);
+    BigInteger result = bi_copy(left);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i] &= right->bits[i];
     }
@@ -380,8 +388,7 @@ inline void bi_and_ip(BigInteger* left, const BigInteger* right)
 
 inline BigInteger bi_or(const BigInteger* left, const BigInteger* right)
 {
-    BigInteger result;
-    bi_copy(left, &result);
+    BigInteger result = bi_copy(left);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i] |= right->bits[i];
     }
@@ -398,8 +405,7 @@ inline void bi_or_ip(BigInteger* left, const BigInteger* right)
 
 inline BigInteger bi_xor(const BigInteger* left, const BigInteger* right)
 {
-    BigInteger result;
-    bi_copy(left, &result);
+    BigInteger result = bi_copy(left);
     for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
         result.bits[i] ^= right->bits[i];
     }
@@ -598,7 +604,7 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
         }
         if (rmndr) {
             // rmndr = left
-            bi_copy(left, rmndr);
+            bi_copy_ip(left, rmndr);
         }
         return;
     }
@@ -638,7 +644,7 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
         // right == 1
         if (quotient) {
             // quotient = left
-            bi_copy(left, quotient);
+            bi_copy_ip(left, quotient);
         }
         if (rmndr) {
             // rmndr = 0
@@ -656,7 +662,7 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
     if (!rmndr) {
         rmndr = &leftCopy;
     }
-    bi_copy(left, rmndr);
+    bi_copy_ip(left, rmndr);
     for (int i = ((BIG_INTEGER_BITS - 1) - rightLog2); i >= 0; --i) {
         BigInteger partMul = bi_lshift(right, i);
 

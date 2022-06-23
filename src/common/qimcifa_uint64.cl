@@ -24,11 +24,10 @@
 
 bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
-    bitCapInt t1, t2;
     while (bi_compare_0(&n2) != 0) {
-        bi_copy(&n1, &t1);
-        bi_copy(&n2, &t2);
-        bi_copy(&n2, &n1);
+        BigInteger t1 = bi_copy(&n1);
+        BigInteger t2 = bi_copy(&n2);
+        bi_copy_ip(&n2, &n1);
         bi_div_mod(&t1, &t2, 0, &n2);
     }
     return n1;
@@ -36,8 +35,7 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 
 bool isPowerOfTwo(bitCapInt x)
 {
-    bitCapInt t;
-    bi_copy(&x, &t);
+    bitCapInt t = bi_copy(&x);
     bi_decrement(&t, 1);
     bi_and_ip(&t, &x);
 
@@ -65,8 +63,7 @@ void kernel qimcifa_batch(global ulong* rngSeeds, global unsigned* trialDivision
     rngState.y = rngLoad.z;
     rngState.z = rngLoad.w;
 
-    bitCapInt t, threadRange;
-    bi_copy(&nodeRange, &t);
+    bitCapInt threadRange, t = bi_copy(&nodeRange);
     bi_increment(&t, threadCount - 1U);
     bi_div_mod_small(&t, threadCount, &threadRange, 0);
 
@@ -142,8 +139,7 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, global unsigned* trialDivi
     rngState.y = rngLoad.z;
     rngState.z = rngLoad.w;
 
-    bitCapInt t, threadRange;
-    bi_copy(&nodeRange, &t);
+    bitCapInt threadRange, t = bi_copy(&nodeRange);
     bi_increment(&t, threadCount - 1U);
     bi_div_mod_small(&t, threadCount, &threadRange, 0);
 

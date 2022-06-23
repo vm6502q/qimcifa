@@ -43,7 +43,7 @@
 #define bitsInByte 8U
 
 #define bci_create(a) bi_create(a)
-#define bci_copy(a, o) bi_copy(&(a), o)
+#define bci_copy_ip(a, o) bi_copy_ip(&(a), o)
 #define bci_set_0(a) bi_set_0(a)
 #define bci_increment(l, r) bi_increment(l, r)
 #define bci_add_ip(l, r) bi_add_ip(l, &(r))
@@ -125,7 +125,7 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
     std::vector<std::string> digits;
     while (bci_neq_0(b)) {
         digits.push_back(std::to_string((unsigned char)(bci_low64(b) % 10U)));
-        bci_copy(b, &t);
+        bci_copy_ip(b, &t);
         bci_div_small(t, 10, &b);
     }
 
@@ -260,7 +260,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     primeIndex = TRIAL_DIVISION_LEVEL;
 
     bitCapInt nodeRange;
-    bci_copy(fullRange, &t);
+    bci_copy_ip(fullRange, &t);
     bci_increment(&t, nodeCount - 1U);
     bci_div_small(t, nodeCount, &nodeRange);
 
