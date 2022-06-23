@@ -186,14 +186,14 @@ bool checkSuccess(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFin
 }
 
 template <typename WORD, typename bitCapInt>
-bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
+bool singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
     const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
     typedef std::uniform_int_distribution<WORD> rand_dist;
-    rand_dist baseDist(0U, (WORD)range);
+    rand_dist baseDist(0U, range);
 
     for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -350,10 +350,10 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
             ++rangeLog2;
         }
         if (rangeLog2 < 32U) {
-            singleWordLoop<uint32_t, bitCapInt>(toFactor, range, threadMin, fullMinBase, primeIndex, iterClock,
+            singleWordLoop<uint32_t, bitCapInt>(toFactor, (uint32_t)range, threadMin, fullMinBase, primeIndex, iterClock,
                 rand_gen, trialDivisionPrimes, isFinished);
         } else if (rangeLog2 < 64U) {
-            singleWordLoop<uint64_t, bitCapInt>(toFactor, range, threadMin, fullMinBase, primeIndex, iterClock,
+            singleWordLoop<uint64_t, bitCapInt>(toFactor, (uint64_t)range, threadMin, fullMinBase, primeIndex, iterClock,
                 rand_gen, trialDivisionPrimes, isFinished);
         } else {
             multiWordLoop<bitCapInt>(64U, toFactor, range, threadMin, fullMinBase, primeIndex, iterClock, rand_gen,
