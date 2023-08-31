@@ -159,7 +159,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
 
 template <typename WORD, typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
-    const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::taus88& rand_gen,
+    const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, std::mt19937& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
@@ -213,7 +213,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt
 template <typename bitCapInt>
 bool multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bitCapInt range, const bitCapInt& threadMin,
     const bitCapInt& fullMinBase, const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock,
-    boost::taus88& rand_gen, const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
+    std::mt19937& rand_gen, const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
@@ -329,7 +329,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     primeIndex = TRIAL_DIVISION_LEVEL;
 
     std::random_device rand_dev;
-    boost::taus88 rand_gen(rand_dev());
+    std::mt19937 rand_gen(rand_dev());
 
     const unsigned cpuCount = std::thread::hardware_concurrency();
     std::atomic<bool> isFinished;

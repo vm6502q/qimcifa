@@ -301,7 +301,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 
     typedef std::uniform_int_distribution<uint64_t> rand_dist;
     std::random_device rand_dev;
-    boost::taus88 rand_gen(rand_dev());
+    std::mt19937 rand_gen(rand_dev());
 
     BufferPtr rngSeedBufferPtr = MakeBuffer(context, CL_MEM_READ_WRITE, sizeof(uint64_t) * itemCount * 4U);
     std::unique_ptr<uint64_t[]> rngSeeds(new uint64_t[itemCount * 4]);
