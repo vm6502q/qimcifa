@@ -36,15 +36,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define BIG_INTEGER_WORD_SIZE 2
-#define BIG_INTEGER_HALF_WORD_SIZE 4
-#define BIG_INTEGER_MAX_WORD_INDEX 1
-#define BIG_INTEGER_BITS 128
-#define BIG_INTEGER_WORD_BITS 64
+#include "config.h"
+
+// This can be any power of 2 greater than (or equal to) 64:
+constexpr size_t BIG_INTEGER_BITS = BIG_INT_BITS;
+// This can change the "word" size to less than 64 bits, but one typically wouldn't:
+constexpr size_t BIG_INTEGER_WORD_BITS = 64;
+// The rest of the constants need to be consistent with the two above:
+constexpr size_t BIG_INTEGER_HALF_WORD_BITS = BIG_INTEGER_WORD_BITS >> 1U;
+constexpr int BIG_INTEGER_WORD_SIZE = BIG_INTEGER_BITS / BIG_INTEGER_WORD_BITS;
+constexpr int BIG_INTEGER_HALF_WORD_SIZE = BIG_INTEGER_WORD_SIZE << 1U;
+constexpr int BIG_INTEGER_MAX_WORD_INDEX = BIG_INTEGER_WORD_SIZE - 1U;
 #define BIG_INTEGER_WORD_POWER 6
 #define BIG_INTEGER_WORD unsigned long
 #define BIG_INTEGER_HALF_WORD unsigned
-#define BIG_INTEGER_HALF_WORD_BITS 32
 #define BIG_INTEGER_HALF_WORD_POW 0x100000000ULL
 #define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFFULL
 #define BIG_INTEGER_HALF_WORD_MASK_NOT 0xFFFFFFFF00000000ULL

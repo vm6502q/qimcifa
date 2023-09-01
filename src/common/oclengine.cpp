@@ -11,6 +11,7 @@
 // for details.
 
 #include "common/oclengine.hpp"
+#include "config.h"
 
 #include "kiss09cl.hpp"
 #include "big_integercl.hpp"
@@ -104,6 +105,22 @@ cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
     sources.push_back({ (const char*)kiss09_cl, (long unsigned int)kiss09_cl_len });
+
+    std::string bigIntConsts =
+        "#define BIG_INTEGER_BITS " + std::to_string(BIG_INT_BITS) + "\n"
+        "#define BIG_INTEGER_WORD_SIZE " + std::to_string(BIG_INT_BITS / 64) + "\n"
+        "#define BIG_INTEGER_HALF_WORD_SIZE " + std::to_string(BIG_INT_BITS / 32) + "\n"
+        "#define BIG_INTEGER_MAX_WORD_INDEX " + std::to_string(BIG_INT_BITS / 64 - 1) + "\n"
+        "#define BIG_INTEGER_WORD_BITS 64\n"
+        "#define BIG_INTEGER_WORD_POWER 6\n"
+        "#define BIG_INTEGER_WORD unsigned long\n"
+        "#define BIG_INTEGER_HALF_WORD unsigned\n"
+        "#define BIG_INTEGER_HALF_WORD_BITS 32\n"
+        "#define BIG_INTEGER_HALF_WORD_POW 0x100000000UL\n"
+        "#define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFFUL\n"
+        "#define BIG_INTEGER_HALF_WORD_MASK_NOT 0xFFFFFFFF00000000UL\n";
+    sources.push_back({ bigIntConsts.c_str(), (long unsigned int)bigIntConsts.length() });
+
     sources.push_back({ (const char*)big_integer_cl, (long unsigned int)big_integer_cl_len });
     sources.push_back({ (const char*)qimcifa_uint64_cl, (long unsigned int)qimcifa_uint64_cl_len });
 
