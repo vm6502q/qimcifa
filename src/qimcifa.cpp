@@ -58,13 +58,11 @@ template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 // trial division factors is linear. The complexity asymptote of "multiples elimination" (complement to trial
 // division by primes) is O(log), with the grant of a primes table that scales linearly in query count for cost.
 // However, the O(log) asymptote is FAR practically slower, (at least for now). The empirical level follows:
-inline size_t pickTrialDivisionLevel(size_t qubitCount)
+inline size_t pickTrialDivisionLevel(size_t qubitCount, int64_t tdLevel)
 {
-#if defined(TRIAL_DIVISION_LEVEL_OVERRIDE)
-    if (TRIAL_DIVISION_LEVEL_OVERRIDE >= 0) {
-        return TRIAL_DIVISION_LEVEL_OVERRIDE;
+    if (tdLevel >= 0) {
+        return tdLevel;
     }
-#endif
 
 #if IS_RSA_SEMIPRIME
     if (qubitCount < 56) {
@@ -276,11 +274,11 @@ bool multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bitCa
 }
 
 template <typename bitCapInt>
-int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId,
+int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId, int64_t tdLevel,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
-    const int TRIAL_DIVISION_LEVEL = pickTrialDivisionLevel(qubitCount);
+    const int TRIAL_DIVISION_LEVEL = pickTrialDivisionLevel(qubitCount, tdLevel);
 #if IS_RSA_SEMIPRIME
     int primeIndex = TRIAL_DIVISION_LEVEL;
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
@@ -455,6 +453,7 @@ int main()
     bitCapIntInput toFactor;
     size_t nodeCount = 1U;
     size_t nodeId = 0U;
+    int64_t tdLevel = -1;
 
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
@@ -491,7 +490,11 @@ int main()
     }
 #endif
 
-    const unsigned highestPrime = trialDivisionPrimes[pickTrialDivisionLevel(qubitCount)];
+    std::cout << "(The 'trial division level' might need custom tuning above 80 bits or so.)" << std::endl;
+    std::cout << "Trial division level (-1 for auto): ";
+    std::cin >> tdLevel;
+
+    const unsigned highestPrime = trialDivisionPrimes[pickTrialDivisionLevel(qubitCount, tdLevel)];
     size_t primeFactorBits = 1U;
     p = highestPrime >> 1U;
     while (p) {
@@ -501,40 +504,40 @@ int main()
     const size_t QBCAPBITS = primeFactorBits + (((qubitCount >> 5U) + 1U) << 5U);
     if (QBCAPBITS < 64) {
         typedef uint64_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
 #if USE_GMP
     } else {
-        return mainBody<bitCapIntInput>(toFactor, qubitCount, nodeCount, nodeId, trialDivisionPrimes);
+        return mainBody<bitCapIntInput>(toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     }
 #else
     } else if (QBCAPBITS < 128) {
         typedef boost::multiprecision::uint128_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     } else if (QBCAPBITS < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     } else if (QBCAPBITS < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     } else if (QBCAPBITS < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     } else if (QBCAPBITS < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     } else if (QBCAPBITS < 2048) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     }
 #endif
 }

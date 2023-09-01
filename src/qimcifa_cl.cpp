@@ -177,13 +177,11 @@ bitLenInt log2(const bitCapInt& n) { return bi_log2(&n); }
 // trial division factors is linear. The complexity asymptote of "multiples elimination" (complement to trial
 // division by primes) is O(log), with the grant of a primes table that scales linearly in query count for cost.
 // However, the O(log) asymptote is FAR practically slower, (at least for now). The empirical level follows:
-inline size_t pickTrialDivisionLevel(size_t qubitCount)
+inline size_t pickTrialDivisionLevel(size_t qubitCount, int64_t tdLevel)
 {
-#if defined(TRIAL_DIVISION_LEVEL_OVERRIDE)
-    if (TRIAL_DIVISION_LEVEL_OVERRIDE >= 0) {
-        return TRIAL_DIVISION_LEVEL_OVERRIDE;
+    if (tdLevel >= 0) {
+        return tdLevel;
     }
-#endif
 
 #if IS_RSA_SEMIPRIME
     if (qubitCount < 56) {
@@ -196,12 +194,12 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount)
 #endif
 }
 
-int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId,
+int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId, int64_t tdLevel,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     bitCapInt t;
     auto iterClock = std::chrono::high_resolution_clock::now();
-    const int TRIAL_DIVISION_LEVEL = pickTrialDivisionLevel(qubitCount);
+    const int TRIAL_DIVISION_LEVEL = pickTrialDivisionLevel(qubitCount, tdLevel);
 #if IS_RSA_SEMIPRIME
     int primeIndex = TRIAL_DIVISION_LEVEL;
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
@@ -446,6 +444,7 @@ int main()
     bitCapInt toFactor;
     size_t nodeCount = 1U;
     size_t nodeId = 0U;
+    int64_t tdLevel = -1;
 
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
@@ -477,5 +476,9 @@ int main()
     }
 #endif
 
-    return mainBody(toFactor, qubitCount, nodeCount, nodeId, trialDivisionPrimes);
+    std::cout << "(The 'trial division level' might need custom tuning above 80 bits or so.)" << std::endl;
+    std::cout << "Trial division level (-1 for auto): ";
+    std::cin >> tdLevel;
+
+    return mainBody(toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
 }

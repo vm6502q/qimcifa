@@ -6,5 +6,3 @@
 #cmakedefine USE_GMP 0
 // Optionally additionally check random number generator outputs for factoring via congruence of squares.
 #cmakedefine IS_SQUARES_CONGRUENCE_CHECK 0
-// Override automatic TRIAL_DIVISION_LEVEL (-1 is no override)
-#cmakedefine TRIAL_DIVISION_LEVEL_OVERRIDE @TRIAL_DIVISION_LEVEL_OVERRIDE@
