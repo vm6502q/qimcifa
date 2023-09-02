@@ -38,21 +38,22 @@
 
 #include "config.h"
 
-// This can be any power of 2 greater than (or equal to) 64:
-constexpr size_t BIG_INTEGER_BITS = BIG_INT_BITS;
-// This can change the "word" size to less than 64 bits, but one typically wouldn't:
-constexpr size_t BIG_INTEGER_WORD_BITS = 64;
-// The rest of the constants need to be consistent with the two above:
-constexpr size_t BIG_INTEGER_HALF_WORD_BITS = BIG_INTEGER_WORD_BITS >> 1U;
-constexpr int BIG_INTEGER_WORD_SIZE = BIG_INTEGER_BITS / BIG_INTEGER_WORD_BITS;
-constexpr int BIG_INTEGER_HALF_WORD_SIZE = BIG_INTEGER_WORD_SIZE << 1U;
-constexpr int BIG_INTEGER_MAX_WORD_INDEX = BIG_INTEGER_WORD_SIZE - 1U;
-#define BIG_INTEGER_WORD_POWER 6
+#define BIG_INTEGER_WORD_BITS 64U
+#define BIG_INTEGER_WORD_POWER 6U
 #define BIG_INTEGER_WORD unsigned long
 #define BIG_INTEGER_HALF_WORD unsigned
 #define BIG_INTEGER_HALF_WORD_POW 0x100000000ULL
 #define BIG_INTEGER_HALF_WORD_MASK 0xFFFFFFFFULL
 #define BIG_INTEGER_HALF_WORD_MASK_NOT 0xFFFFFFFF00000000ULL
+
+// This can be any power of 2 greater than (or equal to) 64:
+constexpr size_t BIG_INTEGER_BITS = BIG_INT_BITS;
+
+// The rest of the constants need to be consistent with the one above:
+constexpr size_t BIG_INTEGER_HALF_WORD_BITS = BIG_INTEGER_WORD_BITS >> 1U;
+constexpr int BIG_INTEGER_WORD_SIZE = BIG_INTEGER_BITS / BIG_INTEGER_WORD_BITS;
+constexpr int BIG_INTEGER_HALF_WORD_SIZE = BIG_INTEGER_WORD_SIZE << 1U;
+constexpr int BIG_INTEGER_MAX_WORD_INDEX = BIG_INTEGER_WORD_SIZE - 1U;
 
 typedef struct BigInteger {
     BIG_INTEGER_WORD bits[BIG_INTEGER_WORD_SIZE];
@@ -652,8 +653,8 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
     // Otherwise, past this point, left > right.
 
     if (right->bits[0] < BIG_INTEGER_HALF_WORD_POW) {
-        int wordSize = 0;
-        for (wordSize = 0; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
+        int wordSize;
+        for (wordSize = 1; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
             if (right->bits[wordSize]) {
                 break;
             }
@@ -674,22 +675,12 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
         }
     }
 
+    BigInteger bi1 = bi_create(1U);
     int rightLog2 = bi_log2(right);
-    if (rightLog2 == 0) {
-        // right == 1
-        if (quotient) {
-            // quotient = left
-            bi_copy_ip(left, quotient);
-        }
-        if (rmndr) {
-            // rmndr = 0
-            bi_set_0(rmndr);
-        }
-        return;
+    BigInteger rightTest = bi_lshift(&bi1, rightLog2);
+    if (bi_compare(right, &rightTest) < 0) {
+        ++rightLog2;
     }
-
-    // Past this point, left > right > 1.
-
     if (quotient) {
         bi_set_0(quotient);
     }
@@ -698,40 +689,17 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
         rmndr = &leftCopy;
     }
     bi_copy_ip(left, rmndr);
-    for (int i = ((BIG_INTEGER_BITS - 1) - rightLog2); i >= 0; --i) {
-        BigInteger partMul = bi_lshift(right, i);
 
-        const int c = bi_compare(rmndr, &partMul);
-        if (c < 0) {
-            continue;
+    while (bi_compare(rmndr, right) >= 0) {
+        int logDiff = bi_log2(rmndr) - rightLog2;
+        if (logDiff > 0) {
+            BigInteger partMul = bi_lshift(right, logDiff);
+            BigInteger partQuo = bi_lshift(&bi1, logDiff);
+            bi_sub_ip(rmndr, &partMul);
+            bi_add_ip(quotient, &partQuo);
+        } else {
+            bi_sub_ip(rmndr, right);
+            bi_increment(quotient, 1U);
         }
-
-        // Past this point, rmndr >= partMul.
-
-        if (quotient) {
-            int iWord = i / BIG_INTEGER_WORD_BITS;
-            const BIG_INTEGER_WORD shiftWord = 1 << (i - (iWord * BIG_INTEGER_WORD_BITS));
-            BIG_INTEGER_WORD temp = quotient->bits[iWord];
-            quotient->bits[iWord] += shiftWord;
-            while ((iWord < BIG_INTEGER_WORD_SIZE) && (temp > quotient->bits[iWord])) {
-                temp = quotient->bits[++iWord]++;
-            }
-        }
-
-        if (c == 0) {
-            // rmndr == partMul
-            bi_set_0(rmndr);
-            return;
-        }
-
-        // Otherwise, c > 1, meaning rmndr > partMul.
-        for (int j = i / BIG_INTEGER_WORD_BITS; j < BIG_INTEGER_MAX_WORD_INDEX; ++j) {
-            BIG_INTEGER_WORD temp = rmndr->bits[j];
-            rmndr->bits[j] -= partMul.bits[j];
-            if (rmndr->bits[j] > temp) {
-                --(rmndr->bits[j + 1]);
-            }
-        }
-        rmndr->bits[BIG_INTEGER_MAX_WORD_INDEX] -= partMul.bits[BIG_INTEGER_MAX_WORD_INDEX];
     }
 }
