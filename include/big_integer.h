@@ -475,8 +475,8 @@ BigInteger bi_mul_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right)
 BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
 {
     if (right->bits[0] < BIG_INTEGER_HALF_WORD_POW) {
-        int wordSize = 0;
-        for (wordSize = 0; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
+        int wordSize;
+        for (wordSize = 1; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
             if (right->bits[wordSize]) {
                 break;
             }
@@ -487,8 +487,8 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
     }
 
     if (left->bits[0] < BIG_INTEGER_HALF_WORD_POW) {
-        int wordSize = 0;
-        for (wordSize = 0; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
+        int wordSize;
+        for (wordSize = 1; wordSize < BIG_INTEGER_WORD_SIZE; ++wordSize) {
             if (left->bits[wordSize]) {
                 break;
             }
