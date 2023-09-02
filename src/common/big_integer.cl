@@ -1,19 +1,15 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qimcifa contributors, 2022. All rights reserved.
+// (C) Daniel Strano and the Qimcifa contributors, 2022, 2023. All rights reserved.
 //
 // This header has been adapted for OpenCL and C, from big_integer.c by Andre Azevedo.
 //
-// Licensed under the GNU Lesser General Public License V3.
-// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
-// for details.
-
-/*
-** big_integer.c
-**     Description: "Arbitrary"-precision integer
-**     Author: Andre Azevedo <http://github.com/andreazevedo>
-**/
-
+// Original file:
+//
+// big_integer.c
+//     Description: "Arbitrary"-precision integer
+//     Author: Andre Azevedo <http://github.com/andreazevedo>
+//
 // The MIT License (MIT)
 //
 // Copyright (c) 2014 Andre Azevedo
@@ -37,7 +33,8 @@
 // SOFTWARE.
 
 #if 0
-// These are defined in oclengine.cpp.
+// For JIT OpenCL compilation, you can specify and modify these in the host code
+// to load the OpenCL program.
 #define BIG_INTEGER_WORD_SIZE 2
 #define BIG_INTEGER_HALF_WORD_SIZE 4
 #define BIG_INTEGER_MAX_WORD_INDEX 1
