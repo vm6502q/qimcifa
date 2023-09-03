@@ -165,7 +165,8 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, constant unsigned* trialDi
             t.bits[i] = 0;
         }
         bitCapInt base;
-        bi_div_mod(&t, &threadRange, 0, &base);
+        bitCapInt quotient;
+        bi_div_mod(&t, &threadRange, &quotient, &base);
 
         for (size_t i = primesLength - 1; i > 0; --i) {
             // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
@@ -179,7 +180,7 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, constant unsigned* trialDi
         bi_add_ip(&base, &threadMin);
 
         bitCapInt n;
-        bi_div_mod(&toFactor, &base, 0, &n);
+        bi_div_mod(&toFactor, &base, &quotient, &n);
         if (bi_compare_0(&n) == 0) {
             outputs[thread] = base;
 
