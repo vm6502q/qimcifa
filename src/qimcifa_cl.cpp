@@ -57,6 +57,7 @@
 #define bci_div_small(l, r, o) bi_div_mod_small(&(l), r, o, NULL)
 #define bci_mod(l, r, o) bi_div_mod(&(l), &(r), NULL, o)
 #define bci_mod_small(l, r, o) bi_div_mod_small(&(l), r, NULL, o)
+#define bci_div_mod(l, r, o1, o2) bi_div_mod(&(l), &(r), o1, o2)
 #define bci_lshift(l, r) bi_lshift(&(l), r)
 #define bci_lshift_ip(l, r) bi_lshift_ip(l, r)
 #define bci_rshift(l, r) bi_rshift(&(l), r)
@@ -316,12 +317,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
     }
     
-    std::unique_ptr<bitCapInt[]> outputArray(new bitCapInt[itemCount]());
+    std::unique_ptr<bitCapInt[]> outputArray(new bitCapInt[itemCount]);
     BufferPtr outputBufferPtr = MakeBuffer(context, CL_MEM_WRITE_ONLY, sizeof(bitCapInt) * itemCount);
-    error = queue.enqueueWriteBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
-    if (error != CL_SUCCESS) {
-        throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));
-    }
 
     // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
     // other QEngineOCL instances, until we're done queueing it.
@@ -337,8 +334,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     ocl.call.setArg(3, *bciArgsBufferPtr);
     ocl.call.setArg(4, *outputBufferPtr);
 
-    bitCapInt testFactor = bci_create(1U);
-    while (!bci_gt_1(testFactor)) {
+    bitCapInt testFactor, f2, rmndr;
+    do {
         cl::Event kernelEvent;
         error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
             cl::NDRange(groupCount), // global number of work items
@@ -355,17 +352,14 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         for (size_t i = 0; i < itemCount; i++) {
             testFactor = outputArray.get()[i];
             if (bci_gt_1(testFactor)) {
-                bitCapInt rmndr;
-                bci_mod(toFactor, testFactor, &rmndr);
+                bci_div_mod(toFactor, testFactor, &f2, &rmndr);
                 if (bci_eq_0(rmndr)) {
                     break;
                 }
             }
         }
-    }
+    } while (!bci_gt_1(testFactor));
 
-    bitCapInt f2;
-    bci_div(toFactor, testFactor, &f2);
     std::cout << "Success: " << testFactor << " * " << f2 << " = " << toFactor << std::endl;
     const double clockFactor = 1.0 / 1000.0; // Report in ms
     auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
