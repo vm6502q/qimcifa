@@ -359,7 +359,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     kernelEvent.wait();
     queue.enqueueReadBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
 
-    bitCapInt testFactor, f2, rmndr;
+    bitCapInt testFactor, rmndr;
     do {
         cl::Event kernelEvent;
         error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
@@ -381,7 +381,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         for (size_t i = 0; i < itemCount; i++) {
             testFactor = outputArray.get()[i];
             if (bci_gt_1(testFactor)) {
-                bci_div_mod(toFactor, testFactor, &f2, &rmndr);
+                bci_mod(toFactor, testFactor, &rmndr);
                 if (bci_eq_0(rmndr)) {
                     break;
                 }
@@ -392,6 +392,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         queue.enqueueReadBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
     } while (!bci_gt_1(testFactor));
 
+    bitCapInt f2;
+    bci_div(toFactor, testFactor, &f2);
     std::cout << "Success: " << testFactor << " * " << f2 << " = " << toFactor << std::endl;
     const double clockFactor = 1.0 / 1000.0; // Report in ms
     auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
