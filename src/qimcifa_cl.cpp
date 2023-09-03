@@ -334,7 +334,22 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     ocl.call.setArg(3, *bciArgsBufferPtr);
     ocl.call.setArg(4, *outputBufferPtr);
 
+    cl::Event kernelEvent;
+    error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(groupCount), // global number of work items
+        cl::NDRange(groupSize), // local number (per group)
+        NULL, // vector of events to wait for
+        &kernelEvent); // handle to wait for the kernel
+
+    if (error != CL_SUCCESS) {
+        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
+    }
+
+    kernelEvent.wait();
+    queue.enqueueReadBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
+
     bitCapInt testFactor, f2, rmndr;
+    bool isFound = false;
     do {
         cl::Event kernelEvent;
         error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
@@ -347,8 +362,6 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
             throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
         }
 
-        kernelEvent.wait();
-        queue.enqueueReadBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
         for (size_t i = 0; i < itemCount; i++) {
             testFactor = outputArray.get()[i];
             if (bci_gt_1(testFactor)) {
@@ -358,6 +371,9 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
                 }
             }
         }
+
+        kernelEvent.wait();
+        queue.enqueueReadBuffer(*outputBufferPtr, CL_TRUE, 0U, sizeof(bitCapInt) * itemCount, outputArray.get(), NULL);
     } while (!bci_gt_1(testFactor));
 
     std::cout << "Success: " << testFactor << " * " << f2 << " = " << toFactor << std::endl;
