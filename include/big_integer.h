@@ -689,10 +689,14 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
             BigInteger partMul = bi_lshift(right, logDiff);
             BigInteger partQuo = bi_lshift(&bi1, logDiff);
             bi_sub_ip(&rem, &partMul);
-            bi_add_ip(quotient, &partQuo);
+            if (quotient) {
+                bi_add_ip(quotient, &partQuo);
+            }
         } else {
             bi_sub_ip(&rem, right);
-            bi_increment(quotient, 1U);
+            if (quotient) {
+                bi_increment(quotient, 1U);
+            }
         }
     }
     if (rmndr) {
