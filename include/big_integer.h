@@ -680,22 +680,22 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
     if (quotient) {
         bi_set_0(quotient);
     }
-    BigInteger leftCopy;
-    if (!rmndr) {
-        rmndr = &leftCopy;
-    }
-    bi_copy_ip(left, rmndr);
+    BigInteger rem;
+    bi_copy_ip(left, &rem);
 
-    while (bi_compare(rmndr, right) >= 0) {
-        int logDiff = bi_log2(rmndr) - rightLog2;
+    while (bi_compare(&rem, right) >= 0) {
+        int logDiff = bi_log2(&rem) - rightLog2;
         if (logDiff > 0) {
             BigInteger partMul = bi_lshift(right, logDiff);
             BigInteger partQuo = bi_lshift(&bi1, logDiff);
-            bi_sub_ip(rmndr, &partMul);
+            bi_sub_ip(&rem, &partMul);
             bi_add_ip(quotient, &partQuo);
         } else {
-            bi_sub_ip(rmndr, right);
+            bi_sub_ip(&rem, right);
             bi_increment(quotient, 1U);
         }
+    }
+    if (rmndr) {
+        *rmndr = rem;
     }
 }
