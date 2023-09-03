@@ -586,9 +586,7 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
 // Complexity - O(x^2)
 void bi_div_mod_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right, BigInteger* quotient, BIG_INTEGER_HALF_WORD* rmndr)
 {
-    if (quotient) {
-        bi_set_0(quotient);
-    }
+    bi_set_0(quotient);
     BIG_INTEGER_WORD carry = 0;
     for (int i = BIG_INTEGER_HALF_WORD_SIZE - 1; i >= 0; --i) {
         const int i2 = i >> 1;
@@ -606,9 +604,7 @@ void bi_div_mod_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right, BigIn
         }
         carry %= right;
     }
-    if (rmndr) {
-        *rmndr = carry;
-    }
+    *rmndr = carry;
 }
 
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
