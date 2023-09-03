@@ -31,7 +31,7 @@
 #elif defined(_WIN32) || ENABLE_SNUCL
 #include <CL/cl.hpp>
 #else
-#include <CL/cl2.hpp>
+#include <CL/opencl.hpp>
 #endif
 
 namespace Qimcifa {

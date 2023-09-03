@@ -198,7 +198,6 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount, int64_t tdLevel)
 int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId, int64_t tdLevel,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
-    bitCapInt t;
     auto iterClock = std::chrono::high_resolution_clock::now();
     const int TRIAL_DIVISION_LEVEL = pickTrialDivisionLevel(qubitCount, tdLevel);
 #if IS_RSA_SEMIPRIME
@@ -237,6 +236,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 #endif
 
     primeIndex = TRIAL_DIVISION_LEVEL;
+    bitCapInt t;
     while (primeIndex >= 0) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
