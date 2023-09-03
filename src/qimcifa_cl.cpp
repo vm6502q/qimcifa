@@ -231,6 +231,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
         unsigned t2;
         bci_mod_small(toFactor, currentPrime, &t2);
         if (!t2) {
+            bitCapInt t;
             bci_div_small(toFactor, currentPrime, &t);
             std::cout << "Factors: " << currentPrime << " * " << t << " = " << toFactor << std::endl;
             return 0;
