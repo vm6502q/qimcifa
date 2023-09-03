@@ -586,26 +586,35 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
 // Complexity - O(x^2)
 void bi_div_mod_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right, BigInteger* quotient, BIG_INTEGER_HALF_WORD* rmndr)
 {
+    BIG_INTEGER_WORD carry = 0;
     if (quotient) {
         bi_set_0(quotient);
-    }
-    BIG_INTEGER_WORD carry = 0;
-    for (int i = BIG_INTEGER_HALF_WORD_SIZE - 1; i >= 0; --i) {
-        const int i2 = i >> 1;
-        carry <<= BIG_INTEGER_HALF_WORD_BITS;
-        if (i & 1) {
-            carry |= left->bits[i2] >> BIG_INTEGER_HALF_WORD_BITS;
-            if (quotient) {
+        for (int i = BIG_INTEGER_HALF_WORD_SIZE - 1; i >= 0; --i) {
+            const int i2 = i >> 1;
+            carry <<= BIG_INTEGER_HALF_WORD_BITS;
+            if (i & 1) {
+                carry |= left->bits[i2] >> BIG_INTEGER_HALF_WORD_BITS;
                 quotient->bits[i2] |= (carry / right) << BIG_INTEGER_HALF_WORD_BITS;
-            }
-        } else {
-            carry |= left->bits[i2] & BIG_INTEGER_HALF_WORD_MASK;
-            if (quotient) {
+            } else {
+                carry |= left->bits[i2] & BIG_INTEGER_HALF_WORD_MASK;
                 quotient->bits[i2] |= (carry / right);
             }
+            carry %= right;
         }
-        carry %= right;
+    } else {
+        for (int i = BIG_INTEGER_HALF_WORD_SIZE - 1; i >= 0; --i) {
+            const int i2 = i >> 1;
+            carry <<= BIG_INTEGER_HALF_WORD_BITS;
+            if (i & 1) {
+                carry |= left->bits[i2] >> BIG_INTEGER_HALF_WORD_BITS;
+
+            } else {
+                carry |= left->bits[i2] & BIG_INTEGER_HALF_WORD_MASK;
+            }
+            carry %= right;
+        }
     }
+
     if (rmndr) {
         *rmndr = carry;
     }
@@ -675,25 +684,30 @@ void bi_div_mod(const BigInteger* left, const BigInteger* right, BigInteger* quo
     if (bi_compare(right, &rightTest) < 0) {
         ++rightLog2;
     }
-    if (quotient) {
-        bi_set_0(quotient);
-    }
     BigInteger rem;
     bi_copy_ip(left, &rem);
-
-    while (bi_compare(&rem, right) >= 0) {
-        int logDiff = bi_log2(&rem) - rightLog2;
-        if (logDiff > 0) {
-            BigInteger partMul = bi_lshift(right, logDiff);
-            BigInteger partQuo = bi_lshift(&bi1, logDiff);
-            bi_sub_ip(&rem, &partMul);
-            if (quotient) {
+    if (quotient) {
+        bi_set_0(quotient);
+        while (bi_compare(&rem, right) >= 0) {
+            int logDiff = bi_log2(&rem) - rightLog2;
+            if (logDiff > 0) {
+                BigInteger partMul = bi_lshift(right, logDiff);
+                BigInteger partQuo = bi_lshift(&bi1, logDiff);
+                bi_sub_ip(&rem, &partMul);
                 bi_add_ip(quotient, &partQuo);
-            }
-        } else {
-            bi_sub_ip(&rem, right);
-            if (quotient) {
+            } else {
+                bi_sub_ip(&rem, right);
                 bi_increment(quotient, 1U);
+            }
+        }
+    } else {
+        while (bi_compare(&rem, right) >= 0) {
+            int logDiff = bi_log2(&rem) - rightLog2;
+            if (logDiff > 0) {
+                BigInteger partMul = bi_lshift(right, logDiff);
+                bi_sub_ip(&rem, &partMul);
+            } else {
+                bi_sub_ip(&rem, right);
             }
         }
     }
