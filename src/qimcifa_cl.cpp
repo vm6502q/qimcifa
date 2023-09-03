@@ -189,9 +189,20 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount, int64_t tdLevel)
         return 0;
     }
 
+#if BIG_INT_BITS >= 512
+    return (qubitCount >> 3U) - 5U;
+#else
     return (qubitCount >> 3U) - 6U;
+#endif
+
+#else
+
+#if BIG_INT_BITS >= 512
+    return (qubitCount >> 4U) + 35U;
 #else
     return (qubitCount >> 4U) + 34U;
+#endif
+
 #endif
 }
 
