@@ -27,9 +27,8 @@ bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     while (bi_compare_0(&n2) != 0) {
         BigInteger t1 = bi_copy(&n1);
         BigInteger t2 = bi_copy(&n2);
-        BigInteger q;
         bi_copy_ip(&n2, &n1);
-        bi_div_mod(&t1, &t2, &q, &n2);
+        bi_div_mod(&t1, &t2, 0, &n2);
     }
     return n1;
 }
@@ -66,8 +65,7 @@ void kernel qimcifa_batch(global ulong* rngSeeds, constant unsigned* trialDivisi
 
     bitCapInt threadRange, t = bi_copy(&nodeRange);
     bi_increment(&t, threadCount - 1U);
-    unsigned rs;
-    bi_div_mod_small(&t, threadCount, &threadRange, &rs);
+    bi_div_mod_small(&t, threadCount, &threadRange, 0);
 
     bitCapInt threadMin = bi_mul_small(&threadRange, thread);
     bi_add_ip(&threadMin, &nodeMin);
@@ -90,12 +88,12 @@ void kernel qimcifa_batch(global ulong* rngSeeds, constant unsigned* trialDivisi
         for (size_t i = rngWordCount; i < BIG_INTEGER_WORD_SIZE; i++) {
             t.bits[i] = 0;
         }
-        bitCapInt r, base;
-        bi_div_mod(&t, &threadRange, &r, &base);
+        bitCapInt base;
+        bi_div_mod(&t, &threadRange, 0, &base);
 
         for (size_t i = primesLength - 1; i > 0; --i) {
             // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-            bi_div_mod_small(&base, privPrimes[i], &t, &rs);
+            bi_div_mod_small(&base, privPrimes[i], &t, 0);
             bi_add_ip(&base, &t);
             bi_increment(&base, 1);
         }
@@ -143,8 +141,7 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, constant unsigned* trialDi
 
     bitCapInt threadRange, t = bi_copy(&nodeRange);
     bi_increment(&t, threadCount - 1U);
-    unsigned rs;
-    bi_div_mod_small(&t, threadCount, &threadRange, &rs);
+    bi_div_mod_small(&t, threadCount, &threadRange, 0);
 
     bitCapInt threadMin = bi_mul_small(&threadRange, thread);
     bi_add_ip(&threadMin, &nodeMin);
@@ -167,12 +164,12 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, constant unsigned* trialDi
         for (size_t i = rngWordCount; i < BIG_INTEGER_WORD_SIZE; i++) {
             t.bits[i] = 0;
         }
-        bitCapInt r, base;
-        bi_div_mod(&t, &threadRange, &r, &base);
+        bitCapInt base;
+        bi_div_mod(&t, &threadRange, 0, &base);
 
         for (size_t i = primesLength - 1; i > 0; --i) {
             // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-            bi_div_mod_small(&base, privPrimes[i], &t, &rs);
+            bi_div_mod_small(&base, privPrimes[i], &t, 0);
             bi_add_ip(&base, &t);
             bi_increment(&base, 1);
         }
@@ -182,7 +179,7 @@ void kernel qimcifa_rsa_batch(global ulong* rngSeeds, constant unsigned* trialDi
         bi_add_ip(&base, &threadMin);
 
         bitCapInt n;
-        bi_div_mod(&toFactor, &base, &r, &n);
+        bi_div_mod(&toFactor, &base, 0, &n);
         if (bi_compare_0(&n) == 0) {
             outputs[thread] = base;
 
