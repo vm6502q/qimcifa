@@ -28,10 +28,10 @@
 #if defined(__APPLE__)
 #define CL_SILENCE_DEPRECATION
 #include <OpenCL/cl.hpp>
-#elif defined(_WIN32) || ENABLE_SNUCL
+#elif defined(_WIN32)
 #include <CL/cl.hpp>
 #else
-#include <CL/opencl.hpp>
+#include <CL/cl2.hpp>
 #endif
 
 namespace Qimcifa {
