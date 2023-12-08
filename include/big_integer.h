@@ -466,7 +466,7 @@ BigInteger bi_mul_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right)
     return result;
 }
 
-#if BIG_INTEGER_WORD_SIZE > 1
+#if BIG_INTEGER_BITS > 80
 // Adapted from Qrack! (The fundamental algorithm was discovered before.)
 // Complexity - O(log)
 BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
