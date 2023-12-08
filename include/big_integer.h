@@ -466,6 +466,41 @@ BigInteger bi_mul_small(const BigInteger* left, BIG_INTEGER_HALF_WORD right)
     return result;
 }
 
+#if BIG_INTEGER_WORD_SIZE > 1
+// Adapted from Qrack! (The fundamental algorithm was discovered before.)
+// Complexity - O(log)
+BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
+{
+    int rightLog2 = bi_log2(right);
+    if (rightLog2 == 0) {
+        // right == 1
+        return *left;
+    }
+    int maxI = BIG_INTEGER_BITS - rightLog2;
+
+    BigInteger result;
+    bi_set_0(&result);
+    for (int i = 0; i < maxI; ++i) {
+        BigInteger partMul = bi_lshift(right, i);
+        if (bi_compare_0(&partMul) == 0) {
+            break;
+        }
+        const int iWord = i / BIG_INTEGER_WORD_BITS;
+        if (1 & (left->bits[iWord] >> (i - (iWord * BIG_INTEGER_WORD_BITS)))) {
+            for (int j = iWord; j < BIG_INTEGER_WORD_SIZE; j++) {
+                BIG_INTEGER_WORD temp = result.bits[j];
+                result.bits[j] += partMul.bits[j];
+                int k = j;
+                while ((k < BIG_INTEGER_WORD_SIZE) && (temp > result.bits[k])) {
+                    temp = result.bits[++k]++;
+                }
+            }
+        }
+    }
+
+    return result;
+}
+#else
 // "Schoolbook multiplication" (on half words)
 // Complexity - O(x^2)
 BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
@@ -540,41 +575,6 @@ BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
                     carry = temp >> BIG_INTEGER_HALF_WORD_BITS;
                     result.bits[i2j2] =
                         (result.bits[i2j2] & BIG_INTEGER_HALF_WORD_MASK_NOT) | (temp & BIG_INTEGER_HALF_WORD_MASK);
-                }
-            }
-        }
-    }
-
-    return result;
-}
-
-#if 0
-// Adapted from Qrack! (The fundamental algorithm was discovered before.)
-// Complexity - O(log)
-BigInteger bi_mul(const BigInteger* left, const BigInteger* right)
-{
-    int rightLog2 = bi_log2(right);
-    if (rightLog2 == 0) {
-        // right == 1
-        return *left;
-    }
-    int maxI = BIG_INTEGER_BITS - rightLog2;
-
-    BigInteger result;
-    bi_set_0(&result);
-    for (int i = 0; i < maxI; ++i) {
-        BigInteger partMul = bi_lshift(right, i);
-        if (bi_compare_0(&partMul) == 0) {
-            break;
-        }
-        const int iWord = i / BIG_INTEGER_WORD_BITS;
-        if (1 & (left->bits[iWord] >> (i - (iWord * BIG_INTEGER_WORD_BITS)))) {
-            for (int j = iWord; j < BIG_INTEGER_WORD_SIZE; j++) {
-                BIG_INTEGER_WORD temp = result.bits[j];
-                result.bits[j] += partMul.bits[j];
-                int k = j;
-                while ((k < BIG_INTEGER_WORD_SIZE) && (temp > result.bits[k])) {
-                    temp = result.bits[++k]++;
                 }
             }
         }
