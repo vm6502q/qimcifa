@@ -274,7 +274,7 @@ bool multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bitCa
 }
 
 template <typename bitCapInt>
-int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId, int64_t tdLevel,
+int mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, size_t nodeCount, size_t nodeId, int64_t tdLevel,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
@@ -284,8 +284,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
 
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
-    bitCapInt fullMinBase = ((1ULL << (primeBits - 2U)) | 1U);
-    const bitCapInt fullMaxBase = ((1ULL << (primeBits + 1U)) - 1U);
+    bitCapInt fullMinBase = ((1ULL << (primeBits - (1U + primeBitsOffset))) | 1U);
+    const bitCapInt fullMaxBase = ((1ULL << (primeBits + primeBitsOffset)) - 1U);
 #else
     int primeIndex = 0;
     unsigned currentPrime = 2;
@@ -453,6 +453,7 @@ int main()
     bitCapIntInput toFactor;
     size_t nodeCount = 1U;
     size_t nodeId = 0U;
+    size_t primeBitsOffset = 1U;
     int64_t tdLevel = -1;
 
     std::cout << "Number to factor: ";
@@ -494,6 +495,12 @@ int main()
     std::cout << "Trial division level (-1 for auto): ";
     std::cin >> tdLevel;
 
+#if IS_RSA_SEMIPRIME
+    std::cout << "RSA semiprimes might have significant mismatch between factor sizes. Often, this is just 1 or 2 bits, but it can theoretically be greater." << std::endl;
+    std::cout << "RSA semiprime factor bit mismatch (usually 1, sometimes more): ";
+    std::cin >> primeBitsOffset;
+#endif
+
     const unsigned highestPrime = trialDivisionPrimes[pickTrialDivisionLevel(qubitCount, tdLevel)];
     size_t primeFactorBits = 1U;
     p = highestPrime >> 1U;
@@ -504,40 +511,40 @@ int main()
     const size_t QBCAPBITS = primeFactorBits + (((qubitCount >> 5U) + 1U) << 5U);
     if (QBCAPBITS < 64) {
         typedef uint64_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
 #if USE_GMP
     } else {
-        return mainBody<bitCapIntInput>(toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapIntInput>(toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     }
 #else
     } else if (QBCAPBITS < 128) {
         typedef boost::multiprecision::uint128_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     } else if (QBCAPBITS < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     } else if (QBCAPBITS < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     } else if (QBCAPBITS < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     } else if (QBCAPBITS < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     } else if (QBCAPBITS < 2048) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     }
 #endif
 }

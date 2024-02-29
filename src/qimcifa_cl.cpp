@@ -206,7 +206,7 @@ inline size_t pickTrialDivisionLevel(size_t qubitCount, int64_t tdLevel)
 #endif
 }
 
-int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nodeId, int64_t tdLevel,
+int mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, size_t nodeCount, size_t nodeId, int64_t tdLevel,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
@@ -217,8 +217,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t nodeCount, size_t nod
 
     const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
     bitCapInt fullMinBase = bci_create(1);
-    bci_lshift_ip(&fullMinBase, primeBits - 2U);
-    bci_increment(&fullMinBase, 1U);
+    bci_lshift_ip(&fullMinBase, primeBits - (1U + primeBitsOffset));
+    bci_increment(&fullMinBase, primeBitsOffset);
 
     bitCapInt fullMaxBase = bci_create(1);
     bci_lshift_ip(&fullMaxBase, primeBits + 1U);
@@ -473,6 +473,7 @@ int main()
     bitCapInt toFactor;
     size_t nodeCount = 1U;
     size_t nodeId = 0U;
+    size_t primeBitsOffset = 1U;
     int64_t tdLevel = -1;
 
     std::cout << "Number to factor: ";
@@ -509,5 +510,11 @@ int main()
     std::cout << "Trial division level (-1 for auto): ";
     std::cin >> tdLevel;
 
-    return mainBody(toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+#if IS_RSA_SEMIPRIME
+    std::cout << "RSA semiprimes might have significant mismatch between factor sizes. Often, this is just 1 or 2 bits, but it can theoretically be greater." << std::endl;
+    std::cout << "RSA semiprime factor bit mismatch (usually 1, sometimes more): ";
+    std::cin >> primeBitsOffset;
+#endif
+
+    return mainBody(toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
 }
