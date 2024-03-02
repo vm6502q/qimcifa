@@ -37,6 +37,7 @@
 #include <mutex>
 
 #include <boost/random.hpp>
+#include <boost/random/mersenne_twister.hpp>
 
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
@@ -173,7 +174,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
 
 template <typename WORD, typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
-    const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, std::mt19937& rand_gen,
+    const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock, boost::mt11213b& rand_gen,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
@@ -227,7 +228,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt
 template <typename bitCapInt>
 bool multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bitCapInt range, const bitCapInt& threadMin,
     const bitCapInt& fullMinBase, const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock,
-    std::mt19937& rand_gen, const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
+    boost::mt11213b& rand_gen, const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
@@ -342,7 +343,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, size
     primeIndex = tdLevel;
 
     std::random_device rand_dev;
-    std::mt19937 rand_gen(rand_dev());
+    boost::mt11213b rand_gen(rand_dev());
 
     const unsigned cpuCount = std::thread::hardware_concurrency();
     std::atomic<bool> isFinished;
