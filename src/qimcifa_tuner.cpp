@@ -208,7 +208,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 }
 
 template <typename bitCapInt>
-CsvRow mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, int64_t tdLevel,
+CsvRow mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, int64_t tdLevel, size_t threadCount,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     const int TRIAL_DIVISION_LEVEL = tdLevel;
@@ -257,6 +257,10 @@ CsvRow mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, i
         fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
+
+    if (fullRange % threadCount) {
+        fullRange = (fullRange / threadCount) * (threadCount + 1U);
+    }
     primeIndex = TRIAL_DIVISION_LEVEL;
 
     const auto workerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes]
@@ -270,7 +274,7 @@ CsvRow mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, i
 
 using namespace Qimcifa;
 
-CsvRow mainCase(bitCapIntInput toFactor, int primeBitsOffset, int tdLevel)
+CsvRow mainCase(bitCapIntInput toFactor, int primeBitsOffset, size_t threadCount, int tdLevel)
 {
     uint32_t qubitCount = 0;
     bitCapIntInput p = toFactor >> 1U;
@@ -355,7 +359,7 @@ CsvRow mainCase(bitCapIntInput toFactor, int primeBitsOffset, int tdLevel)
     const size_t QBCAPBITS = primeFactorBits + (((qubitCount >> 5U) + 1U) << 5U);
     if (QBCAPBITS < 64) {
         typedef uint64_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
 #if USE_GMP
     } else {
         return mainBody<bitCapIntInput>(toFactor, qubitCount, primeBitsOffset, tdLevel, trialDivisionPrimes);
@@ -363,32 +367,32 @@ CsvRow mainCase(bitCapIntInput toFactor, int primeBitsOffset, int tdLevel)
 #else
     } else if (QBCAPBITS < 128) {
         typedef boost::multiprecision::uint128_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
     } else if (QBCAPBITS < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
     } else if (QBCAPBITS < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
     } else if (QBCAPBITS < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
     } else if (QBCAPBITS < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
     } else {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
     }
 #endif
 }
@@ -407,22 +411,52 @@ int main() {
     std::cin >> primeBitsOffset;
 #endif
 
-    std::ofstream settingsFile ("qimcifa_calibration.ssv");
-    settingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
+    size_t threadCount = 1;
+    std::cout << "Total thread count (across all nodes): ";
+    std::cin >> threadCount;
+
+    std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
+    oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
     for (size_t i = 0; i < 100U; ++i) {
-        mainCase(toFactor, primeBitsOffset, i);
+        mainCase(toFactor, primeBitsOffset, threadCount, i);
     }
     for (size_t i = 0; i < 100U; ++i) {
         // "Warm-up"
-        mainCase(toFactor, primeBitsOffset, i);
+        mainCase(toFactor, primeBitsOffset, threadCount, i);
         
         // Test
-        CsvRow row = mainCase(toFactor, primeBitsOffset, i);
+        CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i);
         // Total "cost" assumes at least 2 factors exist in the guessing space (exactly for RSA semiprimes, and as a conservative lower bound in general).
-        settingsFile << i << " " << row.range << " " << row.time_s << " " << ((row.range >> 17).convert_to<double>() * (row.time_s * 1e-9)) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << ((row.range >> 17).convert_to<double>() * (row.time_s * 1e-9)) << std::endl;
     }
-    settingsFile.close();
+    oSettingsFile.close();
+
+    std::ifstream iSettingsFile ("qimcifa_calibration.ssv");
+    std::string header;
+    std::getline(iSettingsFile, header);
+    size_t bestLevel = -1;
+    double bestCost = DBL_MAX;
+    while (iSettingsFile.peek() != EOF)
+    {
+        size_t level;
+        bitCapInt cardinality;
+        double batchTime, cost;
+        iSettingsFile >> level;
+        iSettingsFile >> cardinality;
+        iSettingsFile >> batchTime;
+        iSettingsFile >> cost;
+
+        if (cost < bestCost) {
+            bestLevel = level;
+            bestCost = cost;
+        }
+    }
+    iSettingsFile.close();
+
+    std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
+    const unsigned cpuCount = std::thread::hardware_concurrency();
+    std::cout << "Expected average time-to-solution (seconds): " << (bestCost / threadCount) << std::endl;
 
     return 0;
 }
