@@ -162,13 +162,13 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapI
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    // const int BASE_TRIALS = 1U << 16U;
+    const int BASE_TRIALS = 1U << 6U;
     std::uniform_int_distribution<WORD> baseDist(0U, range);
 
     auto iterClock = std::chrono::high_resolution_clock::now();
 
     // for (;;) {
-        // for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = baseDist(rand_gen) + threadMin;
 
@@ -198,7 +198,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapI
 #if IS_SQUARES_CONGRUENCE_CHECK
             checkCongruenceOfSquares<bitCapInt>(toFactor, base, isFinished, iterClock))
 #endif
-        // }
+        }
 
         // Check if finished, between batches.
         // if (isFinished) {
@@ -215,7 +215,7 @@ CsvRow multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bit
     std::mt19937& rand_gen, const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    // const int BASE_TRIALS = 1U << 16U;
+    const int BASE_TRIALS = 1U << 6U;
     typedef std::uniform_int_distribution<uint64_t> rand_dist;
 
     std::vector<rand_dist> baseDist;
@@ -228,7 +228,7 @@ CsvRow multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bit
     auto iterClock = std::chrono::high_resolution_clock::now();
 
     // for (;;) {
-    //    for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = baseDist[0U](rand_gen);
             for (size_t i = 1U; i < baseDist.size(); ++i) {
@@ -265,13 +265,13 @@ CsvRow multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bit
                 // return true;
             }
 #endif
-        // }
+        }
 
         // Check if finished, between batches.
         // if (isFinished) {
             // return true;
         // }
-    // }
+    //}
 
     return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count());
 }
@@ -503,10 +503,10 @@ int main() {
 #endif
 
     std::ofstream settingsFile ("qimcifa_calibration.csv");
-    settingsFile << "cardinality, batch time (ns), cost" << std::endl;
+    settingsFile << "cardinality, batch time (ns), cost (s)" << std::endl;
     for (size_t i = 0; i < 1000U; ++i) {
         CsvRow row = mainCase(toFactor, primeBitsOffset, i);
-        settingsFile << row.range << "," << row.time_s << "," << (((size_t)row.range) * row.time_s) << std::endl;
+        settingsFile << row.range << "," << row.time_s << "," << (((size_t)row.range) * (row.time_s / (1024 * 1e9))) << std::endl;
     }
     settingsFile.close();
 
