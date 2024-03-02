@@ -491,6 +491,10 @@ int main()
     std::cin >> primeBitsOffset;
 #endif
 
+    std::cout << "Reverse trial division level (-1 for calibration file): ";
+    std::cin >> tdLevel;
+    tdLevel = pickTrialDivisionLevel(tdLevel);
+
 #if IS_DISTRIBUTED
     std::cout << "You can split this work across nodes, without networking!" << std::endl;
     do {
@@ -511,10 +515,6 @@ int main()
     }
 #endif
 
-    std::cout << "Reverse trial division level (-1 for calibration file): ";
-    std::cin >> tdLevel;
-
-    tdLevel = pickTrialDivisionLevel(tdLevel);
     const unsigned highestPrime = trialDivisionPrimes[tdLevel];
     size_t primeFactorBits = 1U;
     p = highestPrime >> 1U;
