@@ -155,20 +155,18 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
 #endif
 
 template <typename WORD, typename bitCapInt>
-CsvRow singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
-    const size_t primeIndex, std::mt19937_64& rand_gen,
-    const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
+CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
+    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
-    std::uniform_int_distribution<WORD> baseDist(0U, range);
-
+    
     auto iterClock = std::chrono::high_resolution_clock::now();
 
-    // for (;;) {
+    // for (bitCapInt lcv = 0; lcv < range; lcv += BASE_TRIALS) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = baseDist(rand_gen) + threadMin;
+            bitCapInt base = 0U + batchItem + threadMin;
 
             for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
@@ -180,79 +178,14 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapI
 
 #if IS_RSA_SEMIPRIME
             if ((toFactor % base) == 0U) {
-                isFinished = true;
+                // isFinished = true;
                 printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Guessed exact factor: Found ", iterClock);
                 // return true;
             }
 #else
             bitCapInt n = gcd(base, toFactor);
             if (n != 1U) {
-                isFinished = true;
-                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Guess has common factor: Found ", iterClock);
-                // return true;
-            }
-#endif
-
-#if IS_SQUARES_CONGRUENCE_CHECK
-            checkCongruenceOfSquares<bitCapInt>(toFactor, base, isFinished, iterClock))
-#endif
-        }
-
-        // Check if finished, between batches.
-        // if (isFinished) {
-            // return true;
-        // }
-    // }
-
-    return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count());
-}
-
-template <typename bitCapInt>
-CsvRow multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bitCapInt range, const bitCapInt& threadMin,
-    const bitCapInt& fullMinBase, const size_t primeIndex,
-    std::mt19937_64& rand_gen, const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
-{
-    // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    const int BASE_TRIALS = 1U << 16U;
-    typedef std::uniform_int_distribution<uint64_t> rand_dist;
-
-    std::vector<rand_dist> baseDist;
-    while (range) {
-        baseDist.push_back(rand_dist(0U, (uint64_t)range));
-        range >>= wordBitCount;
-    }
-    std::reverse(baseDist.begin(), baseDist.end());
-
-    auto iterClock = std::chrono::high_resolution_clock::now();
-
-    // for (;;) {
-        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-            // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = baseDist[0U](rand_gen);
-            for (size_t i = 1U; i < baseDist.size(); ++i) {
-                base <<= wordBitCount;
-                base |= baseDist[i](rand_gen);
-            }
-            base += threadMin;
-
-            for (size_t i = primeIndex; i > 0U; --i) {
-                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                base += base / (trialDivisionPrimes[i] - 1U) + 1U;
-            }
-
-            // Make this odd, then shift the range.
-            base = ((base << 1U) | 1U) + fullMinBase;
-
-#if IS_RSA_SEMIPRIME
-            if ((toFactor % base) == 0U) {
-                isFinished = true;
-                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Guessed exact factor: Found ", iterClock);
-                // return true;
-            }
-#else
-            bitCapInt n = gcd(base, toFactor);
-            if (n != 1U) {
-                isFinished = true;
+                // isFinished = true;
                 printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Guess has common factor: Found ", iterClock);
                 // return true;
             }
@@ -267,9 +200,9 @@ CsvRow multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bit
 
         // Check if finished, between batches.
         // if (isFinished) {
-            // return true;
+        //     return true;
         // }
-    //}
+    // }
 
     return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count());
 }
@@ -326,35 +259,9 @@ CsvRow mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, i
     }
     primeIndex = TRIAL_DIVISION_LEVEL;
 
-    std::random_device rand_dev;
-    std::mt19937_64 rand_gen(rand_dev());
-
-    std::atomic<bool> isFinished;
-    isFinished = false;
-
-    const auto workerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &rand_gen,
-                              &isFinished](bitCapInt threadMin, bitCapInt threadMax) {
-        // These constants are semi-redundant, but they're only defined once per thread,
-        // and compilers differ on lambda expression capture of constants.
-
-        // Define the RNG type based on 32-bit boundary.
-        bitCapInt range = threadMax - (threadMin + 1U);
-        unsigned rangeLog2 = 0U;
-        bitCapInt p = range >> 1U;
-        while (p) {
-            p >>= 1U;
-            ++rangeLog2;
-        }
-        if (rangeLog2 < 32U) {
-            return singleWordLoop<uint32_t, bitCapInt>(toFactor, (uint32_t)range, threadMin, fullMinBase, primeIndex, 
-                rand_gen, trialDivisionPrimes, isFinished);
-        } else if (rangeLog2 < 64U) {
-            return singleWordLoop<uint64_t, bitCapInt>(toFactor, (uint64_t)range, threadMin, fullMinBase, primeIndex, 
-                rand_gen, trialDivisionPrimes, isFinished);
-        } else {
-            return multiWordLoop<bitCapInt>(64U, toFactor, range, threadMin, fullMinBase, primeIndex, rand_gen,
-                trialDivisionPrimes, isFinished);
-        }
+    const auto workerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes]
+        (bitCapInt threadMin, bitCapInt threadMax) {
+        return singleWordLoop<bitCapInt>(toFactor, threadMax - (threadMin + 1U), threadMin, fullMinBase, primeIndex, trialDivisionPrimes);
     };
 
     return workerFn(fullMinBase, fullMinBase + fullRange);
