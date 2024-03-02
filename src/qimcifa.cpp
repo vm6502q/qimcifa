@@ -181,7 +181,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
     for (bitCapInt lcv = 0; lcv < range; lcv += BASE_TRIALS) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = lcv + batchItem + threadMin;
+            bitCapInt base = threadMin + lcv + batchItem;
 
             for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.

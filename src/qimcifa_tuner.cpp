@@ -420,7 +420,7 @@ int main() {
         // Test
         CsvRow row = mainCase(toFactor, primeBitsOffset, i);
         // Total "cost" assumes at least 2 factors exist in the guessing space (exactly for RSA semiprimes, and as a conservative lower bound in general).
-        settingsFile << i << " " << row.range << " " << row.time_s << " " << (((size_t)row.range) * (row.time_s / ((1 << 17) * 1e9))) << std::endl;
+        settingsFile << i << " " << row.range << " " << row.time_s << " " << ((row.range >> 17).convert_to<double>() * (row.time_s * 1e-9)) << std::endl;
     }
     settingsFile.close();
 
