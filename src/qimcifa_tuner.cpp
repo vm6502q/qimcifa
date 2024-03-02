@@ -492,7 +492,7 @@ int main() {
     bitCapIntInput toFactor;
     size_t primeBitsOffset = 1U;
 
-    std::cout << "The qimcifa_tuner number need not be the exact number that will be factored with qimcifa, but closer is better. ";
+    std::cout << "The qimcifa_tuner number need not be the exact number that will be factored with qimcifa, but closer is better." << std::endl;
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
