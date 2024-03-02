@@ -503,7 +503,7 @@ int main() {
 #endif
 
     std::ofstream settingsFile ("qimcifa_calibration.csv");
-    settingsFile << "cardinality, batch time (ns), cost (s)" << std::endl;
+    settingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
     for (size_t i = 0; i < 100U; ++i) {
         mainCase(toFactor, primeBitsOffset, i);
@@ -514,7 +514,7 @@ int main() {
         
         // Test
         CsvRow row = mainCase(toFactor, primeBitsOffset, i);
-        settingsFile << row.range << "," << row.time_s << "," << (((size_t)row.range) * (row.time_s / ((1 << 16) * 1e9))) << std::endl;
+        settingsFile << i << "," << row.range << "," << row.time_s << "," << (((size_t)row.range) * (row.time_s / ((1 << 16) * 1e9))) << std::endl;
     }
     settingsFile.close();
 
