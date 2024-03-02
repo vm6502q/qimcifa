@@ -57,7 +57,7 @@ template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-inline size_t pickTrialDivisionLevel(int64_t tdLevel)
+inline size_t pickTrialDivisionLevel(int64_t tdLevel, size_t nodeCount)
 {
     if (tdLevel >= 0) {
         return tdLevel;
@@ -85,7 +85,8 @@ inline size_t pickTrialDivisionLevel(int64_t tdLevel)
     settingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    std::cout << "Expected average time-to-solution (single-threaded, seconds): " << bestCost << std::endl;
+    const unsigned cpuCount = std::thread::hardware_concurrency();
+    std::cout << "Expected average time-to-solution (seconds): " << (bestCost / (cpuCount * nodeCount)) << std::endl;
 
     return bestLevel;
 }
@@ -491,10 +492,6 @@ int main()
     std::cin >> primeBitsOffset;
 #endif
 
-    std::cout << "Reverse trial division level (-1 for calibration file): ";
-    std::cin >> tdLevel;
-    tdLevel = pickTrialDivisionLevel(tdLevel);
-
 #if IS_DISTRIBUTED
     std::cout << "You can split this work across nodes, without networking!" << std::endl;
     do {
@@ -514,6 +511,10 @@ int main()
         } while (nodeId >= nodeCount);
     }
 #endif
+
+    std::cout << "Reverse trial division level (-1 for calibration file): ";
+    std::cin >> tdLevel;
+    tdLevel = pickTrialDivisionLevel(tdLevel, nodeCount);
 
     const unsigned highestPrime = trialDivisionPrimes[tdLevel];
     size_t primeFactorBits = 1U;
