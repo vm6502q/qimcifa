@@ -506,8 +506,7 @@ int main()
     }
 #endif
 
-    std::cout << "(The 'trial division level' might need custom tuning above 80 bits or so.)" << std::endl;
-    std::cout << "Trial division level (-1 for auto): ";
+    std::cout << "Reverse trial division level (-1 for auto): ";
     std::cin >> tdLevel;
 
 #if IS_RSA_SEMIPRIME

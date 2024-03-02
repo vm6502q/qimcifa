@@ -502,7 +502,7 @@ int main() {
     std::cin >> primeBitsOffset;
 #endif
 
-    std::ofstream settingsFile ("qimcifa_calibration.csv");
+    std::ofstream settingsFile ("qimcifa_calibration.ssv");
     settingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
     for (size_t i = 0; i < 100U; ++i) {
@@ -515,7 +515,7 @@ int main() {
         // Test
         CsvRow row = mainCase(toFactor, primeBitsOffset, i);
         // Total "cost" assumes at least 2 factors exist in the guessing space (exactly for RSA semiprimes, and as a conservative lower bound in general).
-        settingsFile << i << "," << row.range << "," << row.time_s << "," << (((size_t)row.range) * (row.time_s / ((1 << 17) * 1e9))) << std::endl;
+        settingsFile << i << " " << row.range << " " << row.time_s << " " << (((size_t)row.range) * (row.time_s / ((1 << 17) * 1e9))) << std::endl;
     }
     settingsFile.close();
 

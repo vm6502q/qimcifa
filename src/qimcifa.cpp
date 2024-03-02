@@ -21,10 +21,13 @@
 
 #include <chrono>
 #include <cmath>
+#include <float.h>
+#include <fstream>
 #include <iomanip> // For setw
 #include <iostream> // For cout
 #include <random>
 #include <stdlib.h>
+#include <string>
 #include <time.h>
 
 #include <algorithm>
@@ -54,25 +57,37 @@ template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-// Count of distinct primes increases logarithmically, over the integers increasing from 0. The cost of additional
-// trial division factors is linear. The complexity asymptote of "multiples elimination" (complement to trial
-// division by primes) is O(log), with the grant of a primes table that scales linearly in query count for cost.
-// However, the O(log) asymptote is FAR practically slower, (at least for now). The empirical level follows:
-inline size_t pickTrialDivisionLevel(size_t qubitCount, int64_t tdLevel)
+inline size_t pickTrialDivisionLevel(int64_t tdLevel)
 {
     if (tdLevel >= 0) {
         return tdLevel;
     }
 
-#if IS_RSA_SEMIPRIME
-    if (qubitCount < 56) {
-        return 0;
-    }
+    std::ifstream settingsFile ("qimcifa_calibration.ssv");
+    std::string header;
+    std::getline(settingsFile, header);
+    size_t bestLevel = -1;
+    double bestCost = DBL_MAX;
+    while (settingsFile.peek() != EOF)
+    {
+        size_t level, cardinality;
+        double batchTime, cost;
+        settingsFile >> level;
+        settingsFile >> cardinality;
+        settingsFile >> batchTime;
+        settingsFile >> cost;
 
-    return (qubitCount >> 3U) - 6U;
-#else
-    return (qubitCount >> 4U) + 34U;
-#endif
+        if (cost < bestCost) {
+            bestLevel = level;
+            bestCost = cost;
+        }
+    }
+    settingsFile.close();
+
+    std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
+    std::cout << "Expected average time-to-solution: " << bestCost << std::endl;
+
+    return bestLevel;
 }
 
 template <typename bitCapInt>
@@ -278,9 +293,8 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, size
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
-    const int TRIAL_DIVISION_LEVEL = pickTrialDivisionLevel(qubitCount, tdLevel);
 #if IS_RSA_SEMIPRIME
-    int primeIndex = TRIAL_DIVISION_LEVEL;
+    int primeIndex = tdLevel;
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
 
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
@@ -289,7 +303,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, size
 #else
     int primeIndex = 0;
     unsigned currentPrime = 2;
-    while (primeIndex <= TRIAL_DIVISION_LEVEL) {
+    while (primeIndex <= tdLevel) {
         currentPrime = trialDivisionPrimes[primeIndex];
         if ((toFactor % currentPrime) == 0) {
             std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
@@ -306,7 +320,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, size
     const bitCapInt fullMaxBase = toFactor / currentPrime;
 #endif
 
-    primeIndex = TRIAL_DIVISION_LEVEL;
+    primeIndex = tdLevel;
     while (primeIndex >= 0) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
@@ -316,7 +330,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, size
     }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
-    primeIndex = TRIAL_DIVISION_LEVEL;
+    primeIndex = tdLevel;
     while (primeIndex >= 0) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
@@ -324,7 +338,7 @@ int mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, size
         fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
-    primeIndex = TRIAL_DIVISION_LEVEL;
+    primeIndex = tdLevel;
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
@@ -491,8 +505,7 @@ int main()
     }
 #endif
 
-    std::cout << "(The 'trial division level' might need custom tuning above 80 bits or so.)" << std::endl;
-    std::cout << "Trial division level (-1 for auto): ";
+    std::cout << "Reverse trial division level (-1 for calibration file): ";
     std::cin >> tdLevel;
 
 #if IS_RSA_SEMIPRIME
@@ -501,7 +514,8 @@ int main()
     std::cin >> primeBitsOffset;
 #endif
 
-    const unsigned highestPrime = trialDivisionPrimes[pickTrialDivisionLevel(qubitCount, tdLevel)];
+    tdLevel = pickTrialDivisionLevel(tdLevel);
+    const unsigned highestPrime = trialDivisionPrimes[tdLevel];
     size_t primeFactorBits = 1U;
     p = highestPrime >> 1U;
     while (p) {
