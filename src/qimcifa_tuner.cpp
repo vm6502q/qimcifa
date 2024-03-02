@@ -514,7 +514,8 @@ int main() {
         
         // Test
         CsvRow row = mainCase(toFactor, primeBitsOffset, i);
-        settingsFile << i << "," << row.range << "," << row.time_s << "," << (((size_t)row.range) * (row.time_s / ((1 << 16) * 1e9))) << std::endl;
+        // Total "cost" assumes at least 2 factors exist in the guessing space (exactly for RSA semiprimes, and as a conservative lower bound in general).
+        settingsFile << i << "," << row.range << "," << row.time_s << "," << (((size_t)row.range) * (row.time_s / ((1 << 17) * 1e9))) << std::endl;
     }
     settingsFile.close();
 
