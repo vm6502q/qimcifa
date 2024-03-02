@@ -485,6 +485,12 @@ int main()
     }
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
+#if IS_RSA_SEMIPRIME
+    std::cout << "RSA semiprimes might have significant mismatch between factor sizes. Often, this is just 1 or 2 bits, but it can theoretically be greater." << std::endl;
+    std::cout << "RSA semiprime factor bit mismatch (usually 1, sometimes more): ";
+    std::cin >> primeBitsOffset;
+#endif
+
 #if IS_DISTRIBUTED
     std::cout << "You can split this work across nodes, without networking!" << std::endl;
     do {
@@ -507,12 +513,6 @@ int main()
 
     std::cout << "Reverse trial division level (-1 for calibration file): ";
     std::cin >> tdLevel;
-
-#if IS_RSA_SEMIPRIME
-    std::cout << "RSA semiprimes might have significant mismatch between factor sizes. Often, this is just 1 or 2 bits, but it can theoretically be greater." << std::endl;
-    std::cout << "RSA semiprime factor bit mismatch (usually 1, sometimes more): ";
-    std::cin >> primeBitsOffset;
-#endif
 
     tdLevel = pickTrialDivisionLevel(tdLevel);
     const unsigned highestPrime = trialDivisionPrimes[tdLevel];
