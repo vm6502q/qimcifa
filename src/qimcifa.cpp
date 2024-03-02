@@ -85,7 +85,7 @@ inline size_t pickTrialDivisionLevel(int64_t tdLevel)
     settingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    std::cout << "Expected average time-to-solution: " << bestCost << std::endl;
+    std::cout << "Expected average time-to-solution (seconds): " << bestCost << std::endl;
 
     return bestLevel;
 }
