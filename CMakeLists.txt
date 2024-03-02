@@ -19,10 +19,15 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -O3")
 add_executable (qimcifa
     src/qimcifa.cpp
     )
+add_executable (qimcifa_tuner
+    src/qimcifa_tuner.cpp
+    )
 if (USE_GMP)
     target_link_libraries (qimcifa pthread gmp)
+    target_link_libraries (qimcifa_tuner pthread gmp)
 else (USE_GMP)
     target_link_libraries (qimcifa pthread)
+    target_link_libraries (qimcifa_tuner pthread)
 endif (USE_GMP)
 
 # Options used when building the project
