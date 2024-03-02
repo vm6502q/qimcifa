@@ -397,8 +397,8 @@ int main()
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
 #if IS_RSA_SEMIPRIME
-    std::cout << "RSA semiprimes might have significant mismatch between factor sizes. Often, this is just 1 or 2 bits, but it can theoretically be greater." << std::endl;
-    std::cout << "RSA semiprime factor bit mismatch (usually 1, sometimes more): ";
+    std::cout << "Semiprime factor sizes can mismatch bit widths. For RSA, this usually just by 1 bit." << std::endl;
+    std::cout << "Semiprime factor bit mismatch (usually 1, sometimes more): ";
     std::cin >> primeBitsOffset;
 #endif
 
