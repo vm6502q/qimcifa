@@ -503,7 +503,7 @@ int main() {
 #endif
 
     std::ofstream settingsFile ("qimcifa_calibration.csv");
-    settingsFile << "cardinality, batch time (ms), cost" << std::endl;
+    settingsFile << "cardinality, batch time (s), cost" << std::endl;
     for (size_t i = 0; i < 1000U; ++i) {
         CsvRow row = mainCase(toFactor, primeBitsOffset, i);
         settingsFile << row.range << "," << row.time_s << "," << (((size_t)row.range) * row.time_s) << std::endl;
