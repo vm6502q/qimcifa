@@ -62,7 +62,6 @@ inline size_t pickTrialDivisionLevel(int64_t tdLevel, size_t nodeCount)
     }
 
     std::ifstream settingsFile ("qimcifa_calibration.ssv");
-    settingsFile.precision(1234);
     std::string header;
     std::getline(settingsFile, header);
     size_t bestLevel = -1;
