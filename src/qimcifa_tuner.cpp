@@ -162,7 +162,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapI
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    const int BASE_TRIALS = 1U << 6U;
+    const int BASE_TRIALS = 1U << 10U;
     std::uniform_int_distribution<WORD> baseDist(0U, range);
 
     auto iterClock = std::chrono::high_resolution_clock::now();
