@@ -206,7 +206,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const WORD range, const bitCapI
         // }
     // }
 
-    return CsvRow(range, (std::chrono::high_resolution_clock::now() - iterClock).count());
+    return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count());
 }
 
 template <typename bitCapInt>
@@ -273,7 +273,7 @@ CsvRow multiWordLoop(const unsigned wordBitCount, const bitCapInt& toFactor, bit
         // }
     // }
 
-    return CsvRow(range, (std::chrono::high_resolution_clock::now() - iterClock).count());
+    return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count());
 }
 
 template <typename bitCapInt>
@@ -503,7 +503,7 @@ int main() {
 #endif
 
     std::ofstream settingsFile ("qimcifa_calibration.csv");
-    settingsFile << "cardinality, batch time (s), cost" << std::endl;
+    settingsFile << "cardinality, batch time (ns), cost" << std::endl;
     for (size_t i = 0; i < 1000U; ++i) {
         CsvRow row = mainCase(toFactor, primeBitsOffset, i);
         settingsFile << row.range << "," << row.time_s << "," << (((size_t)row.range) * row.time_s) << std::endl;
