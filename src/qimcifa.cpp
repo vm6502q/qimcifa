@@ -55,7 +55,7 @@ template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-inline size_t pickTrialDivisionLevel(int64_t tdLevel, size_t nodeCount)
+template <typename bitCapInt> inline size_t pickTrialDivisionLevel(int64_t tdLevel, size_t nodeCount)
 {
     if (tdLevel >= 0) {
         return tdLevel;
@@ -68,7 +68,8 @@ inline size_t pickTrialDivisionLevel(int64_t tdLevel, size_t nodeCount)
     double bestCost = DBL_MAX;
     while (settingsFile.peek() != EOF)
     {
-        size_t level, cardinality;
+        size_t level;
+        bitCapInt cardinality;
         double batchTime, cost;
         settingsFile >> level;
         settingsFile >> cardinality;
@@ -424,7 +425,7 @@ int main()
 
     std::cout << "Reverse trial division level (-1 for calibration file): ";
     std::cin >> tdLevel;
-    tdLevel = pickTrialDivisionLevel(tdLevel, nodeCount);
+    tdLevel = pickTrialDivisionLevel<bitCapIntInput>(tdLevel, nodeCount);
 
     const unsigned highestPrime = trialDivisionPrimes[tdLevel];
     size_t primeFactorBits = 1U;
