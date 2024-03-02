@@ -146,7 +146,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
         // Inform the other threads on this node that we've succeeded and are done:
         isFinished = true;
-        printSuccess<bitCapInt>(f1, f2, toFactor, "Guessed congruence of squares: Found ", iterClock);
+        printSuccess<bitCapInt>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
         return true;
     }
 
@@ -179,14 +179,14 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 #if IS_RSA_SEMIPRIME
             if ((toFactor % base) == 0U) {
                 // isFinished = true;
-                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Guessed exact factor: Found ", iterClock);
+                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
                 // return true;
             }
 #else
             bitCapInt n = gcd(base, toFactor);
             if (n != 1U) {
                 // isFinished = true;
-                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Guess has common factor: Found ", iterClock);
+                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
                 // return true;
             }
 #endif
