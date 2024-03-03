@@ -154,9 +154,9 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
 }
 #endif
 
-template <typename bitCapInt>
-CsvRow singleWordBatch(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
-    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished, size_t batch)
+template <typename WORD, typename bitCapInt>
+CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
+    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, size_t batch)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 16U;
@@ -180,14 +180,14 @@ CsvRow singleWordBatch(const bitCapInt& toFactor, const bitCapInt& range, const 
 
 #if IS_RSA_SEMIPRIME
             if ((toFactor % base) == 0U) {
-                isFinished = true;
+                // isFinished = true;
                 printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
                 // return true;
             }
 #else
             bitCapInt n = gcd(base, toFactor);
             if (n != 1U) {
-                isFinished = true;
+                // isFinished = true;
                 printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
                 // return true;
             }
@@ -206,69 +206,12 @@ CsvRow singleWordBatch(const bitCapInt& toFactor, const bitCapInt& range, const 
         // }
     // }
 
-    if (batch >= 50) {
-        isFinished = true;
-    }
-
     return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count());
 }
 
 template <typename bitCapInt>
-bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
-    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
-{
-    // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    const int BASE_TRIALS = 1U << 16U;
-
-    auto iterClock = std::chrono::high_resolution_clock::now();
-
-    for (bitCapInt lcv = 0; lcv < range; lcv += BASE_TRIALS) {
-        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-            // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = threadMin + lcv + batchItem;
-
-            for (size_t i = primeIndex; i > 0U; --i) {
-                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                base += base / (trialDivisionPrimes[i] - 1U) + 1U;
-            }
-
-            // Make this odd, then shift the range.
-            base = ((base << 1U) | 1U) + fullMinBase;
-
-#if IS_RSA_SEMIPRIME
-            if ((toFactor % base) == 0U) {
-                isFinished = true;
-                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
-                return true;
-            }
-#else
-            bitCapInt n = gcd(base, toFactor);
-            if (n != 1U) {
-                isFinished = true;
-                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
-                return true;
-            }
-#endif
-
-#if IS_SQUARES_CONGRUENCE_CHECK
-            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, isFinished, iterClock)) {
-                return true;
-            }
-#endif
-        }
-
-        // Check if finished, between batches.
-        if (isFinished) {
-            return true;
-        }
-    }
-
-    return true;
-}
-
-template <typename bitCapInt>
 CsvRow mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, int64_t tdLevel, size_t threadCount,
-    const std::vector<unsigned>& trialDivisionPrimes)
+    const std::vector<unsigned>& trialDivisionPrimes, size_t batch)
 {
     const int TRIAL_DIVISION_LEVEL = tdLevel;
 #if IS_RSA_SEMIPRIME
@@ -322,47 +265,18 @@ CsvRow mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, i
     }
     primeIndex = TRIAL_DIVISION_LEVEL;
 
-    const unsigned cpuCount = std::thread::hardware_concurrency();
-    std::atomic<bool> isFinished;
-    isFinished = false;
-
-    const auto workerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &isFinished]
+    const auto workerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, batch]
         (bitCapInt threadMin, bitCapInt threadMax) {
-        singleWordLoop<bitCapInt>(toFactor, threadMax - (threadMin + 1U), threadMin, fullMinBase, primeIndex, trialDivisionPrimes, isFinished);
+        return singleWordLoop<bitCapInt>(toFactor, threadMax - (threadMin + 1U), threadMin, fullMinBase, primeIndex, trialDivisionPrimes, batch);
     };
 
-    const auto timerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &isFinished]
-        (bitCapInt threadMin, bitCapInt threadMax, size_t batch) {
-        return singleWordBatch<bitCapInt>(toFactor, threadMax - (threadMin + 1U), threadMin, fullMinBase, primeIndex, trialDivisionPrimes, isFinished, batch);
-    };
-
-    const bitCapInt threadRange = (fullRange + cpuCount - 1U) / cpuCount;
-    std::vector<std::future<void>> futures(cpuCount - 1);
-    for (unsigned cpu = 0U; cpu < (cpuCount - 1U); ++cpu) {
-        const bitCapInt threadMin = fullMinBase + threadRange * cpu;
-        const bitCapInt threadMax = threadMin + threadRange;
-        futures[cpu] = std::async(std::launch::async, workerFn, threadMin, threadMax);
-    }
-
-    const bitCapInt threadMin = fullMinBase + threadRange * (cpuCount - 1U);
-    const bitCapInt threadMax = threadMin + threadRange;
-    // "Warm-up"
-    for (size_t j = 0; j < 50U; ++j) {
-        timerFn(threadMin, threadMax, j);
-    }
-    const CsvRow result = timerFn(threadMin, threadMax, 50U);
-
-    for (unsigned cpu = 0U; cpu < (cpuCount - 1U); ++cpu) {
-        futures[cpu].get();
-    }
-
-    return result;
+    return workerFn(fullMinBase, fullMinBase + fullRange);
 }
 } // namespace Qimcifa
 
 using namespace Qimcifa;
 
-CsvRow mainCase(bitCapIntInput toFactor, int primeBitsOffset, size_t threadCount, int tdLevel)
+CsvRow mainCase(bitCapIntInput toFactor, int primeBitsOffset, size_t threadCount, int tdLevel, size_t batch)
 {
     uint32_t qubitCount = 0;
     bitCapIntInput p = toFactor >> 1U;
@@ -447,40 +361,40 @@ CsvRow mainCase(bitCapIntInput toFactor, int primeBitsOffset, size_t threadCount
     const size_t QBCAPBITS = primeFactorBits + (((qubitCount >> 5U) + 1U) << 5U);
     if (QBCAPBITS < 64) {
         typedef uint64_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes, batch);
 #if USE_GMP
     } else {
-        return mainBody<bitCapIntInput>(toFactor, qubitCount, primeBitsOffset, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapIntInput>(toFactor, qubitCount, primeBitsOffset, tdLevel, trialDivisionPrimes, batch);
     }
 #else
     } else if (QBCAPBITS < 128) {
         typedef boost::multiprecision::uint128_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes, batch);
     } else if (QBCAPBITS < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes, batch);
     } else if (QBCAPBITS < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes, batch);
     } else if (QBCAPBITS < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes, batch);
     } else if (QBCAPBITS < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes, batch);
     } else {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, tdLevel, threadCount, trialDivisionPrimes, batch);
     }
 #endif
 }
@@ -505,8 +419,14 @@ int main() {
 
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
+    // "Warm-up"
     for (size_t i = 0; i < 50U; ++i) {
-        CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i);
+        // "Warm-up"
+        for (size_t j = 0; j < 50U; ++j) {
+             mainCase(toFactor, primeBitsOffset, threadCount, i, j);
+        }
+        // Test
+        CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i, 50U);
         // Total "cost" assumes at least 2 factors exist in the guessing space (exactly for RSA semiprimes, and as a conservative lower bound in general).
         oSettingsFile << i << " " << row.range << " " << row.time_s << " " << ((row.range >> 17).convert_to<double>() * (row.time_s * 1e-9)) << std::endl;
     }
