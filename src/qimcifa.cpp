@@ -55,7 +55,7 @@ template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-template <typename bitCapInt> inline size_t pickTrialDivisionLevel(int64_t tdLevel, size_t nodeCount)
+template <typename bitCapInt> inline size_t pickTrialDivisionLevel(const int64_t& tdLevel, const size_t& nodeCount)
 {
     if (tdLevel >= 0) {
         return tdLevel;
@@ -84,29 +84,27 @@ template <typename bitCapInt> inline size_t pickTrialDivisionLevel(int64_t tdLev
     settingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    const unsigned cpuCount = std::thread::hardware_concurrency();
-    std::cout << "Expected average time-to-solution (seconds): " << (bestCost / (cpuCount * nodeCount)) << std::endl;
+    std::cout << "Expected average time-to-solution (seconds): " << (bestCost / (std::thread::hardware_concurrency() * nodeCount)) << std::endl;
 
     return bestLevel;
 }
 
 template <typename bitCapInt>
-void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string message,
-    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
+void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toFactor, const std::string& message,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
-    const double clockFactor = 1.0 / 1000.0; // Report in ms
-
     std::cout << message << f1 << " * " << f2 << " = " << toFactor << std::endl;
     auto tClock =
         std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
-    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
+    // Report in ms
+    std::cout << "(Time elapsed: " << (tClock.count() / 1000.0) << "ms)" << std::endl;
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
 #if IS_SQUARES_CONGRUENCE_CHECK
 template <typename bitCapInt>
-bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
-    std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
+bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest, std::atomic<bool>& isFinished,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     // The basic idea is "congruence of squares":
     // a^2 = b^2 mod N
@@ -172,7 +170,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
 
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
-    const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock,
+    const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
@@ -223,7 +221,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 }
 
 template <typename bitCapInt>
-int mainBody(bitCapInt toFactor, size_t qubitCount, size_t primeBitsOffset, size_t nodeCount, size_t nodeId, int64_t tdLevel,
+int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& primeBitsOffset, const size_t& nodeCount, const size_t& nodeId, const int64_t& tdLevel,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
@@ -315,12 +313,14 @@ int main()
 #endif
 
     // First 1000 primes
+    // (Only including first 100 in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
     const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
         311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439,
-        443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587,
+        443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541 //, 547, 557, 563, 569, 571, 577, 587,
+#if 0
         593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727,
         733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877,
         881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997, 1009, 1013, 1019, 1021,
@@ -369,7 +369,9 @@ int main()
         7283, 7297, 7307, 7309, 7321, 7331, 7333, 7349, 7351, 7369, 7393, 7411, 7417, 7433, 7451, 7457, 7459, 7477,
         7481, 7487, 7489, 7499, 7507, 7517, 7523, 7529, 7537, 7541, 7547, 7549, 7559, 7561, 7573, 7577, 7583, 7589,
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
-        7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
+        7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919
+#endif
+    };
 
     // Print primes table by index:
     // for (size_t i = 0; i < trialDivisionPrimes.size(); ++i) {
@@ -435,6 +437,7 @@ int main()
         ++primeFactorBits;
     }
     const size_t QBCAPBITS = primeFactorBits + (((qubitCount >> 5U) + 1U) << 5U);
+
     if (QBCAPBITS < 64) {
         typedef uint64_t bitCapInt;
         return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
