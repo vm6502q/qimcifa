@@ -419,12 +419,10 @@ int main() {
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
     for (size_t i = 0; i < 100U; ++i) {
-        mainCase(toFactor, primeBitsOffset, threadCount, i);
-    }
-    for (size_t i = 0; i < 100U; ++i) {
         // "Warm-up"
-        mainCase(toFactor, primeBitsOffset, threadCount, i);
-        
+        for (size_t j = 0; j < 100U; ++j) {
+            mainCase(toFactor, primeBitsOffset, threadCount, i);
+        }
         // Test
         CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i);
         // Total "cost" assumes at least 2 factors exist in the guessing space (exactly for RSA semiprimes, and as a conservative lower bound in general).
@@ -440,7 +438,7 @@ int main() {
     while (iSettingsFile.peek() != EOF)
     {
         size_t level;
-        bitCapInt cardinality;
+        bitCapIntInput cardinality;
         double batchTime, cost;
         iSettingsFile >> level;
         iSettingsFile >> cardinality;
@@ -455,7 +453,6 @@ int main() {
     iSettingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    const unsigned cpuCount = std::thread::hardware_concurrency();
     std::cout << "Expected average time-to-solution (seconds): " << (bestCost / threadCount) << std::endl;
 
     return 0;
