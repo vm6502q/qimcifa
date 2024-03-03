@@ -170,7 +170,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
 }
 #endif
 
-template <typename WORD, typename bitCapInt>
+template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
     const size_t primeIndex, std::chrono::time_point<std::chrono::high_resolution_clock> iterClock,
     const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
