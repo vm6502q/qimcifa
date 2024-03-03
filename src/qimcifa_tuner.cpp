@@ -180,7 +180,7 @@ CsvRow singleWordBatch(const bitCapInt& toFactor, const bitCapInt& range, const 
 
 #if IS_RSA_SEMIPRIME
             if ((toFactor % base) == 0U) {
-                isFinished = true;bat
+                isFinished = true;
                 printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
                 // return true;
             }
