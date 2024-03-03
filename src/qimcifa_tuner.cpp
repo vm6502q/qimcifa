@@ -89,7 +89,7 @@ void printSuccess(bitCapInt f1, bitCapInt f2, bitCapInt toFactor, std::string me
 
 #if IS_SQUARES_CONGRUENCE_CHECK
 template <typename bitCapInt>
-bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<bool>& isFinished,
+bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest,
     std::chrono::time_point<std::chrono::high_resolution_clock> iterClock)
 {
     // The basic idea is "congruence of squares":
@@ -145,7 +145,7 @@ bool checkCongruenceOfSquares(bitCapInt toFactor, bitCapInt toTest, std::atomic<
     }
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
         // Inform the other threads on this node that we've succeeded and are done:
-        isFinished = true;
+        // isFinished = true;
         printSuccess<bitCapInt>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
         return true;
     }
@@ -159,7 +159,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
     const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, size_t batch)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    const int BASE_TRIALS = 1U << 16U;
+    const int BASE_TRIALS = 1U << 20U;
     const int start = batch * BASE_TRIALS;
     const int end = (batch + 1U) * BASE_TRIALS;
 
@@ -194,7 +194,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 #endif
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, isFinished, iterClock)) {
+            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
                 // return true;
             }
 #endif
@@ -421,14 +421,10 @@ int main() {
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
     for (size_t i = 0; i < 50U; ++i) {
-        // "Warm-up"
-        for (size_t j = 0; j < 20U; ++j) {
-             mainCase(toFactor, primeBitsOffset, threadCount, i, j);
-        }
         // Test
-        CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i, 20U);
+        CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i, 10U);
         // Total "cost" assumes at least 2 factors exist in the guessing space (exactly for RSA semiprimes, and as a conservative lower bound in general).
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << ((row.range >> 17).convert_to<double>() * (row.time_s * 1e-9)) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << ((row.range >> 20).convert_to<double>() * (row.time_s * 1e-9)) << std::endl;
     }
     oSettingsFile.close();
 
