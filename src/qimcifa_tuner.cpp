@@ -418,9 +418,9 @@ int main() {
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
-    for (size_t i = 0; i < 100U; ++i) {
+    for (size_t i = 0; i < 50U; ++i) {
         // "Warm-up"
-        for (size_t j = 0; j < 100U; ++j) {
+        for (size_t j = 0; j < 50U; ++j) {
             mainCase(toFactor, primeBitsOffset, threadCount, i);
         }
         // Test
