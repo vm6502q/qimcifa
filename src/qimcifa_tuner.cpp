@@ -422,11 +422,11 @@ int main() {
     // "Warm-up"
     for (size_t i = 0; i < 50U; ++i) {
         // "Warm-up"
-        for (size_t j = 0; j < 50U; ++j) {
+        for (size_t j = 0; j < 20U; ++j) {
              mainCase(toFactor, primeBitsOffset, threadCount, i, j);
         }
         // Test
-        CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i, 50U);
+        CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i, 20U);
         // Total "cost" assumes at least 2 factors exist in the guessing space (exactly for RSA semiprimes, and as a conservative lower bound in general).
         oSettingsFile << i << " " << row.range << " " << row.time_s << " " << ((row.range >> 17).convert_to<double>() * (row.time_s * 1e-9)) << std::endl;
     }
