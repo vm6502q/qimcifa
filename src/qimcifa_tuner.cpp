@@ -159,7 +159,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
     const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, size_t batch)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    const int BASE_TRIALS = 1U << 20U;
+    const int BASE_TRIALS = 1U << 22U;
     const int start = batch * BASE_TRIALS;
     const int end = (batch + 1U) * BASE_TRIALS;
 
@@ -424,7 +424,7 @@ int main() {
         // Test
         CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i, 10U);
         // Total "cost" assumes at least 2 factors exist in the guessing space (exactly for RSA semiprimes, and as a conservative lower bound in general).
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << ((row.range >> 21).convert_to<double>() * (row.time_s * 1e-9)) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s * 1e-9 / (1 << 23))) << std::endl;
     }
     oSettingsFile.close();
 
