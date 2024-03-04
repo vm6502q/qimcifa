@@ -352,7 +352,7 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
     bitCapInt fullMinBase = ((1ULL << (primeBits - (1U + primeBitsOffset))) | 1U);
-    bitCapInt fullMaxBase = ((1ULL << (primeBits + primeBitsOffset)) - 1U);
+    bitCapInt fullMaxBase = ((1ULL << primeBits) - 1U);
 #else
     int primeIndex = 0;
     unsigned currentPrime = 2;
@@ -383,7 +383,7 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     }
 
     const bitCapInt toFactorSqrt = sqrt(toFactor);
-    if ((fullMaxBase > toFactorSqrt) && (((fullMaxBase - toFactorSqrt) << 1U) < (fullMaxBase - fullMinBase))) {
+    if (fullMaxBase > toFactorSqrt) {
         fullMaxBase = toFactorSqrt;
     }
 
@@ -398,7 +398,6 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     }
     primeIndex = tdLevel;
 
-    const unsigned cpuCount = std::thread::hardware_concurrency();
     std::atomic<bool> isFinished;
     isFinished = false;
 
@@ -408,6 +407,7 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
             trialDivisionPrimes, isFinished);
     };
 
+    const unsigned cpuCount = std::thread::hardware_concurrency();
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;

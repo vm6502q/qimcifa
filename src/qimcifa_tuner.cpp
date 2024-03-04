@@ -141,12 +141,10 @@ template <typename bitCapInt> bitCapInt sqrt(const bitCapInt& toTest)
 struct CsvRow {
     bitCapIntInput range;
     double time_s;
-    bool isRootBound;
 
     CsvRow(bitCapIntInput r, double t)
         : range(r)
         , time_s(t)
-        , isRootBound(false)
     {
         // Intentionally left blank.
     }
@@ -374,8 +372,8 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
     int primeIndex = TRIAL_DIVISION_LEVEL;
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
-    bitCapInt fullMinBase = ((1ULL << (primeBits - (1U + primeBitsOffset))) | 1U);
-    bitCapInt fullMaxBase = ((1ULL << (primeBits + primeBitsOffset)) - 1U);
+    bitCapInt fullMinBase = ((1ULL << (primeBits - primeBitsOffset)) | 1U);
+    bitCapInt fullMaxBase = ((1ULL << primeBits) - 1U);
 #else
     int primeIndex = 0;
     unsigned currentPrime = 2;
@@ -406,10 +404,8 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
     }
 
     const bitCapInt toFactorSqrt = sqrt(toFactor);
-    bool isRootBound = false;
-    if ((fullMaxBase > toFactorSqrt) && (((fullMaxBase - toFactorSqrt) << 1U) < (fullMaxBase - fullMinBase))) {
+    if (fullMaxBase > toFactorSqrt) {
         fullMaxBase = toFactorSqrt;
-        isRootBound = true;
     }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
@@ -436,10 +432,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
         return singleWordLoop<bitCapInt>(toFactor, threadMax - (threadMin + 1U), threadMin, fullMinBase, primeIndex, trialDivisionPrimes, batch);
     };
 
-    CsvRow result = workerFn(fullMinBase, fullMinBase + fullRange);
-    result.isRootBound = isRootBound;
-
-    return result;
+    return workerFn(fullMinBase, fullMinBase + fullRange);
 }
 } // namespace Qimcifa
 
@@ -616,9 +609,9 @@ int main() {
         // Test
         CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i, 10U);
 #if USE_GMP || USE_BOOST
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s * 1e-9 / (1 << (row.isRootBound ? 20 : 21)))) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s * 1e-9 / (1 << 20))) << std::endl;
 #else
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s * 1e-9 / (1 << (row.isRootBound ? 20 : 21)))) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s * 1e-9 / (1 << 20))) << std::endl;
 #endif
     }
     oSettingsFile.close();
