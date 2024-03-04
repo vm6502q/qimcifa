@@ -107,7 +107,11 @@ inline bool isPowerOfTwo(const bitCapInt& x)
 
 template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
+#if USE_GMP || USE_BOOST
     while (n2) {
+#else
+    while (bi_compare_0(n2) != 0) {
+#endif
         const bitCapInt t = n1;
         n1 = n2;
         n2 = t % n2;
@@ -179,15 +183,28 @@ bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest
     // It's a binary search for floor(sqrt(toTest)).
 
     // If a^2 = 1 mod N, then b = 1.
+#if USE_GMP || USE_BOOST
     if (remainder > 1U) {
+#else
+    if (bi_compare_1(remainder) > 0) {
+#endif
         // Otherwise, find b = sqrt(b^2).
-        bitCapInt start = 1U, end = remainder >> 1U, ans = 0U;
+        bitCapInt start = 1U, ans = 0U;
+#if USE_GMP || USE_BOOST
+        remainder >>= 1U;
+#else
+        bi_rshift_ip(&remainder, 1U);
+#endif
         do {
-            const bitCapInt mid = (start + end) >> 1U;
+            const bitCapInt mid = (start + remainder) >> 1U;
 
             // If toTest is a perfect square
             const bitCapInt sqr = mid * mid;
+#if USE_GMP || USE_BOOST
             if (sqr == toTest) {
+#else
+            if (bi_compare(sqr, toTest) == 0) {
+#endif
                 ans = mid;
                 break;
             }
@@ -198,10 +215,15 @@ bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest
                 ans = mid;
             } else {
                 // If mid*mid is greater than p
-                end = mid - 1U;
+                remainder = mid - 1U;
             }
-        } while (start <= end);
-        if (start > end) {
+#if USE_GMP || USE_BOOST
+        } while (start <= remainder);
+        if (start > remainder) {
+#else
+        } while (bi_compare(start, remainder) <= 0);
+        if (bi_compare(start, remainder) > 0) {
+#endif
             // Must be a perfect square.
             return false;
         }
@@ -212,13 +234,21 @@ bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest
     bitCapInt f1 = gcd<bitCapInt>(toTest + remainder, toFactor);
     bitCapInt f2 = gcd<bitCapInt>(toTest - remainder, toFactor);
     bitCapInt fmul = f1 * f2;
+#if USE_GMP || USE_BOOST
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
+#else
+    while ((bi_compare_1(fmul) > 0) && (bi_compare(fmul, toFactor) != 0) && (bi_compare_0(toFactor % fmul) == 0)) {
+#endif
         fmul = f1;
-        f1 *= f2;
+        f1 = f1 * f2;
         f2 = toFactor / (fmul * f2);
         fmul = f1 * f2;
     }
+#if USE_GMP || USE_BOOST
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+#else
+    if ((bi_compare(fmul, toFactor) == 0) && (bi_compare_1(f1) > 0) && (bi_compare_1(f2) > 0)) {
+#endif
         // Inform the other threads on this node that we've succeeded and are done:
         isFinished = true;
         printSuccess<bitCapInt>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
@@ -518,8 +548,11 @@ int main()
 #endif
         ++primeFactorBits;
     }
+#if !(USE_GMP || USE_BOOST)
+    typedef BigInteger bitCapInt;
+    return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+#else
     const size_t QBCAPBITS = primeFactorBits + (((qubitCount >> 5U) + 1U) << 5U);
-
     if (QBCAPBITS < 64) {
         typedef uint64_t bitCapInt;
         return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
@@ -557,10 +590,6 @@ int main()
             bitCapInt;
         return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     }
-#else
-    } else {
-        typedef BigInteger bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
-    }
+#endif
 #endif
 }
