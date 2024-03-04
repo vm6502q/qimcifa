@@ -141,10 +141,12 @@ template <typename bitCapInt> bitCapInt sqrt(const bitCapInt& toTest)
 struct CsvRow {
     bitCapIntInput range;
     double time_s;
+    bool isRootBound;
 
     CsvRow(bitCapIntInput r, double t)
         : range(r)
         , time_s(t)
+        , isRootBound(false)
     {
         // Intentionally left blank.
     }
@@ -404,8 +406,10 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
     }
 
     const bitCapInt toFactorSqrt = sqrt(toFactor);
+    bool isRootBound = false;
     if ((fullMaxBase > toFactorSqrt) && (((fullMaxBase - toFactorSqrt) << 1U) < (fullMaxBase - fullMinBase))) {
         fullMaxBase = toFactorSqrt;
+        isRootBound = true;
     }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
@@ -432,7 +436,10 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
         return singleWordLoop<bitCapInt>(toFactor, threadMax - (threadMin + 1U), threadMin, fullMinBase, primeIndex, trialDivisionPrimes, batch);
     };
 
-    return workerFn(fullMinBase, fullMinBase + fullRange);
+    CsvRow result = workerFn(fullMinBase, fullMinBase + fullRange);
+    result.isRootBound = isRootBound;
+
+    return result;
 }
 } // namespace Qimcifa
 
@@ -609,9 +616,9 @@ int main() {
         // Test
         CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i, 10U);
 #if USE_GMP || USE_BOOST
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s * 1e-9 / (1 << 20))) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s * 1e-9 / (1 << (row.isRootBound ? 20 : 21)))) << std::endl;
 #else
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s * 1e-9 / (1 << 21))) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s * 1e-9 / (1 << (row.isRootBound ? 20 : 21)))) << std::endl;
 #endif
     }
     oSettingsFile.close();
