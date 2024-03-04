@@ -347,12 +347,20 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
+    const bitCapInt fullMaxBase = sqrt(toFactor);
+#if USE_GMP || USE_BOOST
+    if (fullMaxBase * fullMaxBase == toFactor) {
+#else
+    if (bi_compare(fullMaxBase * fullMaxBase, toFactor) == 0) {
+#endif
+        std::cout << "Number to factor is a perfect square: " << fullMaxBase << " * " << fullMaxBase << " = " << toFactor;
+        return 0;
+    }
 #if IS_RSA_SEMIPRIME
     int primeIndex = tdLevel;
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
     bitCapInt fullMinBase = ((1ULL << (primeBits - (1U + primeBitsOffset))) | 1U);
-    const bitCapInt fullMaxBase = sqrt(toFactor);
 #else
     int primeIndex = 0;
     unsigned currentPrime = 2;
@@ -369,8 +377,6 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     // We include potential factors as low as the next odd number after the highest trial division prime.
     currentPrime += 2U;
     bitCapInt fullMinBase = currentPrime;
-    // We include potential factors as high as toFactor / nextPrime.
-    const bitCapInt fullMaxBase = toFactor / currentPrime;
 #endif
 
     primeIndex = tdLevel;

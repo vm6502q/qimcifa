@@ -368,12 +368,14 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
     const std::vector<unsigned>& trialDivisionPrimes, const size_t& batch)
 {
     const int TRIAL_DIVISION_LEVEL = tdLevel;
+    // When we factor this number, we split it into two factors (which themselves may be composite).
+    // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
+    const bitCapInt fullMaxBase = sqrt(toFactor);
 #if IS_RSA_SEMIPRIME
     int primeIndex = TRIAL_DIVISION_LEVEL;
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
     bitCapInt fullMinBase = ((1ULL << (primeBits - primeBitsOffset)) | 1U);
-    const bitCapInt fullMaxBase = sqrt(toFactor);
 #else
     int primeIndex = 0;
     unsigned currentPrime = 2;
@@ -391,7 +393,6 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
     currentPrime += 2U;
     bitCapInt fullMinBase = currentPrime;
     // We include potential factors as high as toFactor / nextPrime.
-    const bitCapInt fullMaxBase = toFactor / currentPrime;
 #endif
 
     primeIndex = tdLevel;
