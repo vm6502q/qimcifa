@@ -315,7 +315,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 #endif
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, isFinished, iterClock)) {
+            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
                 // return true;
             }
 #endif
