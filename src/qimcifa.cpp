@@ -350,7 +350,6 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
 #if IS_RSA_SEMIPRIME
     int primeIndex = tdLevel;
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
-
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
     bitCapInt fullMinBase = ((1ULL << (primeBits - (1U + primeBitsOffset))) | 1U);
     bitCapInt fullMaxBase = ((1ULL << (primeBits + primeBitsOffset)) - 1U);
@@ -375,14 +374,8 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
 #endif
 
     const bitCapInt toFactorSqrt = sqrt(toFactor);
-    if ((1U + fullMaxBase - toFactorSqrt) < (toFactorSqrt - fullMinBase)) {
-        if ((toFactorSqrt & ~1U) < fullMaxBase) {
-            fullMaxBase = toFactorSqrt & ~1U;
-        }
-    } else {
-        if (fullMinBase < (toFactorSqrt | 1U)) {
-            fullMinBase = toFactorSqrt | 1U;
-        }
+    if (toFactorSqrt < fullMaxBase) {
+        fullMaxBase = toFactorSqrt;
     }
 
     primeIndex = tdLevel;
