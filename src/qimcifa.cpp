@@ -161,8 +161,8 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
     std::cout << message << f1 << " * " << f2 << " = " << toFactor << std::endl;
     auto tClock =
         std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
-    // Report in ms
-    std::cout << "(Time elapsed: " << (tClock.count() / 1000.0) << "ms)" << std::endl;
+    // Report in seconds
+    std::cout << "(Time elapsed: " << (tClock.count() / 1000000.0) << " seconds)" << std::endl;
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
