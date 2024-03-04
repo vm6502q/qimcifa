@@ -352,7 +352,7 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     unsigned currentPrime = trialDivisionPrimes[primeIndex];
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
     bitCapInt fullMinBase = ((1ULL << (primeBits - (1U + primeBitsOffset))) | 1U);
-    bitCapInt fullMaxBase = ((1ULL << primeBits) - 1U);
+    const bitCapInt fullMaxBase = sqrt(toFactor);
 #else
     int primeIndex = 0;
     unsigned currentPrime = 2;
@@ -370,7 +370,7 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     currentPrime += 2U;
     bitCapInt fullMinBase = currentPrime;
     // We include potential factors as high as toFactor / nextPrime.
-    bitCapInt fullMaxBase = toFactor / currentPrime;
+    const bitCapInt fullMaxBase = toFactor / currentPrime;
 #endif
 
     primeIndex = tdLevel;
@@ -380,11 +380,6 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
         currentPrime = trialDivisionPrimes[primeIndex];
         fullMinBase = (fullMinBase / currentPrime) * currentPrime;
         --primeIndex;
-    }
-
-    const bitCapInt toFactorSqrt = sqrt(toFactor);
-    if (fullMaxBase > toFactorSqrt) {
-        fullMaxBase = toFactorSqrt;
     }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
