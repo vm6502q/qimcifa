@@ -397,9 +397,13 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
 
     const bitCapInt toFactorSqrt = sqrt(toFactor);
     if ((1U + fullMaxBase - toFactorSqrt) < (toFactorSqrt - fullMinBase)) {
-        fullMaxBase = toFactorSqrt;
+        if ((toFactorSqrt & ~1U) < fullMaxBase) {
+            fullMaxBase = toFactorSqrt & ~1U;
+        }
     } else {
-        fullMinBase = toFactorSqrt;
+        if (fullMinBase < (toFactorSqrt | 1U)) {
+            fullMinBase = toFactorSqrt | 1U;
+        }
     }
 
     primeIndex = TRIAL_DIVISION_LEVEL;
