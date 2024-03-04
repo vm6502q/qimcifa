@@ -396,8 +396,10 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
 #endif
 
     const bitCapInt toFactorSqrt = sqrt(toFactor);
-    if (toFactorSqrt < fullMaxBase) {
+    if ((1U + fullMaxBase - toFactorSqrt) < (toFactorSqrt - fullMinBase)) {
         fullMaxBase = toFactorSqrt;
+    } else {
+        fullMinBase = toFactorSqrt;
     }
 
     primeIndex = TRIAL_DIVISION_LEVEL;
@@ -609,9 +611,8 @@ int main() {
     for (size_t i = 0; i < 50U; ++i) {
         // Test
         CsvRow row = mainCase(toFactor, primeBitsOffset, threadCount, i, 10U);
-        // Total "cost" assumes at least 2 factors exist in the guessing space (exactly for RSA semiprimes, and as a conservative lower bound in general).
 #if USE_GMP || USE_BOOST
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s * 1e-9 / (1 << 21))) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s * 1e-9 / (1 << 20))) << std::endl;
 #else
         oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s * 1e-9 / (1 << 21))) << std::endl;
 #endif

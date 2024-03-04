@@ -375,8 +375,10 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
 #endif
 
     const bitCapInt toFactorSqrt = sqrt(toFactor);
-    if (toFactorSqrt < fullMaxBase) {
+    if ((1U + fullMaxBase - toFactorSqrt) < (toFactorSqrt - fullMinBase)) {
         fullMaxBase = toFactorSqrt;
+    } else {
+        fullMinBase = toFactorSqrt;
     }
 
     primeIndex = tdLevel;
