@@ -34,8 +34,6 @@
 #include <map>
 #include <mutex>
 
-#include <boost/random.hpp>
-
 #include "big_integer.h"
 #define bitCapInt BigInteger
 #define bitLenInt uint32_t

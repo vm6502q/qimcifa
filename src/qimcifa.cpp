@@ -38,11 +38,72 @@
 
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
-#else
+#elif USE_BOOST
 #include <boost/multiprecision/cpp_int.hpp>
+#else
+#include "big_integer.hpp"
 #endif
 
 namespace Qimcifa {
+
+#if !(USE_GMP || USE_BOOST)
+typedef BigInteger bitCapIntInput;
+typedef BigInteger bitCapInt;
+const bitCapInt ZERO_BCI = 0U;
+
+std::ostream& operator<<(std::ostream& os, bitCapInt b)
+{
+    if (bi_compare_0(b) == 0) {
+        os << "0";
+        return os;
+    }
+
+    // Calculate the base-10 digits, from lowest to highest.
+    std::vector<std::string> digits;
+    while (bi_compare_0(b) != 0) {
+        bitCapInt quo;
+        BIG_INTEGER_HALF_WORD rem;
+        bi_div_mod_small(b, 10U, &quo, &rem);
+        digits.push_back(std::to_string((unsigned char)rem));
+        b = quo;
+    }
+
+    // Reversing order, print the digits from highest to lowest.
+    for (size_t i = digits.size() - 1U; i > 0; --i) {
+        os << digits[i];
+    }
+    // Avoid the need for a signed comparison.
+    os << digits[0];
+
+    return os;
+}
+
+std::istream& operator>>(std::istream& is, bitCapInt& b)
+{
+    // Get the whole input string at once.
+    std::string input;
+    is >> input;
+
+    // Start the output address value at 0.
+    b = ZERO_BCI;
+    for (size_t i = 0; i < input.size(); ++i) {
+        // Left shift by 1 base-10 digit.
+        b = b * 10;
+        // Add the next lowest base-10 digit.
+        bi_increment(&b, (input[i] - 48U));
+    }
+
+    return is;
+}
+
+inline bool isPowerOfTwo(const bitCapInt& x)
+{
+    bitCapInt y = x;
+    bi_decrement(&y, 1U);
+    bi_and_ip(&y, x);
+    return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
+}
+#endif
 
 template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
@@ -176,21 +237,25 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 20U;
 
-    for (bitCapInt lcv = 0; lcv < range; lcv += BASE_TRIALS) {
+    for (bitCapInt lcv = 0; lcv < range; lcv = lcv + BASE_TRIALS) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = threadMin + lcv + batchItem;
 
             for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                base += base / (trialDivisionPrimes[i] - 1U) + 1U;
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
 
 #if IS_RSA_SEMIPRIME
+#if USE_GMP || USE_BOOST
             if ((toFactor % base) == 0U) {
+#else
+            if (bi_compare_0(toFactor % base) == 0U) {
+#endif
                 isFinished = true;
                 printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
                 return true;
@@ -306,7 +371,7 @@ int main()
 {
 #if USE_GMP
     typedef boost::multiprecision::mpz_int bitCapIntInput;
-#else
+#elif USE_BOOST
     typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
         bitCapIntInput;
@@ -386,12 +451,21 @@ int main()
 
     uint32_t qubitCount = 0;
     bitCapIntInput p = toFactor >> 1U;
+#if USE_GMP || USE_BOOST
     while (p) {
         p >>= 1U;
+#else
+    while (bi_compare_0(p)) {
+        bi_rshift_ip(&p, 1U);
+#endif
         ++qubitCount;
     }
     // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
+#if USE_GMP || USE_BOOST
     if (!(toFactor && !(toFactor & (toFactor - 1ULL)))) {
+#else
+    if (!isPowerOfTwo(toFactor)) {
+#endif
         qubitCount++;
     }
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
@@ -435,8 +509,13 @@ int main()
     const unsigned highestPrime = trialDivisionPrimes[tdLevel];
     size_t primeFactorBits = 1U;
     p = highestPrime >> 1U;
+#if USE_GMP || USE_BOOST
     while (p) {
         p >>= 1U;
+#else
+    while (bi_compare_0(p)) {
+        bi_rshift_ip(&p, 1U);
+#endif
         ++primeFactorBits;
     }
     const size_t QBCAPBITS = primeFactorBits + (((qubitCount >> 5U) + 1U) << 5U);
@@ -448,7 +527,7 @@ int main()
     } else {
         return mainBody<bitCapIntInput>(toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     }
-#else
+#elif USE_BOOST
     } else if (QBCAPBITS < 128) {
         typedef boost::multiprecision::uint128_t bitCapInt;
         return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
@@ -476,6 +555,11 @@ int main()
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
+        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
+    }
+#else
+    } else {
+        typedef BigInteger bitCapInt;
         return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, primeBitsOffset, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     }
 #endif
