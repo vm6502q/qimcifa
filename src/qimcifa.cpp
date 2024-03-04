@@ -104,7 +104,7 @@ inline bool isPowerOfTwo(const bitCapInt& x)
     return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
 }
 
-template <typename bitCapInt> bitCapInt sqrt(const bitCapInt& toTest)
+template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
 {
     // Otherwise, find b = sqrt(b^2).
     bitCapInt start = 1U, end = toTest >> 1U, ans = 0U;
@@ -195,7 +195,7 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
 
 #if IS_SQUARES_CONGRUENCE_CHECK
 template <typename bitCapInt>
-bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest, std::atomic<bool>& isFinished,
+inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest, std::atomic<bool>& isFinished,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     // The basic idea is "congruence of squares":
@@ -258,8 +258,8 @@ bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest
         remainder = ans;
     }
 
-    bitCapInt f1 = gcd<bitCapInt>(toTest + remainder, toFactor);
-    bitCapInt f2 = gcd<bitCapInt>(toTest - remainder, toFactor);
+    bitCapInt f1 = gcd(toTest + remainder, toFactor);
+    bitCapInt f2 = gcd(toTest - remainder, toFactor);
     bitCapInt fmul = f1 * f2;
 #if USE_GMP || USE_BOOST
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {

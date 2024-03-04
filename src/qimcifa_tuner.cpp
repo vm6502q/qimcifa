@@ -46,7 +46,7 @@
 
 namespace Qimcifa {
 
-const int BASE_TRIALS = 1U << 16U;
+const int BASE_TRIALS = 1U << 12U;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -215,7 +215,7 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
 
 #if IS_SQUARES_CONGRUENCE_CHECK
 template <typename bitCapInt>
-bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest,
+inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     // The basic idea is "congruence of squares":
@@ -278,8 +278,8 @@ bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest
         remainder = ans;
     }
 
-    bitCapInt f1 = gcd<bitCapInt>(toTest + remainder, toFactor);
-    bitCapInt f2 = gcd<bitCapInt>(toTest - remainder, toFactor);
+    bitCapInt f1 = gcd(toTest + remainder, toFactor);
+    bitCapInt f2 = gcd(toTest - remainder, toFactor);
     bitCapInt fmul = f1 * f2;
 #if USE_GMP || USE_BOOST
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
