@@ -403,22 +403,6 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
         --primeIndex;
     }
 
-    const bitCapInt toFactorSqrt = sqrt(toFactor);
-    if ((toFactorSqrt < fullMaxBase) && ((fullMaxBase - toFactorSqrt) > ((toFactorSqrt | 1U) - fullMinBase))) {
-        fullMaxBase = toFactorSqrt;
-    } else if ((toFactorSqrt | 1U) > fullMinBase) {
-        fullMinBase = toFactorSqrt | 1U;
-    }
-
-    primeIndex = tdLevel;
-    while (primeIndex >= 0) {
-        // The truncation here is a conservative bound, but it's exact if we
-        // happen to be aligned to a perfect factor of all trial division.
-        currentPrime = trialDivisionPrimes[primeIndex];
-        fullMinBase = (fullMinBase / currentPrime) * currentPrime;
-        --primeIndex;
-    }
-
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     primeIndex = TRIAL_DIVISION_LEVEL;
     while (primeIndex >= 0) {
