@@ -152,7 +152,7 @@ struct CsvRow {
     }
 };
 
-template <typename bitCapInt> bitCapInt gcd(bitCapInt n1, bitCapInt n2)
+template <typename bitCapInt> inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
 #if USE_GMP || USE_BOOST
     while (n2) {
