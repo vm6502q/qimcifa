@@ -407,7 +407,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
 
     const bitCapInt toFactorSqrt = sqrt(toFactor);
     bool isRootBound = false;
-    if ((fullMaxBase > toFactorSqrt) && (((fullMaxBase - toFactorSqrt) << 1U) < (fullMaxBase - fullMinBase))) {
+    if ((fullMaxBase > toFactorSqrt) && (((1U + fullMaxBase - toFactorSqrt) << 1U) < (1U + fullMaxBase - fullMinBase))) {
         fullMaxBase = toFactorSqrt;
         isRootBound = true;
     }
