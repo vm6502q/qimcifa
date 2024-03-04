@@ -109,6 +109,33 @@ inline bool isPowerOfTwo(const bitCapInt& x)
     bi_and_ip(&y, x);
     return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
 }
+
+template <typename bitCapInt> bitCapInt sqrt(const bitCapInt& toTest)
+{
+    // Otherwise, find b = sqrt(b^2).
+    bitCapInt start = 1U, end = toTest >> 1U, ans = 0U;
+    do {
+        const bitCapInt mid = (start + end) >> 1U;
+
+        // If toTest is a perfect square
+        const bitCapInt sqr = mid * mid;
+        if (bi_compare(sqr, toTest) == 0) {
+            ans = mid;
+            break;
+        }
+
+        if (sqr < toTest) {
+            // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
+            start = mid + 1U;
+            ans = mid;
+        } else {
+            // If mid*mid is greater than p
+            end = mid - 1U;
+        }
+    } while (bi_compare(start, end) <= 0);
+
+    return ans;
+}
 #endif
 
 struct CsvRow {
@@ -347,7 +374,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
 
     const uint32_t primeBits = (qubitCount + 1U) >> 1U;
     bitCapInt fullMinBase = ((1ULL << (primeBits - (1U + primeBitsOffset))) | 1U);
-    const bitCapInt fullMaxBase = ((1ULL << (primeBits + primeBitsOffset)) - 1U);
+    bitCapInt fullMaxBase = ((1ULL << (primeBits + primeBitsOffset)) - 1U);
 #else
     int primeIndex = 0;
     unsigned currentPrime = 2;
@@ -365,8 +392,13 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_
     currentPrime += 2U;
     bitCapInt fullMinBase = currentPrime;
     // We include potential factors as high as toFactor / nextPrime.
-    const bitCapInt fullMaxBase = toFactor / currentPrime;
+    bitCapInt fullMaxBase = toFactor / currentPrime;
 #endif
+
+    const bitCapInt toFactorSqrt = sqrt(toFactor);
+    if (toFactorSqrt < fullMaxBase) {
+        fullMaxBase = toFactorSqrt;
+    }
 
     primeIndex = TRIAL_DIVISION_LEVEL;
     while (primeIndex >= 0) {
