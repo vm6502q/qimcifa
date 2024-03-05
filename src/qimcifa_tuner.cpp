@@ -1,13 +1,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2024. All rights reserved.
 //
-// "A quantum-inspired Monte Carlo integer factoring algorithm"
+// "A quantum-inspired Monte Carlo integer factoring algorithm" (tuner)
 //
-// This example demonstrates a (Shor's-like) "quantum-inspired" algorithm for integer factoring.
-// This approach is similar to Shor's algorithm, except with a uniformly random output from the
-// quantum period-finding subroutine. Therefore, we don't need quantum computer simulation for
-// this algorithm at all!
+// This tuner application for "Qimcifa" performs resource estimates and picks the best plan for
+// execution.
 //
 // (This file was heavily adapted from
 // https://github.com/ProjectQ-Framework/ProjectQ/blob/develop/examples/shor.py,
