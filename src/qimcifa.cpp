@@ -404,7 +404,11 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     unsigned currentPrime = 2;
     while (primeIndex <= tdLevel) {
         currentPrime = trialDivisionPrimes[primeIndex];
+#if USE_GMP || USE_BOOST
         if ((toFactor % currentPrime) == 0) {
+#else
+        if (bi_compare_0(toFactor % currentPrime) == 0) {
+#endif
             std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
                       << std::endl;
             return 0;
