@@ -237,9 +237,16 @@ template <typename bitCapInt> inline void finish(bitCapInt& batchNumber, std::mu
 template <typename bitCapInt> inline bitCapInt getNextBatch(bitCapInt& batchNumber, std::mutex& batchMutex) {
     std::lock_guard<std::mutex> lock(batchMutex);
     const bitCapInt result = batchNumber;
+#if USE_GMP || USE_BOOST
     if (batchNumber != (bitCapInt)-1) {
         ++batchNumber;
     }
+#else
+    if (bi_compare(batchNumber, (bitCapInt)-1) != 0) {
+        bi_increment(&batchNumber, 1U);
+    }
+#endif
+
     return result;
 }
 
@@ -345,7 +352,11 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 
     bitCapInt lcv = BASE_TRIALS * getNextBatch(batchNumber, batchMutex);
 
+#if USE_GMP || USE_BOOST
     while ((lcv != (bitCapInt)-1) && (lcv < range)) {
+#else
+    while ((bi_compare(lcv, (bitCapInt)-1) != 0) && (bi_compare(lcv, range) < 0)) {
+#endif
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = threadMin + lcv + batchItem;
