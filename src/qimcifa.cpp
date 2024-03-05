@@ -176,7 +176,7 @@ template <typename bitCapInt> inline size_t pickTrialDivisionLevel(const int64_t
     settingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    std::cout << "Expected average time-to-solution (seconds): " << (bestCost / (std::thread::hardware_concurrency() * nodeCount)) << std::endl;
+    std::cout << "Estimated worst case time-to-solution: " << (bestCost / (std::thread::hardware_concurrency() * nodeCount)) << " seconds" << std::endl;
 
     return bestLevel;
 }
