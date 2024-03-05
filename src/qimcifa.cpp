@@ -82,8 +82,8 @@
 
 namespace Qimcifa {
 
-const int MIN_RTD_LEVEL = 3;
-const int MIN_RTD_INDEX = 2;
+const int MIN_RTD_LEVEL = 1;
+const int MIN_RTD_INDEX = 0;
 
 #if !(USE_GMP || USE_BOOST)
 typedef BigInteger bitCapIntInput;
@@ -370,10 +370,10 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
             }
 
             // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // base = base + (base >> 2U) + 1U;
 
             // Make this not a multiple of 3.
-            base = base + (base >> 1U) + 1U;
+            // base = base + (base >> 1U) + 1U;
 
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
