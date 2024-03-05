@@ -82,6 +82,9 @@
 
 namespace Qimcifa {
 
+const int MIN_RTD_LEVEL = 1;
+const int MIN_RTD_INDEX = 0;
+
 #if !(USE_GMP || USE_BOOST)
 typedef BigInteger bitCapIntInput;
 typedef BigInteger bitCapInt;
@@ -361,16 +364,16 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = threadMin + lcv + batchItem;
 
-            for (size_t i = primeIndex; i > 2U; --i) {
+            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
             // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // base = base + (base >> 2U) + 1U;
 
             // Make this not a multiple of 3.
-            base = base + (base >> 1U) + 1U;
+            // base = base + (base >> 1U) + 1U;
 
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
@@ -457,7 +460,7 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange = ((fullRange + 1U) * (currentPrime - 1U)) / currentPrime;
+        fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
     primeIndex = tdLevel - 1;
@@ -616,10 +619,10 @@ int main()
 #endif
 
     int64_t tdLevel = -1;
-    std::cout << "Reverse trial division level (minimum of 3, or -1 for calibration file): ";
+    std::cout << "Reverse trial division level (minimum of " << MIN_RTD_LEVEL << ", or -1 for calibration file): ";
     std::cin >> tdLevel;
-    if ((tdLevel > -1) && (tdLevel < 1U)) {
-        tdLevel = 3;
+    if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
+        tdLevel = MIN_RTD_LEVEL;
     }
     if (tdLevel >= (int64_t)trialDivisionPrimes.size()) {
         tdLevel = trialDivisionPrimes.size() - 1U;

@@ -45,6 +45,8 @@
 namespace Qimcifa {
 
 const int BASE_TRIALS = 1U << 16U;
+const int MIN_RTD_LEVEL = 1;
+const int MIN_RTD_INDEX = 0;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -285,16 +287,16 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = 0U + batchItem + threadMin;
 
-            for (size_t i = primeIndex; i > 2U; --i) {
+            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
             // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // base = base + (base >> 2U) + 1U;
 
             // Make this not a multiple of 3.
-            base = base + (base >> 1U) + 1U;
+            // base = base + (base >> 1U) + 1U;
 
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
@@ -329,13 +331,13 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = 0U + batchItem + threadMin;
 
-            for (size_t i = primeIndex; i > 2U; --i) {
+            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
             // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // base = base + (base >> 2U) + 1U;
 
             // Make this not a multiple of 3.
             base = base + (base >> 1U) + 1U;
@@ -403,7 +405,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange = ((fullRange + 1U) * (currentPrime - 1U)) / currentPrime;
+        fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
 
@@ -607,7 +609,7 @@ int main() {
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
-    for (size_t i = 1; i < 100U; ++i) {
+    for (size_t i = MIN_RTD_INDEX; i <= 100U; ++i) {
         // Test
         CsvRow row = mainCase(toFactor, threadCount, i, 10U);
 #if USE_GMP || USE_BOOST
