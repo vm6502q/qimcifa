@@ -633,7 +633,7 @@ int main() {
         iSettingsFile >> batchTime;
         iSettingsFile >> cost;
 
-        if (cost < bestCost) {
+        if ((level > 2U) && (cost < bestCost)) {
             bestLevel = level;
             bestCost = cost;
         }
