@@ -44,7 +44,7 @@
 
 namespace Qimcifa {
 
-const int BASE_TRIALS = 1U << 16U;
+const int BASE_TRIALS = 1U << 18U;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
