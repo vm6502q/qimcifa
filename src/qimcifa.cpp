@@ -450,7 +450,7 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        fullMinBase = ((fullMinBase + currentPrime - 1U) / currentPrime) * currentPrime;
+        fullMinBase = (fullMinBase / currentPrime) * currentPrime;
         --primeIndex;
     }
 
