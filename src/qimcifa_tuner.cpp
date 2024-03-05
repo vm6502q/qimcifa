@@ -46,7 +46,7 @@
 
 namespace Qimcifa {
 
-const int BASE_TRIALS = 1U << 12U;
+const int BASE_TRIALS = 1U << 16U;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -313,11 +313,49 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int start = batch * BASE_TRIALS;
     const int end = (batch + 1U) * BASE_TRIALS;
-
-    auto iterClock = std::chrono::high_resolution_clock::now();
+    const int mid = ((end - start) >> 1U) + start;
 
     // for (bitCapInt lcv = 0; lcv < range; lcv += BASE_TRIALS) {
-        for (int batchItem = start; batchItem < end; ++batchItem) {
+        auto iterClock = std::chrono::high_resolution_clock::now();
+        for (int batchItem = start; batchItem < mid; ++batchItem) {
+            // Choose a base at random, >1 and <toFactor.
+            bitCapInt base = 0U + batchItem + threadMin;
+
+            for (size_t i = primeIndex; i > 0U; --i) {
+                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+            }
+
+            // Make this odd, then shift the range.
+            base = ((base << 1U) | 1U) + fullMinBase;
+
+#if IS_RSA_SEMIPRIME
+#if USE_GMP || USE_BOOST
+            if ((toFactor % base) == 0U) {
+#else
+            if (bi_compare_0(toFactor % base) == 0U) {
+#endif
+                // isFinished = true;
+                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
+                // return true;
+            }
+#else
+            bitCapInt n = gcd(base, toFactor);
+            if (n != 1U) {
+                // isFinished = true;
+                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
+                // return true;
+            }
+#endif
+
+#if IS_SQUARES_CONGRUENCE_CHECK
+            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
+                // return true;
+            }
+#endif
+        }
+        iterClock = std::chrono::high_resolution_clock::now();
+        for (int batchItem = mid; batchItem < end; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = 0U + batchItem + threadMin;
 
@@ -440,12 +478,14 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel, size_t
     }
 
     // First 1000 primes
+    // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
     const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
         311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439,
-        443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587,
+        443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541 }; //, 547, 557, 563, 569, 571, 577, 587,
+#if 0
         593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727,
         733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877,
         881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997, 1009, 1013, 1019, 1021,
@@ -495,6 +535,7 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel, size_t
         7481, 7487, 7489, 7499, 7507, 7517, 7523, 7529, 7537, 7541, 7547, 7549, 7559, 7561, 7573, 7577, 7583, 7589,
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
         7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
+#endif
 
     // Print primes table by index:
     // for (size_t i = 0; i < trialDivisionPrimes.size(); ++i) {
@@ -573,13 +614,13 @@ int main() {
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
-    for (size_t i = 0; i < 1000U; ++i) {
+    for (size_t i = 0; i < 100U; ++i) {
         // Test
         CsvRow row = mainCase(toFactor, threadCount, i, 10U);
 #if USE_GMP || USE_BOOST
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s * 1e-9 / BASE_TRIALS)) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s * 1e-9 / (BASE_TRIALS >> 1U))) << std::endl;
 #else
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s * 1e-9 / BASE_TRIALS)) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s * 1e-9 / (BASE_TRIALS >> 1U))) << std::endl;
 #endif
     }
     oSettingsFile.close();
