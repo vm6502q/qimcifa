@@ -212,7 +212,7 @@ template <typename bitCapInt> inline size_t pickTrialDivisionLevel(const int64_t
     settingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    std::cout << "Average sample time, times worst-case guess count: " << (bestCost / (std::thread::hardware_concurrency() * nodeCount)) << " seconds" << std::endl;
+    std::cout << "Average sample time, times worst-case guess count, divided by thread count: " << (bestCost / (std::thread::hardware_concurrency() * nodeCount)) << " seconds" << std::endl;
 
     return bestLevel;
 }
@@ -361,16 +361,16 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = threadMin + lcv + batchItem;
 
-            for (size_t i = primeIndex; i > 2U; --i) {
+            for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
             // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // base = base + (base >> 2U) + 1U;
 
             // Make this not a multiple of 3.
-            base = base + (base >> 1U) + 1U;
+            // base = base + (base >> 1U) + 1U;
 
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
@@ -616,10 +616,10 @@ int main()
 #endif
 
     int64_t tdLevel = -1;
-    std::cout << "Reverse trial division level (minimum of 3, or -1 for calibration file): ";
+    std::cout << "Reverse trial division level (minimum of 1, or -1 for calibration file): ";
     std::cin >> tdLevel;
-    if ((tdLevel > -1) && (tdLevel < 3U)) {
-        tdLevel = 3;
+    if ((tdLevel > -1) && (tdLevel < 1U)) {
+        tdLevel = 1;
     }
     if (tdLevel >= (int64_t)trialDivisionPrimes.size()) {
         tdLevel = trialDivisionPrimes.size() - 1U;

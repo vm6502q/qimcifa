@@ -291,10 +291,10 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             }
 
             // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // base = base + (base >> 2U) + 1U;
 
             // Make this not a multiple of 3.
-            base = base + (base >> 1U) + 1U;
+            // base = base + (base >> 1U) + 1U;
 
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
@@ -335,10 +335,10 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             }
 
             // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // base = base + (base >> 2U) + 1U;
 
             // Make this not a multiple of 3.
-            base = base + (base >> 1U) + 1U;
+            // base = base + (base >> 1U) + 1U;
 
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
@@ -607,7 +607,7 @@ int main() {
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
-    for (size_t i = 3; i < 100U; ++i) {
+    for (size_t i = 1; i < 100U; ++i) {
         // Test
         CsvRow row = mainCase(toFactor, threadCount, i, 10U);
 #if USE_GMP || USE_BOOST
@@ -641,7 +641,7 @@ int main() {
     iSettingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    std::cout << "Average sample time, times worst-case guess count: " << (bestCost / threadCount) << " seconds" << std::endl;
+    std::cout << "Average sample time, times worst-case guess count, divided by thread count: " << (bestCost / threadCount) << " seconds" << std::endl;
 
     return 0;
 }
