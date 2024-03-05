@@ -420,7 +420,7 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     currentPrime += 2U;
     bitCapInt fullMinBase = currentPrime;
 
-    primeIndex = tdLevel;
+    primeIndex = tdLevel - 1;
     while (primeIndex >= 0) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
@@ -430,7 +430,7 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
-    primeIndex = tdLevel;
+    primeIndex = tdLevel - 1;
     while (primeIndex >= 0) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
@@ -438,7 +438,7 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
         fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
-    primeIndex = tdLevel;
+    primeIndex = tdLevel - 1;
 
     std::atomic<bool> isFinished;
     isFinished = false;

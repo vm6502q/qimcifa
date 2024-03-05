@@ -404,13 +404,12 @@ template <typename bitCapInt>
 CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64_t& tdLevel, const size_t& threadCount,
     const std::vector<unsigned>& trialDivisionPrimes, const size_t& batch)
 {
-    const int TRIAL_DIVISION_LEVEL = tdLevel;
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
     const bitCapInt fullMaxBase = sqrt(toFactor);
     int primeIndex = 0;
     unsigned currentPrime = 2;
-    while (primeIndex <= tdLevel) {
+    while (primeIndex < tdLevel) {
         currentPrime = trialDivisionPrimes[primeIndex];
         ++primeIndex;
     }
@@ -420,7 +419,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
     bitCapInt fullMinBase = currentPrime;
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
-    primeIndex = TRIAL_DIVISION_LEVEL;
+    primeIndex = tdLevel - 1;
     while (primeIndex >= 0) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
@@ -436,7 +435,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
 #endif
         fullRange = (fullRange / threadCount) * (threadCount + 1U);
     }
-    primeIndex = TRIAL_DIVISION_LEVEL;
+    primeIndex = tdLevel - 1;
 
     const auto workerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, batch]
         (bitCapInt threadMin, bitCapInt threadMax) {
