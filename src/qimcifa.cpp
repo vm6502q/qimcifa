@@ -205,7 +205,7 @@ template <typename bitCapInt> inline size_t pickTrialDivisionLevel(const int64_t
         settingsFile >> batchTime;
         settingsFile >> cost;
 
-        if ((level > 1) && (cost < bestCost)) {
+        if (cost < bestCost) {
             bestLevel = level;
             bestCost = cost;
         }
@@ -401,9 +401,8 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     }
 
     int primeIndex = 0;
-    unsigned currentPrime = 2;
     while (primeIndex <= tdLevel) {
-        currentPrime = trialDivisionPrimes[primeIndex];
+        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
 #if USE_GMP || USE_BOOST
         if ((toFactor % currentPrime) == 0) {
 #else
@@ -417,14 +416,13 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     }
 
     // We include potential factors as low as the next odd number after the highest trial division prime.
-    currentPrime += 2U;
-    bitCapInt fullMinBase = currentPrime;
+    bitCapInt fullMinBase = trialDivisionPrimes[tdLevel] + 2U;
 
     primeIndex = tdLevel - 1;
     while (primeIndex >= 0) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
-        currentPrime = trialDivisionPrimes[primeIndex];
+        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
         fullMinBase = (fullMinBase / currentPrime) * currentPrime;
         --primeIndex;
     }
@@ -434,8 +432,8 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     while (primeIndex >= 0) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
-        currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange = (fullRange * (currentPrime - 1U) + currentPrime - 1U) / currentPrime;
+        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
+        fullRange = ((fullRange + 1U) * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
     primeIndex = tdLevel - 1;

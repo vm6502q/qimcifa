@@ -165,40 +165,6 @@ template <typename bitCapInt> inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-template <typename bitCapInt> inline size_t pickTrialDivisionLevel(const int64_t& tdLevel, const size_t& nodeCount)
-{
-    if (tdLevel >= 0) {
-        return tdLevel;
-    }
-
-    std::ifstream settingsFile ("qimcifa_calibration.ssv");
-    std::string header;
-    std::getline(settingsFile, header);
-    size_t bestLevel = -1;
-    double bestCost = DBL_MAX;
-    while (settingsFile.peek() != EOF)
-    {
-        size_t level;
-        bitCapInt cardinality;
-        double batchTime, cost;
-        settingsFile >> level;
-        settingsFile >> cardinality;
-        settingsFile >> batchTime;
-        settingsFile >> cost;
-
-        if (cost < bestCost) {
-            bestLevel = level;
-            bestCost = cost;
-        }
-    }
-    settingsFile.close();
-
-    std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    std::cout << "Estimated worst case time-to-solution: " << (bestCost / (std::thread::hardware_concurrency() * nodeCount)) << " seconds" << std::endl;
-
-    return bestLevel;
-}
-
 template <typename bitCapInt>
 void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toFactor, const std::string& message,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
@@ -407,24 +373,25 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
     const bitCapInt fullMaxBase = sqrt(toFactor);
-    int primeIndex = 0;
-    unsigned currentPrime = 2;
-    while (primeIndex < tdLevel) {
-        currentPrime = trialDivisionPrimes[primeIndex];
-        ++primeIndex;
-    }
-
     // We include potential factors as low as the next odd number after the highest trial division prime.
-    currentPrime += 2U;
-    bitCapInt fullMinBase = currentPrime;
+    bitCapInt fullMinBase = trialDivisionPrimes[tdLevel] + 2U;
+
+    int primeIndex = tdLevel - 1;
+    while (primeIndex >= 0) {
+        // The truncation here is a conservative bound, but it's exact if we
+        // happen to be aligned to a perfect factor of all trial division.
+        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
+        fullMinBase = (fullMinBase / currentPrime) * currentPrime;
+        --primeIndex;
+    }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     primeIndex = tdLevel - 1;
     while (primeIndex >= 0) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
-        currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange = (fullRange * (currentPrime - 1U) + currentPrime - 1U) / currentPrime;
+        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
+        fullRange = ((fullRange + 1U) * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
 
@@ -633,7 +600,7 @@ int main() {
         iSettingsFile >> batchTime;
         iSettingsFile >> cost;
 
-        if ((level > 1U) && (cost < bestCost)) {
+        if (cost < bestCost) {
             bestLevel = level;
             bestCost = cost;
         }
