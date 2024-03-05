@@ -412,9 +412,6 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
     const bitCapInt fullMaxBase = sqrt(toFactor);
     int primeIndex = 0;
     unsigned currentPrime = 2;
-#if IS_RSA_SEMIPRIME
-    bitCapInt fullMinBase = (1U << ((qubitCount >> 1U) - 1U)) | 1U;
-#else
     while (primeIndex <= tdLevel) {
         currentPrime = trialDivisionPrimes[primeIndex];
         ++primeIndex;
@@ -423,7 +420,6 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
     // We include potential factors as low as the next odd number after the highest trial division prime.
     currentPrime += 2U;
     bitCapInt fullMinBase = currentPrime;
-#endif
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     primeIndex = TRIAL_DIVISION_LEVEL;

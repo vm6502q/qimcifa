@@ -359,9 +359,6 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
 
     int primeIndex = 0;
     unsigned currentPrime = 2;
-#if IS_RSA_SEMIPRIME
-    bitCapInt fullMinBase = (1U << ((qubitCount >> 1U) - 2U)) | 1U;
-#else
     while (primeIndex <= tdLevel) {
         currentPrime = trialDivisionPrimes[primeIndex];
         if ((toFactor % currentPrime) == 0) {
@@ -375,7 +372,6 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     // We include potential factors as low as the next odd number after the highest trial division prime.
     currentPrime += 2U;
     bitCapInt fullMinBase = currentPrime;
-#endif
 
     primeIndex = tdLevel;
     while (primeIndex >= 0) {
