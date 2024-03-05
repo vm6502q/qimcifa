@@ -566,6 +566,7 @@ int main() {
     std::cout << "The qimcifa_tuner number need not be the exact number that will be factored with qimcifa, but closer is better." << std::endl;
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
+    std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
     size_t threadCount = 1;
     std::cout << "Total thread count (across all nodes): ";
