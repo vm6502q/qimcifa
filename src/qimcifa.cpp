@@ -348,7 +348,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
     const std::vector<unsigned>& trialDivisionPrimes, bitCapInt& batchNumber, std::mutex& batchMutex)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    const int BASE_TRIALS = 1U << 20U;
+    const int BASE_TRIALS = 1U << 16U;
 
     bitCapInt lcv = BASE_TRIALS * getNextBatch(batchNumber, batchMutex);
 
