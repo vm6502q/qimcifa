@@ -566,6 +566,26 @@ int main() {
     std::cout << "The qimcifa_tuner number need not be the exact number that will be factored with qimcifa, but closer is better." << std::endl;
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
+
+    uint32_t qubitCount = 0;
+    bitCapIntInput p = toFactor >> 1U;
+#if USE_GMP || USE_BOOST
+    while (p) {
+        p >>= 1U;
+#else
+    while (bi_compare_0(p)) {
+        bi_rshift_ip(&p, 1U);
+#endif
+        ++qubitCount;
+    }
+    // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
+#if USE_GMP || USE_BOOST
+    if (!(toFactor && !(toFactor & (toFactor - 1ULL)))) {
+#else
+    if (!isPowerOfTwo(toFactor)) {
+#endif
+        qubitCount++;
+    }
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
     size_t threadCount = 1;
