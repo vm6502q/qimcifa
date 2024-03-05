@@ -171,9 +171,9 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
 {
     std::cout << message << f1 << " * " << f2 << " = " << toFactor << std::endl;
     auto tClock =
-        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock);
     // Report in seconds
-    std::cout << "(Time elapsed: " << (tClock.count() / 1000000.0) << " seconds)" << std::endl;
+    std::cout << "(Time elapsed: " << (tClock.count() * 1e-9) << " seconds)" << std::endl;
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
@@ -290,6 +290,12 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
                 base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
+            // Make this not a multiple of 5.
+            base = base + (base >> 2U) + 1U;
+
+            // Make this not a multiple of 3.
+            base = base + (base >> 1U) + 1U;
+
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
 
@@ -328,6 +334,12 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
                 base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
 
+            // Make this not a multiple of 5.
+            base = base + (base >> 2U) + 1U;
+
+            // Make this not a multiple of 3.
+            base = base + (base >> 1U) + 1U;
+
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
 
@@ -363,7 +375,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
         // }
     // }
 
-    return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count());
+    return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9);
 }
 
 template <typename bitCapInt>
@@ -599,9 +611,9 @@ int main() {
         // Test
         CsvRow row = mainCase(toFactor, threadCount, i, 10U);
 #if USE_GMP || USE_BOOST
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s * 1e-9 / (BASE_TRIALS >> 1U))) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s / (BASE_TRIALS >> 1U))) << std::endl;
 #else
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s * 1e-9 / (BASE_TRIALS >> 1U))) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s / (BASE_TRIALS >> 1U))) << std::endl;
 #endif
     }
     oSettingsFile.close();

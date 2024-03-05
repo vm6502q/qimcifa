@@ -68,7 +68,6 @@
 #include <time.h>
 
 #include <algorithm>
-#include <atomic>
 #include <future>
 #include <map>
 #include <mutex>
@@ -230,9 +229,23 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
+template <typename bitCapInt> inline void finish(bitCapInt& batchNumber, std::mutex& batchMutex) {
+    std::lock_guard<std::mutex> lock(batchMutex);
+    batchNumber = (bitCapInt)-1;
+}
+
+template <typename bitCapInt> inline bitCapInt getNextBatch(bitCapInt& batchNumber, std::mutex& batchMutex) {
+    std::lock_guard<std::mutex> lock(batchMutex);
+    const bitCapInt result = batchNumber;
+    if (batchNumber != (bitCapInt)-1) {
+        ++batchNumber;
+    }
+    return result;
+}
+
 #if IS_SQUARES_CONGRUENCE_CHECK
 template <typename bitCapInt>
-inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest, std::atomic<bool>& isFinished,
+inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     // The basic idea is "congruence of squares":
@@ -314,7 +327,6 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     if ((bi_compare(fmul, toFactor) == 0) && (bi_compare_1(f1) > 0) && (bi_compare_1(f2) > 0)) {
 #endif
         // Inform the other threads on this node that we've succeeded and are done:
-        isFinished = true;
         printSuccess<bitCapInt>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
         return true;
     }
@@ -326,12 +338,14 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
     const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
-    const std::vector<unsigned>& trialDivisionPrimes, std::atomic<bool>& isFinished)
+    const std::vector<unsigned>& trialDivisionPrimes, bitCapInt& batchNumber, std::mutex& batchMutex)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int BASE_TRIALS = 1U << 20U;
 
-    for (bitCapInt lcv = 0; lcv < range; lcv = lcv + BASE_TRIALS) {
+    bitCapInt lcv = BASE_TRIALS * getNextBatch(batchNumber, batchMutex);
+
+    while ((lcv != (bitCapInt)-1) && (lcv < range)) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = threadMin + lcv + batchItem;
@@ -356,30 +370,29 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 #else
             if (bi_compare_0(toFactor % base) == 0U) {
 #endif
-                isFinished = true;
+                finish(batchNumber, batchMutex);
                 printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
                 return true;
             }
 #else
             bitCapInt n = gcd(base, toFactor);
             if (n != 1U) {
-                isFinished = true;
+                finish(batchNumber, batchMutex);
                 printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
                 return true;
             }
 #endif
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, isFinished, iterClock)) {
+            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
+                finish(batchNumber, batchMutex);
                 return true;
             }
 #endif
         }
 
         // Check if finished, between batches.
-        if (isFinished) {
-            return true;
-        }
+        lcv = getNextBatch(batchNumber, batchMutex);
     }
 
     return true;
@@ -438,13 +451,13 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
     }
     primeIndex = tdLevel - 1;
 
-    std::atomic<bool> isFinished;
-    isFinished = false;
+    bitCapInt batchNumber = 0U;
+    std::mutex batchMutex;
 
-    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &isFinished]
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &batchNumber, &batchMutex]
         (bitCapInt threadMin, bitCapInt threadMax) {
         singleWordLoop<bitCapInt>(toFactor, threadMax - (threadMin + 1U), threadMin, fullMinBase, primeIndex, iterClock,
-            trialDivisionPrimes, isFinished);
+            trialDivisionPrimes, batchNumber, batchMutex);
     };
 
     const unsigned cpuCount = std::thread::hardware_concurrency();
