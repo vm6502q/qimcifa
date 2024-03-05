@@ -424,7 +424,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
         currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
+        fullRange = (fullRange * (currentPrime - 1U) + currentPrime - 1U) / currentPrime;
         --primeIndex;
     }
 
@@ -433,7 +433,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
 #else
     if (bi_compare_0(fullRange % threadCount) != 0) {
 #endif
-        fullRange = (fullRange / threadCount) * (threadCount + 1U);
+        fullRange = (fullRange + threadCount - 1U) / threadCount);
     }
     primeIndex = tdLevel;
 
