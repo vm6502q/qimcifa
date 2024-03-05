@@ -433,7 +433,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
 #else
     if (bi_compare_0(fullRange % threadCount) != 0) {
 #endif
-        fullRange = (fullRange + threadCount - 1U) / threadCount);
+        fullRange = (fullRange + threadCount - 1U) / threadCount;
     }
     primeIndex = tdLevel;
 
