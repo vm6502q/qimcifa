@@ -372,11 +372,11 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
     const bitCapInt fullMaxBase = sqrt(toFactor);
-#if IS_RSA_SEMIPRIME
-    bitCapInt fullMinBase = (1U << ((qubitCount >> 1U) - 2U)) | 1U;
-#else
     int primeIndex = 0;
     unsigned currentPrime = 2;
+#if IS_RSA_SEMIPRIME
+    bitCapInt fullMinBase = (1U << ((qubitCount >> 1U) - 1U)) | 1U;
+#else
     while (primeIndex <= tdLevel) {
         currentPrime = trialDivisionPrimes[primeIndex];
         ++primeIndex;

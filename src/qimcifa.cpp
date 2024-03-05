@@ -357,11 +357,11 @@ int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& 
         return 0;
     }
 
+    int primeIndex = 0;
+    unsigned currentPrime = 2;
 #if IS_RSA_SEMIPRIME
     bitCapInt fullMinBase = (1U << ((qubitCount >> 1U) - 2U)) | 1U;
 #else
-    int primeIndex = 0;
-    unsigned currentPrime = 2;
     while (primeIndex <= tdLevel) {
         currentPrime = trialDivisionPrimes[primeIndex];
         if ((toFactor % currentPrime) == 0) {
