@@ -435,7 +435,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
 #endif
         fullRange = (fullRange / threadCount) * (threadCount + 1U);
     }
-    primeIndex = tdLevel - 1;
+    primeIndex = tdLevel;
 
     const auto workerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, batch]
         (bitCapInt threadMin, bitCapInt threadMax) {
@@ -607,7 +607,7 @@ int main() {
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
-    for (size_t i = 0; i < 100U; ++i) {
+    for (size_t i = 3; i < 100U; ++i) {
         // Test
         CsvRow row = mainCase(toFactor, threadCount, i, 10U);
 #if USE_GMP || USE_BOOST
