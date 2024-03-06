@@ -425,9 +425,9 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
         --primeIndex;
     }
     fullRange /= threadCount;
-    if (!isPowerOfTwo(fullRange)) {
-        fullRange = 1U << (log2(fullRange) + 1U);
-    }
+    // if (!isPowerOfTwo(fullRange)) {
+    //     fullRange = 1U << (log2(fullRange) + 1U);
+    // }
     fullRange *= threadCount;
     primeIndex = tdLevel - 1;
 
