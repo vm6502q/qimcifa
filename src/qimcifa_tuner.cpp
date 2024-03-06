@@ -424,14 +424,9 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
         fullRange = ((fullRange + 1U) * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
+    fullRange /= threadCount;
+    fullRange *= threadCount;
     primeIndex = tdLevel - 1;
-#if USE_GMP || USE_BOOST
-    if (fullRange % threadCount) {
-#else
-    if (bi_compare_0(fullRange % threadCount) != 0) {
-#endif
-        fullRange = ((fullRange + threadCount - 1U) / threadCount) * threadCount;
-    }
 
     std::random_device seeder;
     boost::random::mt19937 rng(seeder());

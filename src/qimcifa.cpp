@@ -475,7 +475,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const unsigned cpuCount = std::thread::hardware_concurrency();
-    bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
+    const bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
     const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder]
         (bitCapInt threadMin, bitCapInt threadMax) {
         boost::random::mt19937 rng(seeder());
@@ -485,7 +485,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         const bitCapInt threadMin = nodeMin + threadRange * cpu;
-        const bitCapInt threadMax = threadMin + nodeRange;
+        const bitCapInt threadMax = nodeMin + threadRange * (cpu + 1U);
         futures[cpu] = std::async(std::launch::async, workerFn, threadMin, threadMax);
     }
 
@@ -493,7 +493,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         futures[cpu].get();
     }
 #elif IS_DISTRIBUTED
-    bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
+    const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     boost::random::mt19937 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
