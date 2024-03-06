@@ -638,7 +638,7 @@ int main() {
         iSettingsFile >> batchTime;
         iSettingsFile >> cost;
 
-        if ((level > 2U) && (cost < bestCost)) {
+        if ((level >= MIN_RTD_LEVEL) && (cost < bestCost)) {
             bestLevel = level;
             bestCost = cost;
         }
