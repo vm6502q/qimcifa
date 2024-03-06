@@ -292,7 +292,7 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 
 template <typename WORD, typename bitCapInt>
 CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
-    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937_64& rng)
+    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937& rng)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
@@ -431,7 +431,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     primeIndex = tdLevel - 1;
 
     std::random_device seeder;
-    boost::random::mt19937_64 rng(seeder());
+    boost::random::mt19937 rng(seeder());
 
     return singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, trialDivisionPrimes, rng);
 }
