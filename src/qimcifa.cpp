@@ -336,8 +336,8 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 {
     std::random_device seeder;
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
+    boost::random::mt19937 rng(seeder());
     for (;;) {
-        boost::random::mt19937 rng(seeder());
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = rngDist(rng);
@@ -387,8 +387,6 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
         if (isFinished) {
             return false;
         }
-
-        rngDist.reset();
     }
 
     return true;
