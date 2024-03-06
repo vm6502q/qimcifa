@@ -82,8 +82,9 @@
 
 namespace Qimcifa {
 
-const int MIN_RTD_LEVEL = 1;
-const int MIN_RTD_INDEX = 0;
+constexpr int BASE_TRIALS = 1U << 16U;
+constexpr int MIN_RTD_LEVEL = 1;
+constexpr int MIN_RTD_INDEX = 0;
 
 #if !(USE_GMP || USE_BOOST)
 typedef BigInteger bitCapIntInput;
@@ -195,7 +196,7 @@ template <typename bitCapInt> inline size_t pickTrialDivisionLevel(const int64_t
     std::ifstream settingsFile ("qimcifa_calibration.ssv");
     std::string header;
     std::getline(settingsFile, header);
-    size_t bestLevel = -1;
+    size_t bestLevel = MIN_RTD_LEVEL;
     double bestCost = DBL_MAX;
     while (settingsFile.peek() != EOF)
     {
@@ -207,7 +208,7 @@ template <typename bitCapInt> inline size_t pickTrialDivisionLevel(const int64_t
         settingsFile >> batchTime;
         settingsFile >> cost;
 
-        if ((level > 2U) && (cost < bestCost)) {
+        if ((level >= MIN_RTD_LEVEL) && (cost < bestCost)) {
             bestLevel = level;
             bestCost = cost;
         }
@@ -351,8 +352,6 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
     const std::vector<unsigned>& trialDivisionPrimes, bitCapInt& batchNumber, std::mutex& batchMutex)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    const int BASE_TRIALS = 1U << 16U;
-
     bitCapInt lcv = BASE_TRIALS * getNextBatch(batchNumber, batchMutex);
 
 #if USE_GMP || USE_BOOST

@@ -44,9 +44,9 @@
 
 namespace Qimcifa {
 
-const int BASE_TRIALS = 1U << 16U;
-const int MIN_RTD_LEVEL = 1;
-const int MIN_RTD_INDEX = 0;
+constexpr int BASE_TRIALS = 1U << 16U;
+constexpr int MIN_RTD_LEVEL = 1;
+constexpr int MIN_RTD_INDEX = 0;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
