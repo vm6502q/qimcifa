@@ -643,7 +643,7 @@ int main() {
     iSettingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    std::cout << "Average sample time, times worst-case guess count, divided by thread count: " << (bestCost / threadCount) << " seconds" << std::endl;
+    std::cout << "Estimated worst-case time to exit (time-per-guess * cardinality / nodes): " << (bestCost / threadCount) << " seconds" << std::endl;
 
     return 0;
 }
