@@ -140,14 +140,6 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
     return is;
 }
 
-inline bool isPowerOfTwo(const bitCapInt& x)
-{
-    bitCapInt y = x;
-    bi_decrement(&y, 1U);
-    bi_and_ip(&y, x);
-    return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
-}
-
 template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
 {
     // Otherwise, find b = sqrt(b^2).
@@ -175,6 +167,32 @@ template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
     return ans;
 }
 #endif
+
+template <typename bitCapInt> inline uint64_t log2(bitCapInt n) {
+#if USE_GMP || USE_BOOST
+    uint64_t pow = 0U;
+    bitCapInt p = n >> 1U;
+    while (p) {
+        p >>= 1U;
+        ++pow;
+    }
+    return pow;
+#else
+    return bi_log2(n);
+#endif
+}
+template <typename bitCapInt> inline bool isPowerOfTwo(const bitCapInt& x)
+{
+    // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
+#if USE_GMP || USE_BOOST
+    return (x && !(x & (x - 1ULL)));
+#else
+    bitCapInt y = x;
+    bi_decrement(&y, 1U);
+    bi_and_ip(&y, x);
+    return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
+#endif
+}
 
 template <typename bitCapInt> inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
@@ -457,7 +475,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const unsigned cpuCount = std::thread::hardware_concurrency();
-    const bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
+    bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
     const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder]
         (bitCapInt threadMin, bitCapInt threadMax) {
         boost::random::mt19937 rng(seeder());
@@ -475,7 +493,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         futures[cpu].get();
     }
 #elif IS_DISTRIBUTED
-    const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
+    bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     boost::random::mt19937 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
@@ -582,12 +600,7 @@ int main()
 #endif
         ++qubitCount;
     }
-    // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-#if USE_GMP || USE_BOOST
-    if (!(toFactor && !(toFactor & (toFactor - 1ULL)))) {
-#else
     if (!isPowerOfTwo(toFactor)) {
-#endif
         qubitCount++;
     }
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;

@@ -105,14 +105,6 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
     return is;
 }
 
-inline bool isPowerOfTwo(const bitCapInt& x)
-{
-    bitCapInt y = x;
-    bi_decrement(&y, 1U);
-    bi_and_ip(&y, x);
-    return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
-}
-
 template <typename bitCapInt> bitCapInt sqrt(const bitCapInt& toTest)
 {
     // Otherwise, find b = sqrt(b^2).
@@ -140,6 +132,32 @@ template <typename bitCapInt> bitCapInt sqrt(const bitCapInt& toTest)
     return ans;
 }
 #endif
+
+template <typename bitCapInt> inline uint64_t log2(bitCapInt n) {
+#if USE_GMP || USE_BOOST
+    uint64_t pow = 0U;
+    bitCapInt p = n >> 1U;
+    while (p) {
+        p >>= 1U;
+        ++pow;
+    }
+    return pow;
+#else
+    return bi_log2(n);
+#endif
+}
+template <typename bitCapInt> inline bool isPowerOfTwo(const bitCapInt& x)
+{
+    // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
+#if USE_GMP || USE_BOOST
+    return (x && !(x & (x - 1ULL)));
+#else
+    bitCapInt y = x;
+    bi_decrement(&y, 1U);
+    bi_and_ip(&y, x);
+    return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
+#endif
+}
 
 struct CsvRow {
     bitCapIntInput range;
@@ -380,8 +398,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 }
 
 template <typename bitCapInt>
-CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64_t& tdLevel, const size_t& threadCount,
-    const std::vector<unsigned>& trialDivisionPrimes)
+CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t& threadCount, const std::vector<unsigned>& trialDivisionPrimes)
 {
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
@@ -407,24 +424,19 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
         fullRange = ((fullRange + 1U) * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
-
+    primeIndex = tdLevel - 1;
 #if USE_GMP || USE_BOOST
     if (fullRange % threadCount) {
 #else
     if (bi_compare_0(fullRange % threadCount) != 0) {
 #endif
-        fullRange = (fullRange + threadCount - 1U) / threadCount;
+        fullRange = ((fullRange + threadCount - 1U) / threadCount) * threadCount;
     }
-    primeIndex = tdLevel;
 
     std::random_device seeder;
-    const auto workerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder]
-        (bitCapInt threadMin, bitCapInt threadMax) {
-        boost::random::mt19937 rng(seeder());
-        return singleWordLoop<bitCapInt>(toFactor, threadMax - (threadMin + 1U), threadMin, fullMinBase, primeIndex, trialDivisionPrimes, rng);
-    };
+    boost::random::mt19937 rng(seeder());
 
-    return workerFn(fullMinBase, fullMinBase + fullRange);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, trialDivisionPrimes, rng);
 }
 } // namespace Qimcifa
 
@@ -443,12 +455,7 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel)
 #endif
         ++qubitCount;
     }
-    // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-#if USE_GMP || USE_BOOST
-    if (!(toFactor && !(toFactor & (toFactor - 1ULL)))) {
-#else
     if (!isPowerOfTwo(toFactor)) {
-#endif
         qubitCount++;
     }
 
@@ -531,45 +538,45 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel)
     }
 #if !(USE_GMP || USE_BOOST)
     typedef BigInteger bitCapInt;
-    return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, tdLevel, threadCount, trialDivisionPrimes);
+    return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
 #else
     const size_t QBCAPBITS = primeFactorBits + (((qubitCount >> 5U) + 1U) << 5U);
     if (QBCAPBITS < 64) {
         typedef uint64_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
 #if USE_GMP
     } else {
-        return mainBody<bitCapIntInput>(toFactor, qubitCount, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapIntInput>(toFactor, tdLevel, threadCount, trialDivisionPrimes);
     }
 #elif USE_BOOST
     } else if (QBCAPBITS < 128) {
         typedef boost::multiprecision::uint128_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
     } else if (QBCAPBITS < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
     } else if (QBCAPBITS < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
     } else if (QBCAPBITS < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
     } else if (QBCAPBITS < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
     } else {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, qubitCount, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
     }
 #endif
 #endif
@@ -593,12 +600,7 @@ int main() {
 #endif
         ++qubitCount;
     }
-    // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-#if USE_GMP || USE_BOOST
-    if (!(toFactor && !(toFactor & (toFactor - 1ULL)))) {
-#else
     if (!isPowerOfTwo(toFactor)) {
-#endif
         qubitCount++;
     }
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
