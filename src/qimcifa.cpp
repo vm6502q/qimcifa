@@ -473,9 +473,13 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
 
 #if IS_PARALLEL
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
-    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const unsigned cpuCount = std::thread::hardware_concurrency();
     const bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
+    // if (!isPowerOfTwo(threadRange)) {
+    //     threadRange = 1U << (log2(threadRange) + 1U);
+    //     nodeRange = cpuCount * threadRange;
+    // }
+    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder]
         (bitCapInt threadMin, bitCapInt threadMax) {
         boost::random::mt19937 rng(seeder());
@@ -494,10 +498,16 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     }
 #elif IS_DISTRIBUTED
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
+    // if (!isPowerOfTwo(nodeRange)) {
+    //     nodeRange = 1U << (log2(nodeRange) + 1U);
+    // }
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     boost::random::mt19937 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
+    // if (!isPowerOfTwo(fullRange)) {
+    //     fullRange = 1U << (log2(fullRange) + 1U);
+    // }
     boost::random::mt19937 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #endif
