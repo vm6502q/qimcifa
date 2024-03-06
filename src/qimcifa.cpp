@@ -72,6 +72,9 @@
 #include <map>
 #include <mutex>
 
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
+
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
 #elif USE_BOOST
@@ -82,9 +85,13 @@
 
 namespace Qimcifa {
 
+boost::random::mt19937 rng;
+
 constexpr int BASE_TRIALS = 1U << 16U;
 constexpr int MIN_RTD_LEVEL = 1;
 constexpr int MIN_RTD_INDEX = 0;
+
+std::atomic<bool> isFinished;
 
 #if !(USE_GMP || USE_BOOST)
 typedef BigInteger bitCapIntInput;
@@ -233,27 +240,6 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
-template <typename bitCapInt> inline void finish(bitCapInt& batchNumber, std::mutex& batchMutex) {
-    std::lock_guard<std::mutex> lock(batchMutex);
-    batchNumber = (bitCapInt)-1;
-}
-
-template <typename bitCapInt> inline bitCapInt getNextBatch(bitCapInt& batchNumber, std::mutex& batchMutex) {
-    std::lock_guard<std::mutex> lock(batchMutex);
-    const bitCapInt result = batchNumber;
-#if USE_GMP || USE_BOOST
-    if (batchNumber != (bitCapInt)-1) {
-        ++batchNumber;
-    }
-#else
-    if (bi_compare(batchNumber, (bitCapInt)-1) != 0) {
-        bi_increment(&batchNumber, 1U);
-    }
-#endif
-
-    return result;
-}
-
 #if IS_SQUARES_CONGRUENCE_CHECK
 template <typename bitCapInt>
 inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest,
@@ -349,19 +335,13 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
     const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
-    const std::vector<unsigned>& trialDivisionPrimes, bitCapInt& batchNumber, std::mutex& batchMutex)
+    const std::vector<unsigned>& trialDivisionPrimes)
 {
-    // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    bitCapInt lcv = BASE_TRIALS * getNextBatch(batchNumber, batchMutex);
-
-#if USE_GMP || USE_BOOST
-    while ((lcv != (bitCapInt)-1) && (lcv < range)) {
-#else
-    while ((bi_compare(lcv, (bitCapInt)-1) != 0) && (bi_compare(lcv, range) < 0)) {
-#endif
+    boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
+    for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = threadMin + lcv + batchItem;
+            bitCapInt base = rngDist(rng);
 
             for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
@@ -383,14 +363,14 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 #else
             if (bi_compare_0(toFactor % base) == 0U) {
 #endif
-                finish(batchNumber, batchMutex);
+                isFinished = true;
                 printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
                 return true;
             }
 #else
             bitCapInt n = gcd(base, toFactor);
             if (n != 1U) {
-                finish(batchNumber, batchMutex);
+                isFinished = true;
                 printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
                 return true;
             }
@@ -398,14 +378,16 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 
 #if IS_SQUARES_CONGRUENCE_CHECK
             if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
-                finish(batchNumber, batchMutex);
+                isFinished = true;
                 return true;
             }
 #endif
         }
 
         // Check if finished, between batches.
-        lcv = getNextBatch(batchNumber, batchMutex);
+        if (isFinished) {
+            return false;
+        }
     }
 
     return true;
@@ -472,19 +454,16 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     }
     primeIndex = tdLevel - 1;
 
-    bitCapInt batchNumber = 0U;
-    std::mutex batchMutex;
-
 #if IS_PARALLEL
-    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &batchNumber, &batchMutex]
-        (bitCapInt threadMin, bitCapInt threadMax) {
-        singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
-            trialDivisionPrimes, batchNumber, batchMutex);
-    };
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const unsigned cpuCount = std::thread::hardware_concurrency();
     const bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes]
+        (bitCapInt threadMin, bitCapInt threadMax) {
+        singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
+            trialDivisionPrimes);
+    };
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         const bitCapInt threadMin = nodeMin + threadRange * cpu;
@@ -498,11 +477,9 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
 #elif IS_DISTRIBUTED
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
-    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes,
-        batchNumber, batchMutex);
+    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
 #else
-    singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes,
-        batchNumber, batchMutex);
+    singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 
     return 0;
@@ -513,6 +490,7 @@ using namespace Qimcifa;
 
 int main()
 {
+    isFinished = false;
 #if USE_GMP
     typedef boost::multiprecision::mpz_int bitCapIntInput;
 #elif USE_BOOST

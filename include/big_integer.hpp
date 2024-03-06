@@ -237,6 +237,18 @@ inline void bi_decrement(BigInteger* pBigInt, const BIG_INTEGER_WORD& value)
     }
 }
 
+inline BigInteger operator++(BigInteger& right)
+{
+    bi_increment(&right, 1U);
+    return right;
+}
+
+inline BigInteger operator+=(BigInteger& left, const BigInteger& right)
+{
+    bi_add_ip(&left, right);
+    return left;
+}
+
 inline BigInteger bi_load(BIG_INTEGER_WORD* a)
 {
     BigInteger result;
@@ -476,6 +488,9 @@ inline double bi_to_double(const BigInteger& in)
 }
 
 inline bool operator<(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) < 0; }
+inline bool operator>(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) > 0; }
+inline bool operator<=(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) <= 0; }
+inline bool operator==(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) == 0; }
 
 /**
  * "Schoolbook multiplication" (on half words)
@@ -496,6 +511,11 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right);
  */
 BigInteger operator*(const BigInteger& left, const BigInteger& right);
 #endif
+
+BigInteger operator*=(BigInteger left, const BigInteger& right) {
+    left = left * right;
+    return left;
+}
 
 /**
  * "Schoolbook division" (on half words)
