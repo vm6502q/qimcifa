@@ -13,6 +13,15 @@ option (USE_GMP "Use GMP library instead of Boost or pure language for arbitrary
 option (USE_BOOST "Use Boost library instead of pure language for arbitrary precision integers." ON)
 set(BIG_INT_BITS "128" CACHE STRING "Change the maximum bit width of arbitrary precision 'big integers.'")
 
+message ("Optimize for RSA semiprime numbers: ${IS_RSA_SEMIPRIME}")
+message ("Enable parallelism within nodes: ${IS_PARALLEL}")
+message ("Enable node distribution configuraiton dialog: ${IS_DISTRIBUTED}")
+message ("Enable RNG-based 'quantum-inspired' method: ${IS_RANDOM}")
+message ("Enable congruence of squares check: ${IS_SQUARES_CONGRUENCE_CHECK}")
+message ("Use GMP library instead of Boost or pure language for arbitrary precision integers: ${USE_GMP}")
+message ("Use Boost library instead of pure language for arbitrary precision integers: ${USE_BOOST}")
+message ("Maximum bit width of arbitrary precision 'big integers': ${BIG_INT_BITS}")
+
 configure_file(include/common/config.h.in include/common/config.h @ONLY)
 include_directories ("include" "include/common")
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
