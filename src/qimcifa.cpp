@@ -62,7 +62,6 @@
 #include <fstream>
 #include <iomanip> // For setw
 #include <iostream> // For cout
-#include <random>
 #include <stdlib.h>
 #include <string>
 #include <time.h>
@@ -84,8 +83,6 @@
 #endif
 
 namespace Qimcifa {
-
-boost::random::mt19937 rng;
 
 constexpr int BASE_TRIALS = 1U << 16U;
 constexpr int MIN_RTD_LEVEL = 1;
@@ -337,6 +334,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
     const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
+    boost::random::mt19937 rng;
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
     for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
