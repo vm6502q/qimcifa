@@ -48,7 +48,6 @@ namespace Qimcifa {
 constexpr int BASE_TRIALS = 1U << 16U;
 constexpr int MIN_RTD_LEVEL = 3;
 constexpr int MIN_RTD_INDEX = 2;
-constexpr int TIME_SCALE_FACTOR = 28;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -279,13 +278,11 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
     const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937& rng)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    const int mid = (BASE_TRIALS >> 1U);
-
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
 
     // for (bitCapInt lcv = 0; lcv < range; lcv += BASE_TRIALS) {
         auto iterClock = std::chrono::high_resolution_clock::now();
-        for (int batchItem = 0; batchItem < mid; ++batchItem) {
+        for (int batchItem = 0; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = rngDist(rng);
 
@@ -329,7 +326,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 #endif
         }
         iterClock = std::chrono::high_resolution_clock::now();
-        for (int batchItem = mid; batchItem < BASE_TRIALS; ++batchItem) {
+        for (int batchItem = 0; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = rngDist(rng);
 
@@ -613,13 +610,13 @@ int main() {
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
-    for (size_t i = MIN_RTD_INDEX; i <= 100U; ++i) {
+    for (size_t i = MIN_RTD_LEVEL; i <= 100U; ++i) {
         // Test
         CsvRow row = mainCase(toFactor, threadCount, i);
 #if USE_GMP || USE_BOOST
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s / (BASE_TRIALS >> 1U))) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s / BASE_TRIALS)) << std::endl;
 #else
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s / (BASE_TRIALS >> 1U))) << std::endl;
+        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s / BASE_TRIALS)) << std::endl;
 #endif
     }
     oSettingsFile.close();
@@ -647,7 +644,7 @@ int main() {
     iSettingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    std::cout << "Estimated average time to exit: " << (TIME_SCALE_FACTOR * bestCost / threadCount) << " seconds" << std::endl;
+    std::cout << "Estimated average time to exit: " << (bestCost / threadCount) << " seconds" << std::endl;
 
     return 0;
 }

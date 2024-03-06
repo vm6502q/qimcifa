@@ -84,10 +84,9 @@
 
 namespace Qimcifa {
 
-constexpr int BASE_TRIALS = 1U << 16U;
+constexpr int BASE_TRIALS = 1U << 20U;
 constexpr int MIN_RTD_LEVEL = 3;
 constexpr int MIN_RTD_INDEX = 2;
-constexpr int TIME_SCALE_FACTOR = 28;
 
 std::atomic<bool> isFinished;
 
@@ -222,7 +221,7 @@ template <typename bitCapInt> inline size_t pickTrialDivisionLevel(const int64_t
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
     const unsigned cpuCount = std::thread::hardware_concurrency();
-    std::cout << "Estimated average time to exit: " << (TIME_SCALE_FACTOR * bestCost / (cpuCount * nodeCount)) << " seconds" << std::endl;
+    std::cout << "Estimated average time to exit: " << (bestCost / (cpuCount * nodeCount)) << " seconds" << std::endl;
 
     return bestLevel;
 }
