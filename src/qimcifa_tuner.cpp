@@ -48,6 +48,7 @@ namespace Qimcifa {
 constexpr int BASE_TRIALS = 1U << 16U;
 constexpr int MIN_RTD_LEVEL = 3;
 constexpr int MIN_RTD_INDEX = 2;
+constexpr int TIME_SCALE_FACTOR = 28;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -646,7 +647,7 @@ int main() {
     iSettingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-    std::cout << "Average sample time, times worst-case guess count, divided by thread count: " << (bestCost / threadCount) << " seconds" << std::endl;
+    std::cout << "Estimated average time to exit: " << (TIME_SCALE_FACTOR * bestCost / threadCount) << " seconds" << std::endl;
 
     return 0;
 }
