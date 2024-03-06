@@ -480,9 +480,12 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     //     nodeRange = cpuCount * threadRange;
     // }
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
-    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder]
+    std::mutex rngMutex;
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder, &rngMutex]
         (bitCapInt threadMin, bitCapInt threadMax) {
+        rngMutex.lock();
         boost::random::mt19937 rng(seeder());
+        rngMutex.unlock();
         singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
             trialDivisionPrimes, rng);
     };
