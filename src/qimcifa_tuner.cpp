@@ -275,14 +275,12 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 
 template <typename WORD, typename bitCapInt>
 CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
-    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes)
+    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937& rng)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     const int mid = (BASE_TRIALS >> 1U);
 
-    std::random_device seeder;
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
-    boost::random::mt19937 rng(seeder());
 
     // for (bitCapInt lcv = 0; lcv < range; lcv += BASE_TRIALS) {
         auto iterClock = std::chrono::high_resolution_clock::now();
@@ -421,9 +419,11 @@ CsvRow mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const int64
     }
     primeIndex = tdLevel;
 
-    const auto workerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes]
+    std::random_device seeder;
+    const auto workerFn = [toFactor, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder]
         (bitCapInt threadMin, bitCapInt threadMax) {
-        return singleWordLoop<bitCapInt>(toFactor, threadMax - (threadMin + 1U), threadMin, fullMinBase, primeIndex, trialDivisionPrimes);
+        boost::random::mt19937 rng(seeder());
+        return singleWordLoop<bitCapInt>(toFactor, threadMax - (threadMin + 1U), threadMin, fullMinBase, primeIndex, trialDivisionPrimes, rng);
     };
 
     return workerFn(fullMinBase, fullMinBase + fullRange);

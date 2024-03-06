@@ -332,11 +332,9 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
     const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
-    const std::vector<unsigned>& trialDivisionPrimes)
+    const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937& rng)
 {
-    std::random_device seeder;
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
-    boost::random::mt19937 rng(seeder());
     for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
@@ -452,16 +450,18 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         --primeIndex;
     }
     primeIndex = tdLevel - 1;
+    std::random_device seeder;
 
 #if IS_PARALLEL
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
     const unsigned cpuCount = std::thread::hardware_concurrency();
     const bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
-    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes]
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder]
         (bitCapInt threadMin, bitCapInt threadMax) {
+        boost::random::mt19937 rng(seeder());
         singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
-            trialDivisionPrimes);
+            trialDivisionPrimes, rng);
     };
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
@@ -476,9 +476,11 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
 #elif IS_DISTRIBUTED
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
-    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
+    boost::random::mt19937 rng(seeder());
+    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
+    boost::random::mt19937 rng(seeder());
+    singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #endif
 
     return 0;
