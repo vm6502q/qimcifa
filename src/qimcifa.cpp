@@ -85,8 +85,8 @@
 namespace Qimcifa {
 
 constexpr int BASE_TRIALS = 1U << 16U;
-constexpr int MIN_RTD_LEVEL = 1;
-constexpr int MIN_RTD_INDEX = 0;
+constexpr int MIN_RTD_LEVEL = 3;
+constexpr int MIN_RTD_INDEX = 2;
 
 std::atomic<bool> isFinished;
 
@@ -348,10 +348,10 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
             }
 
             // Make this not a multiple of 5.
-            // base = base + (base >> 2U) + 1U;
+            base = base + (base >> 2U) + 1U;
 
             // Make this not a multiple of 3.
-            // base = base + (base >> 1U) + 1U;
+            base = base + (base >> 1U) + 1U;
 
             // Make this odd, then shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
