@@ -17,21 +17,20 @@
 
 #include "config.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <float.h>
 #include <fstream>
+#include <future>
 #include <iomanip> // For setw
 #include <iostream> // For cout
+#include <map>
+#include <mutex>
+#include <random>
 #include <stdlib.h>
 #include <string>
 #include <time.h>
-
-#include <algorithm>
-#include <atomic>
-#include <future>
-#include <map>
-#include <mutex>
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
@@ -45,8 +44,6 @@
 #endif
 
 namespace Qimcifa {
-
-boost::random::mt19937 rng;
 
 constexpr int BASE_TRIALS = 1U << 16U;
 constexpr int MIN_RTD_LEVEL = 1;
@@ -285,7 +282,9 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
     const int end = (batch + 1U) * BASE_TRIALS;
     const int mid = ((end - start) >> 1U) + start;
 
+    std::random_device seeder;
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
+    boost::random::mt19937 rng(seeder());
 
     // for (bitCapInt lcv = 0; lcv < range; lcv += BASE_TRIALS) {
         auto iterClock = std::chrono::high_resolution_clock::now();

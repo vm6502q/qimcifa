@@ -56,20 +56,20 @@
 
 #include "config.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <float.h>
 #include <fstream>
+#include <future>
 #include <iomanip> // For setw
 #include <iostream> // For cout
+#include <map>
+#include <mutex>
+#include <random>
 #include <stdlib.h>
 #include <string>
 #include <time.h>
-
-#include <algorithm>
-#include <future>
-#include <map>
-#include <mutex>
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
@@ -334,9 +334,10 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
     const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
-    boost::random::mt19937 rng;
+    std::random_device seeder;
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
     for (;;) {
+        boost::random::mt19937 rng(seeder());
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = rngDist(rng);
@@ -386,6 +387,8 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
         if (isFinished) {
             return false;
         }
+
+        rngDist.reset();
     }
 
     return true;
