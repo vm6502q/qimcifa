@@ -481,33 +481,28 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     const unsigned cpuCount = std::thread::hardware_concurrency();
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
-    // if (!isPowerOfTwo(threadRange)) {
-    //     threadRange = 1U << (log2(threadRange) + 1U);
-    //     nodeRange = cpuCount * threadRange;
-    // }
-    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
+    const bitCapInt nodeMin = nodeRange * nodeId;
 #if IS_RANDOM
     std::mutex rngMutex;
-    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder, &rngMutex]
-        (bitCapInt threadMin, bitCapInt threadMax) {
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, threadRange, fullMinBase, &trialDivisionPrimes, &seeder, &rngMutex]
+        (bitCapInt threadMin) {
         rngMutex.lock();
         boost::random::mt19937_64 rng(seeder());
         rngMutex.unlock();
-        singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
+        singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin, fullMinBase, primeIndex, iterClock,
             trialDivisionPrimes, rng);
     };
 #else
-    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes]
-        (bitCapInt threadMin, bitCapInt threadMax) {
-        singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, threadRange, fullMinBase, &trialDivisionPrimes]
+        (bitCapInt threadMin) {
+        singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin, fullMinBase, primeIndex, iterClock,
             trialDivisionPrimes);
     };
 #endif
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         const bitCapInt threadMin = nodeMin + threadRange * cpu;
-        const bitCapInt threadMax = nodeMin + threadRange * (cpu + 1U);
-        futures[cpu] = std::async(std::launch::async, workerFn, threadMin, threadMax);
+        futures[cpu] = std::async(std::launch::async, workerFn, threadMin);
     }
 
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
@@ -515,10 +510,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     }
 #elif IS_DISTRIBUTED
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
-    // if (!isPowerOfTwo(nodeRange)) {
-    //     nodeRange = 1U << (log2(nodeRange) + 1U);
-    // }
-    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
+    const bitCapInt nodeMin = nodeRange * nodeId;
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
@@ -526,9 +518,6 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 #else
-    // if (!isPowerOfTwo(fullRange)) {
-    //     fullRange = 1U << (log2(fullRange) + 1U);
-    // }
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
