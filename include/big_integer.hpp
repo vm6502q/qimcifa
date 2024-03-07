@@ -491,6 +491,7 @@ inline bool operator<(const BigInteger& left, const BigInteger& right) { return 
 inline bool operator>(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) > 0; }
 inline bool operator<=(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) <= 0; }
 inline bool operator==(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) == 0; }
+inline bool operator!=(const BigInteger& left, const BigInteger& right) { return bi_compare(left, right) != 0; }
 
 /**
  * "Schoolbook multiplication" (on half words)

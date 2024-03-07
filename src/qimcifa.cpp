@@ -150,11 +150,7 @@ template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
 
         // If toTest is a perfect square
         const bitCapInt sqr = mid * mid;
-#if USE_GMP || USE_BOOST
         if (sqr == toTest) {
-#else
-        if (bi_compare(sqr, toTest) == 0) {
-#endif
             ans = mid;
             break;
         }
@@ -167,11 +163,7 @@ template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
             // If mid*mid is greater than p
             end = mid - 1U;
         }
-#if USE_GMP || USE_BOOST
     } while (start <= end);
-#else
-    } while (bi_compare(start, end) <= 0);
-#endif
 
     return ans;
 }
@@ -208,7 +200,7 @@ template <typename bitCapInt> inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 #if USE_GMP || USE_BOOST
     while (n2) {
 #else
-    while (bi_compare_0(n2) != 0) {
+    if (bi_compare_0(n2) != 0) {
 #endif
         const bitCapInt t = n1;
         n1 = n2;
@@ -303,11 +295,7 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 
             // If toTest is a perfect square
             const bitCapInt sqr = mid * mid;
-#if USE_GMP || USE_BOOST
             if (sqr == toTest) {
-#else
-            if (bi_compare(sqr, toTest) == 0) {
-#endif
                 ans = mid;
                 break;
             }
@@ -320,13 +308,8 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
                 // If mid*mid is greater than p
                 remainder = mid - 1U;
             }
-#if USE_GMP || USE_BOOST
         } while (start <= remainder);
         if (start > remainder) {
-#else
-        } while (bi_compare(start, remainder) <= 0);
-        if (bi_compare(start, remainder) > 0) {
-#endif
             // Must be a perfect square.
             return false;
         }
@@ -448,11 +431,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
     const bitCapInt fullMaxBase = sqrt<bitCapInt>(toFactor);
-#if USE_GMP || USE_BOOST
     if (fullMaxBase * fullMaxBase == toFactor) {
-#else
-    if (bi_compare(fullMaxBase * fullMaxBase, toFactor) == 0) {
-#endif
         std::cout << "Number to factor is a perfect square: " << fullMaxBase << " * " << fullMaxBase << " = " << toFactor;
         return 0;
     }

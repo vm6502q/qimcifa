@@ -114,11 +114,7 @@ template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
 
         // If toTest is a perfect square
         const bitCapInt sqr = mid * mid;
-#if USE_GMP || USE_BOOST
         if (sqr == toTest) {
-#else
-        if (bi_compare(sqr, toTest) == 0) {
-#endif
             ans = mid;
             break;
         }
@@ -131,11 +127,7 @@ template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
             // If mid*mid is greater than p
             end = mid - 1U;
         }
-#if USE_GMP || USE_BOOST
     } while (start <= end);
-#else
-    } while (bi_compare(start, end) <= 0);
-#endif
 
     return ans;
 }
@@ -240,11 +232,7 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 
             // If toTest is a perfect square
             const bitCapInt sqr = mid * mid;
-#if USE_GMP || USE_BOOST
             if (sqr == toTest) {
-#else
-            if (bi_compare(sqr, toTest) == 0) {
-#endif
                 ans = mid;
                 break;
             }
@@ -257,13 +245,8 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
                 // If mid*mid is greater than p
                 remainder = mid - 1U;
             }
-#if USE_GMP || USE_BOOST
         } while (start <= remainder);
         if (start > remainder) {
-#else
-        } while (bi_compare(start, remainder) <= 0);
-        if (bi_compare(start, remainder) > 0) {
-#endif
             // Must be a perfect square.
             return false;
         }
