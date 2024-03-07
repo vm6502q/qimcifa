@@ -309,7 +309,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             // base += threadMin;
 
             // Make this odd, then shift the range.
-            base = ((base << 1U) | 1U);
+            base = ((base << 1U) | 1U) + fullMinBase;
 
             // Make this not a multiple of 3.
             base = base + (base >> 1U) + 1U;
@@ -321,8 +321,6 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
-
-            base += fullMinBase;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -359,7 +357,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             // base += threadMin;
 
             // Make this odd, then shift the range.
-            base = ((base << 1U) | 1U);
+            base = ((base << 1U) | 1U) + fullMinBase;
 
             // Make this not a multiple of 3.
             base = base + (base >> 1U) + 1U;
@@ -371,8 +369,6 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
                 base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
             }
-
-            base += fullMinBase;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
