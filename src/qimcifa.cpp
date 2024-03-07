@@ -403,19 +403,19 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
             // }
             // base += threadMin;
 
-            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
-                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
-            }
-
-            // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // Make this odd, then shift the range.
+            base = ((base << 1U) | 1U) + fullMinBase;
 
             // Make this not a multiple of 3.
             base = base + (base >> 1U) + 1U;
 
-            // Make this odd, then shift the range.
-            base = ((base << 1U) | 1U) + fullMinBase;
+            // Make this not a multiple of 5.
+            base = base + (base >> 2U) + 1U;
+
+            for (size_t i = MIN_RTD_INDEX; i < primeIndex; ++i) {
+                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+            }
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -470,19 +470,19 @@ bool multiWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitC
             }
             base += threadMin;
 
-            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
-                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
-            }
-
-            // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // Make this odd, then shift the range.
+            base = ((base << 1U) | 1U) + fullMinBase;
 
             // Make this not a multiple of 3.
             base = base + (base >> 1U) + 1U;
 
-            // Make this odd, then shift the range.
-            base = ((base << 1U) | 1U) + fullMinBase;
+            // Make this not a multiple of 5.
+            base = base + (base >> 2U) + 1U;
+
+            for (size_t i = MIN_RTD_INDEX; i < primeIndex; ++i) {
+                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+            }
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -605,7 +605,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         return 0;
     }
 
-    int primeIndex = 0;
+    int64_t primeIndex = 0;
     while (primeIndex <= tdLevel) {
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
 #if USE_GMP || USE_BOOST
@@ -629,13 +629,11 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
-    primeIndex = tdLevel - 1;
-    while (primeIndex >= 0) {
+    for (primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
         fullRange = ((fullRange + 1U) * (currentPrime - 1U)) / currentPrime;
-        --primeIndex;
     }
     primeIndex = tdLevel - 1;
 #if IS_RANDOM
