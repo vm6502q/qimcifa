@@ -380,10 +380,6 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
             // Make this odd, and shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
 
-            if (base == 1U) {
-                continue;
-            }
-
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
             if ((toFactor % base) == 0U) {
@@ -496,7 +492,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         const bitCapInt threadMin = nodeMin + threadRange * cpu;
-        futures[cpu] = std::async(std::launch::async, workerFn, threadMin);
+        futures[cpu] = std::async(std::launch::async, workerFn, threadMin ? threadMin : 1U);
     }
 
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
@@ -507,16 +503,16 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     const bitCapInt nodeMin = nodeRange * nodeId;
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
+    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin ? nodeMin : 1U, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
+    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin ? nodeMin : 1U, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 #else
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
+    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
+    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 #endif
 

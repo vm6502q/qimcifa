@@ -322,10 +322,6 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             // Make this odd, and shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
 
-            if (base == 1U) {
-                continue;
-            }
-
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
             if ((toFactor % base) == 0U) {
@@ -373,10 +369,6 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 
             // Make this odd, and shift the range.
             base = ((base << 1U) | 1U) + fullMinBase;
-
-            if (base == 1U) {
-                continue;
-            }
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -440,9 +432,9 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     std::random_device seeder;
     boost::random::mt19937_64 rng(seeder());
 
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, fullMinBase, primeIndex, trialDivisionPrimes, rng);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, fullMinBase, primeIndex, trialDivisionPrimes, rng);
 #else
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, fullMinBase, primeIndex, trialDivisionPrimes);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, fullMinBase, primeIndex, trialDivisionPrimes);
 #endif
 }
 } // namespace Qimcifa
