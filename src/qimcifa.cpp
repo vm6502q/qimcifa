@@ -240,9 +240,9 @@ template <typename bitCapInt> inline size_t pickTrialDivisionLevel(const int64_t
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
     const unsigned cpuCount = std::thread::hardware_concurrency();
 #if IS_RANDOM
-    std::cout << "Estimated average time to exit: " << bestCost / (cpuCount * nodeCount)) << " seconds" << std::endl;
+    std::cout << "Estimated average time to exit: " << (bestCost / (cpuCount * nodeCount)) << " seconds" << std::endl;
 #else
-    std::cout << "Estimated average time to exit: " << bestCost / (2 * cpuCount * nodeCount)) << " seconds" << std::endl;
+    std::cout << "Estimated average time to exit: " << (bestCost / (2 * cpuCount * nodeCount)) << " seconds" << std::endl;
 #endif
 
     return bestLevel;
