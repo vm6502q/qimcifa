@@ -412,12 +412,12 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
     const bitCapInt fullMaxBase = sqrt<bitCapInt>(toFactor);
 
-    // Make this an exact multiple of all reverse trial division levels.
+    // Align the 0th-index possibility.
     bitCapInt fullMinBase = 1U;
-    for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
-        fullMinBase *= trialDivisionPrimes[primeIndex];
+    for (int64_t primeIndex = tdLevel - 1; primeIndex >= 0; --primeIndex) {
+        fullMinBase += fullMinBase / (trialDivisionPrimes[primeIndex] - 1U) + 1U;
     }
-    fullMinBase += 2U;
+    ++fullMinBase;
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we

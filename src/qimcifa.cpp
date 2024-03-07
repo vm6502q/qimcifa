@@ -449,12 +449,11 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         ++primeIndex;
     }
 
-    // Make this an exact multiple of all reverse trial division levels.
     bitCapInt fullMinBase = 1U;
-    for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
-        fullMinBase *= trialDivisionPrimes[primeIndex];
+    for (int64_t primeIndex = tdLevel - 1; primeIndex >= 0; --primeIndex) {
+        fullMinBase += fullMinBase / (trialDivisionPrimes[primeIndex] - 1U) + 1U;
     }
-    fullMinBase += 2U;
+    ++fullMinBase;
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
