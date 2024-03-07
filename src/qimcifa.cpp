@@ -462,7 +462,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
+        fullRange = ((fullRange + 1U) * (currentPrime - 1U)) / currentPrime;
     }
     int64_t primeIndex = tdLevel - 1;
 #if IS_RANDOM
