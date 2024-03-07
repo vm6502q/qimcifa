@@ -453,7 +453,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     for (int64_t primeIndex = tdLevel - 1; primeIndex >= 0; --primeIndex) {
         fullMinBase += fullMinBase / (trialDivisionPrimes[primeIndex] - 1U) + 1U;
     }
-    --fullMinBase;
+    ++fullMinBase;
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
