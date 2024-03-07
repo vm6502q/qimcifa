@@ -351,7 +351,7 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
     const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
-    const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937& rng)
+    const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937_64& rng)
 {
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
     for (;;) {
@@ -484,7 +484,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder, &rngMutex]
         (bitCapInt threadMin, bitCapInt threadMax) {
         rngMutex.lock();
-        boost::random::mt19937 rng(seeder());
+        boost::random::mt19937_64 rng(seeder());
         rngMutex.unlock();
         singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
             trialDivisionPrimes, rng);
@@ -505,13 +505,13 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     //     nodeRange = 1U << (log2(nodeRange) + 1U);
     // }
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
-    boost::random::mt19937 rng(seeder());
+    boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
     // if (!isPowerOfTwo(fullRange)) {
     //     fullRange = 1U << (log2(fullRange) + 1U);
     // }
-    boost::random::mt19937 rng(seeder());
+    boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #endif
 
