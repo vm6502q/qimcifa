@@ -452,6 +452,73 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 
     return true;
 }
+template <typename bitCapInt>
+bool multiWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
+    const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
+    const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937_64& rng)
+{
+    // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
+    boost::random::uniform_int_distribution<uint64_t> rngDist64(0, ULONG_MAX);
+    boost::random::uniform_int_distribution<uint64_t> rngDistRm(0, (uint64_t)((range - 1U) & ULONG_MAX));
+    const uint64_t word64Count = ((range >> 32U) >> 32U);
+    for (;;) {
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+            // Choose a base at random, >1 and <toFactor.
+            bitCapInt base = rngDistRm(rng) + threadMin;
+            for (unsigned w = 0; w < word64Count; ++w) {
+                base = ((base << 32U) << 32U) | rngDist64(rng);
+            }
+            base += threadMin;
+
+            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
+                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+            }
+
+            // Make this not a multiple of 5.
+            base = base + (base >> 2U) + 1U;
+
+            // Make this not a multiple of 3.
+            base = base + (base >> 1U) + 1U;
+
+            // Make this odd, then shift the range.
+            base = ((base << 1U) | 1U) + fullMinBase;
+
+#if IS_RSA_SEMIPRIME
+#if USE_GMP || USE_BOOST
+            if ((toFactor % base) == 0U) {
+#else
+            if (bi_compare_0(toFactor % base) == 0U) {
+#endif
+                isFinished = true;
+                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
+                return true;
+            }
+#else
+            bitCapInt n = gcd(base, toFactor);
+            if (n != 1U) {
+                isFinished = true;
+                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
+                return true;
+            }
+#endif
+
+#if IS_SQUARES_CONGRUENCE_CHECK
+            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
+                isFinished = true;
+                return true;
+            }
+#endif
+        }
+
+        // Check if finished, between batches.
+        if (isFinished) {
+            return false;
+        }
+    }
+
+    return true;
+}
 #else
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
@@ -595,8 +662,13 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         rngMutex.lock();
         boost::random::mt19937_64 rng(seeder());
         rngMutex.unlock();
-        singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
-            trialDivisionPrimes, rng);
+        if (sizeof(bitCapInt) <= 8) {
+            singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
+                trialDivisionPrimes, rng);
+        } else {
+            multiWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
+                trialDivisionPrimes, rng);
+        }
     };
 #else
     std::mutex rngMutex;
@@ -624,7 +696,13 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
+    if (sizeof(bitCapInt) <= 8) {
+        singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes,
+            rng);
+    } else {
+        multiWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes,
+            rng);
+    }
 #else
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
 #endif
@@ -635,8 +713,15 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
+    if (sizeof(bitCapInt) <= 8) {
+        singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes,
+            rng);
+    } else {
+        multiWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes,
+            rng);
+    }
 #else
-    singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
+    singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #endif
 #endif
 
