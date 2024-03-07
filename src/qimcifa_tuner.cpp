@@ -308,19 +308,21 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             bitCapInt base = batchStart + batchItem + threadMin;
 #endif
 
-            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
-                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
-            }
-
-            // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // Make this odd.
+            base = ((base << 1U) | 1U);
 
             // Make this not a multiple of 3.
             base = base + (base >> 1U) + 1U;
 
-            // Make this odd, then shift the range.
-            base = ((base << 1U) | 1U) + fullMinBase;
+            // Make this not a multiple of 5.
+            base = base + (base >> 2U) + 1U;
+
+            for (size_t i = MIN_RTD_INDEX; i <= primeIndex; --i) {
+                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+            }
+            // Shift the range
+            base += fullMinBase;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -356,19 +358,21 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             bitCapInt base = batchStart + batchItem + threadMin;
 #endif
 
-            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
-                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
-            }
-
-            // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            // Make this odd.
+            base = ((base << 1U) | 1U);
 
             // Make this not a multiple of 3.
             base = base + (base >> 1U) + 1U;
 
-            // Make this odd, then shift the range.
-            base = ((base << 1U) | 1U) + fullMinBase;
+            // Make this not a multiple of 5.
+            base = base + (base >> 2U) + 1U;
+
+            for (size_t i = MIN_RTD_INDEX; i <= primeIndex; --i) {
+                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+            }
+            // Shift the range
+            base += fullMinBase;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
