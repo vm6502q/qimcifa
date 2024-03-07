@@ -418,26 +418,18 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
 
     // Make this an exact multiple of all reverse trial division levels.
     bitCapInt fullMinBase = 1;
-    int primeIndex = 0;
-    for (primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
+    for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         fullMinBase *= trialDivisionPrimes[primeIndex];
     }
-
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
-    primeIndex = tdLevel - 1;
-    while (primeIndex >= 0) {
+    for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
         fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
-        --primeIndex;
     }
-    fullRange /= threadCount;
-    // if (!isPowerOfTwo(fullRange)) {
-    //     fullRange = 1U << (log2(fullRange) + 1U);
-    // }
-    fullRange *= threadCount;
-    primeIndex = tdLevel - 1;
+    fullRange = (fullRange / threadCount) * threadCount;
+    int64_t primeIndex = tdLevel - 1;
 
 #if IS_RANDOM
     std::random_device seeder;
