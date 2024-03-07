@@ -412,7 +412,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
     const bitCapInt fullMaxBase = sqrt<bitCapInt>(toFactor);
 
-    bitCapInt fullMinBase = 0U;
+    bitCapInt fullMinBase = (bitCapInt)(-1U);
     for (int64_t primeIndex = tdLevel - 1; primeIndex >= 0; --primeIndex) {
         fullMinBase += fullMinBase / (trialDivisionPrimes[primeIndex] - 1U) + 1U;
     }
@@ -432,9 +432,9 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     std::random_device seeder;
     boost::random::mt19937_64 rng(seeder());
 
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, fullMinBase, primeIndex, trialDivisionPrimes, rng);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, fullMinBase, primeIndex, trialDivisionPrimes, rng);
 #else
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, fullMinBase, primeIndex, trialDivisionPrimes);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, fullMinBase, primeIndex, trialDivisionPrimes);
 #endif
 }
 } // namespace Qimcifa
