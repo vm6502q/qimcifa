@@ -487,17 +487,17 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     int64_t primeIndex;
     bitCapInt fullMinBase = 1;
     for (primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
-        // The truncation here is a conservative bound, but it's exact if we
-        // happen to be aligned to a perfect factor of all trial division.
+        // Make the lower bound the product of all reverse trial
+        // division primes.
         fullMinBase = fullMinBase * trialDivisionPrimes[primeIndex];
     }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     for (primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
-        // The truncation here is a conservative bound, but it's exact if we
-        // happen to be aligned to a perfect factor of all trial division.
+        // The truncation here is exact, since we happen to be
+        // aligned to a perfect factor of all trial division.
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange = ((fullRange + 1U) * (currentPrime - 1U)) / currentPrime;
+        fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
     }
     fullRange /= threadCount;
     // if (!isPowerOfTwo(fullRange)) {
