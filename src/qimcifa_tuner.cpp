@@ -420,7 +420,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange = ((fullRange + 1U) * (currentPrime - 1U)) / currentPrime;
+        fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
         --primeIndex;
     }
     fullRange /= threadCount;
