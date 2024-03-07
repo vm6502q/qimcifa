@@ -454,8 +454,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         fullMinBase *= trialDivisionPrimes[primeIndex];
     }
-    // The exact lower bound CANNOT be a multiple of any reverse trial division prime.
-    ++fullMinBase;
+    fullMinBase += 2U;
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
