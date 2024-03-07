@@ -415,15 +415,12 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
     const bitCapInt fullMaxBase = sqrt<bitCapInt>(toFactor);
-    // We include potential factors as low as the next odd number after the highest trial division prime.
-    bitCapInt fullMinBase = trialDivisionPrimes[tdLevel] + 2U;
 
-    int primeIndex = tdLevel - 1;
-    while (primeIndex >= 0) {
-        // The truncation here is a conservative bound, but it's exact if we
-        // happen to be aligned to a perfect factor of all trial division.
-        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        fullMinBase = (fullMinBase / currentPrime) * currentPrime;
+    // Make this an exact multiple of all reverse trial division levels.
+    bitCapInt fullMinBase = 1;
+    int primeIndex = 0;
+    for (primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
+        fullMinBase *= trialDivisionPrimes[primeIndex];
         --primeIndex;
     }
 
