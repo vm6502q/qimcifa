@@ -103,8 +103,9 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
 
     return is;
 }
+#endif
 
-template <typename bitCapInt> bitCapInt sqrt(const bitCapInt& toTest)
+template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
 {
     // Otherwise, find b = sqrt(b^2).
     bitCapInt start = 1U, end = toTest >> 1U, ans = 0U;
@@ -113,7 +114,11 @@ template <typename bitCapInt> bitCapInt sqrt(const bitCapInt& toTest)
 
         // If toTest is a perfect square
         const bitCapInt sqr = mid * mid;
+#if USE_GMP || USE_BOOST
+        if (sqr == toTest) {
+#else
         if (bi_compare(sqr, toTest) == 0) {
+#endif
             ans = mid;
             break;
         }
@@ -126,11 +131,14 @@ template <typename bitCapInt> bitCapInt sqrt(const bitCapInt& toTest)
             // If mid*mid is greater than p
             end = mid - 1U;
         }
+#if USE_GMP || USE_BOOST
+    } while (start <= end);
+#else
     } while (bi_compare(start, end) <= 0);
+#endif
 
     return ans;
 }
-#endif
 
 template <typename bitCapInt> inline uint64_t log2(bitCapInt n) {
 #if USE_GMP || USE_BOOST
@@ -145,6 +153,7 @@ template <typename bitCapInt> inline uint64_t log2(bitCapInt n) {
     return bi_log2(n);
 #endif
 }
+
 template <typename bitCapInt> inline bool isPowerOfTwo(const bitCapInt& x)
 {
     // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
@@ -418,7 +427,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
 {
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
-    const bitCapInt fullMaxBase = sqrt(toFactor);
+    const bitCapInt fullMaxBase = sqrt<bitCapInt>(toFactor);
     // We include potential factors as low as the next odd number after the highest trial division prime.
     bitCapInt fullMinBase = trialDivisionPrimes[tdLevel] + 2U;
 
