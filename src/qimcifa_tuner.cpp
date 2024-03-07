@@ -443,9 +443,9 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     std::random_device seeder;
     boost::random::mt19937_64 rng(seeder());
 
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, trialDivisionPrimes, rng);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, fullMinBase, primeIndex, trialDivisionPrimes, rng);
 #else
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, trialDivisionPrimes);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, fullMinBase, primeIndex, trialDivisionPrimes);
 #endif
 }
 } // namespace Qimcifa
