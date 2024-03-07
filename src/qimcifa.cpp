@@ -390,11 +390,18 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
     const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
     const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937_64& rng)
 {
-    boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
+    // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
+    // boost::random::uniform_int_distribution<uint64_t> rngDist64(0, ULONG_MAX);
+    boost::random::uniform_int_distribution<uint64_t> rngDistRm(0, (uint64_t)((range - 1U) & ULONG_MAX));
+    // const uint64_t word64Count = range >> 64U;
     for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = rngDist(rng);
+            bitCapInt base = rngDistRm(rng) + threadMin;
+            // for (unsigned w = 0; w < word64Count; ++w) {
+            //     base = (base << 64U) | rngDist64(rng);
+            // }
+            // base += threadMin;
 
             for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
