@@ -417,8 +417,8 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         fullMinBase *= trialDivisionPrimes[primeIndex];
     }
-    // This cannot be a factor, but the next odd number can be.
-    fullMinBase += 2U;
+    // The exact lower bound CANNOT be a multiple of any reverse trial division prime.
+    fullMinBase -= 2U;
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
