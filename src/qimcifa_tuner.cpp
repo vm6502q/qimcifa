@@ -412,12 +412,12 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
     const bitCapInt fullMaxBase = sqrt<bitCapInt>(toFactor);
 
-    bitCapInt fullMinBase = (bitCapInt)(-1U);
+    bitCapInt fullMinBase = 0U;
     for (int64_t primeIndex = tdLevel - 1; primeIndex >= 0; --primeIndex) {
         fullMinBase += fullMinBase / (trialDivisionPrimes[primeIndex] - 1U) + 1U;
     }
-    // 0th-index possibility should be 1 (as potential factor).
-    fullMinBase = 1U - fullMinBase;
+    // 0th-index possibility should be next prime (as potential factor).
+    fullMinBase = trialDivisionPrimes[tdLevel] - fullMinBase;
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
@@ -611,7 +611,7 @@ int main() {
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
-    for (size_t i = MIN_RTD_LEVEL; i <= 100U; ++i) {
+    for (size_t i = MIN_RTD_LEVEL; i <= 75U; ++i) {
         // Test
         CsvRow row = mainCase(toFactor, threadCount, i);
 #if USE_GMP || USE_BOOST
