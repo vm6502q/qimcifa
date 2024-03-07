@@ -513,10 +513,7 @@ BigInteger operator*(const BigInteger& left, const BigInteger& right);
 BigInteger operator*(const BigInteger& left, const BigInteger& right);
 #endif
 
-BigInteger operator*=(BigInteger left, const BigInteger& right) {
-    left = left * right;
-    return left;
-}
+BigInteger operator*=(BigInteger left, const BigInteger& right);
 
 /**
  * "Schoolbook division" (on half words)
@@ -533,3 +530,5 @@ void bi_div_mod(const BigInteger& left, const BigInteger& right, BigInteger* quo
 
 BigInteger operator/(const BigInteger& left, const BigInteger& right);
 BigInteger operator%(const BigInteger& left, const BigInteger& right);
+
+BigInteger operator/=(BigInteger left, const BigInteger& right);

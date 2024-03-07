@@ -236,3 +236,13 @@ BigInteger operator%(const BigInteger& left, const BigInteger& right) {
     bi_div_mod(left, right, NULL, &t);
     return t;
 }
+
+BigInteger operator*=(BigInteger left, const BigInteger& right) {
+    left = left * right;
+    return left;
+}
+
+BigInteger operator/=(BigInteger left, const BigInteger& right) {
+    left = left / right;
+    return left;
+}
