@@ -290,6 +290,7 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 }
 #endif
 
+#if IS_RANDOM
 template <typename WORD, typename bitCapInt>
 CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
     const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937_64& rng)
@@ -302,6 +303,18 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
         for (int batchItem = 0; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = rngDist(rng);
+#else
+template <typename WORD, typename bitCapInt>
+CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
+    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes)
+{
+    // for (bitCapInt batchStart = 0; batchStart < range; batchStart += BASE_TRIALS) {
+        bitCapInt batchStart = 0;
+        auto iterClock = std::chrono::high_resolution_clock::now();
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+            // Choose a base at random, >1 and <toFactor.
+            bitCapInt base = batchStart + batchItem + threadMin;
+#endif
 
             for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
@@ -345,7 +358,11 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
         iterClock = std::chrono::high_resolution_clock::now();
         for (int batchItem = 0; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
+#if IS_RANDOM
             bitCapInt base = rngDist(rng);
+#else
+            bitCapInt base = batchStart + batchItem + threadMin;
+#endif
 
             for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
@@ -430,10 +447,14 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     fullRange *= threadCount;
     primeIndex = tdLevel - 1;
 
+#if IS_RANDOM
     std::random_device seeder;
     boost::random::mt19937_64 rng(seeder());
 
     return singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, trialDivisionPrimes, rng);
+#else
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, trialDivisionPrimes);
+#endif
 }
 } // namespace Qimcifa
 
@@ -643,7 +664,11 @@ int main() {
     iSettingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
+#if IS_RANDOM
     std::cout << "Estimated average time to exit: " << (bestCost / threadCount) << " seconds" << std::endl;
+#else
+    std::cout << "Estimated average time to exit: " << (bestCost / (2 * threadCount)) << " seconds" << std::endl;
+#endif
 
     return 0;
 }

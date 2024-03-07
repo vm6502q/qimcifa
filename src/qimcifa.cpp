@@ -239,7 +239,11 @@ template <typename bitCapInt> inline size_t pickTrialDivisionLevel(const int64_t
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
     const unsigned cpuCount = std::thread::hardware_concurrency();
-    std::cout << "Estimated average time to exit: " << (bestCost / (cpuCount * nodeCount)) << " seconds" << std::endl;
+#if IS_RANDOM
+    std::cout << "Estimated average time to exit: " << bestCost / (cpuCount * nodeCount)) << " seconds" << std::endl;
+#else
+    std::cout << "Estimated average time to exit: " << bestCost / (2 * cpuCount * nodeCount)) << " seconds" << std::endl;
+#endif
 
     return bestLevel;
 }
@@ -348,6 +352,7 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 }
 #endif
 
+#if IS_RANDOM
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
     const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
@@ -358,6 +363,17 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = rngDist(rng);
+#else
+template <typename bitCapInt>
+bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
+    const size_t& primeIndex, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
+    const std::vector<unsigned>& trialDivisionPrimes)
+{
+    for (bitCapInt batchStart = 0; batchStart < range; batchStart += BASE_TRIALS) {
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+            // Choose a base at random, >1 and <toFactor.
+            bitCapInt base = batchStart + batchItem + threadMin;
+#endif
 
             for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
@@ -469,7 +485,9 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         --primeIndex;
     }
     primeIndex = tdLevel - 1;
+#if IS_RANDOM
     std::random_device seeder;
+#endif
 
 #if IS_PARALLEL
     const unsigned cpuCount = std::thread::hardware_concurrency();
@@ -480,6 +498,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     //     nodeRange = cpuCount * threadRange;
     // }
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
+#if IS_RANDOM
     std::mutex rngMutex;
     const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes, &seeder, &rngMutex]
         (bitCapInt threadMin, bitCapInt threadMax) {
@@ -489,6 +508,13 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
             trialDivisionPrimes, rng);
     };
+#else
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, fullMinBase, &trialDivisionPrimes]
+        (bitCapInt threadMin, bitCapInt threadMax) {
+        singleWordLoop<bitCapInt>(toFactor, threadMax - threadMin, threadMin, fullMinBase, primeIndex, iterClock,
+            trialDivisionPrimes);
+    };
+#endif
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         const bitCapInt threadMin = nodeMin + threadRange * cpu;
@@ -505,14 +531,22 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     //     nodeRange = 1U << (log2(nodeRange) + 1U);
     // }
     const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
+#if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
+#else
+    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
+#endif
 #else
     // if (!isPowerOfTwo(fullRange)) {
     //     fullRange = 1U << (log2(fullRange) + 1U);
     // }
+#if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
+#else
+    singleWordLoop<bitCapInt>(toFactor, fullRange, fullMinBase, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
+#endif
 #endif
 
     return 0;
