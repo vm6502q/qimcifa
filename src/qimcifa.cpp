@@ -457,7 +457,6 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     bitCapInt fullMinBase = 1;
     for (primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         fullMinBase *= trialDivisionPrimes[primeIndex];
-        --primeIndex;
     }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;

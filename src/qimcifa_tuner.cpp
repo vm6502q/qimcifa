@@ -421,7 +421,6 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     int primeIndex = 0;
     for (primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         fullMinBase *= trialDivisionPrimes[primeIndex];
-        --primeIndex;
     }
 
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
