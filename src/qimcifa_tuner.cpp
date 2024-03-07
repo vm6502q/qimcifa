@@ -611,7 +611,7 @@ int main() {
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
-    for (size_t i = MIN_RTD_LEVEL; i <= 75U; ++i) {
+    for (size_t i = MIN_RTD_LEVEL; i < 100U; ++i) {
         // Test
         CsvRow row = mainCase(toFactor, threadCount, i);
 #if USE_GMP || USE_BOOST
