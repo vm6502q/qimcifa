@@ -284,8 +284,8 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 
 #if IS_RANDOM
 template <typename WORD, typename bitCapInt>
-CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
-    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937_64& rng)
+CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const size_t primeIndex,
+   const std::vector<unsigned>& trialDivisionPrimes, boost::random::mt19937_64& rng)
 {
     // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
@@ -297,8 +297,8 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             bitCapInt base = rngDist(rng);
 #else
 template <typename WORD, typename bitCapInt>
-CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const bitCapInt& fullMinBase,
-    const size_t primeIndex, const std::vector<unsigned>& trialDivisionPrimes)
+CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, const size_t primeIndex,
+    const std::vector<unsigned>& trialDivisionPrimes)
 {
     // for (bitCapInt batchStart = 0; batchStart < range; batchStart += BASE_TRIALS) {
         bitCapInt batchStart = 0;
@@ -310,17 +310,18 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 
             for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+                const unsigned pm1 = (trialDivisionPrimes[i] - 1U);
+                base = base + base / pm1 + pm1;
             }
 
             // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            base = base + (base >> 2U) + 4U;
 
             // Make this not a multiple of 3.
-            base = base + (base >> 1U) + 1U;
+            base = base + (base >> 1U) + 2U;
 
             // Make this odd, and shift the range.
-            base = ((base << 1U) | 1U) + fullMinBase;
+            base = ((base << 1U) | 1U);
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -358,17 +359,18 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 
             for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+                const unsigned pm1 = (trialDivisionPrimes[i] - 1U);
+                base = base + base / pm1 + pm1;
             }
 
             // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 1U;
+            base = base + (base >> 2U) + 4U;
 
             // Make this not a multiple of 3.
-            base = base + (base >> 1U) + 1U;
+            base = base + (base >> 1U) + 2U;
 
             // Make this odd, and shift the range.
-            base = ((base << 1U) | 1U) + fullMinBase;
+            base = ((base << 1U) | 1U);
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -412,14 +414,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
     const bitCapInt fullMaxBase = sqrt<bitCapInt>(toFactor);
 
-    bitCapInt fullMinBase = 0U;
-    for (int64_t primeIndex = tdLevel - 1; primeIndex >= 0; --primeIndex) {
-        fullMinBase += fullMinBase / (trialDivisionPrimes[primeIndex] - 1U) + 1U;
-    }
-    // All possibilities in range should be numbers that are not multiples of the
-    // reverse trial division primes, starting with 1 at index 0.
-    fullMinBase = 1U - fullMinBase;
-    bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
+    bitCapInt fullRange = fullMaxBase;
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
@@ -433,9 +428,9 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     std::random_device seeder;
     boost::random::mt19937_64 rng(seeder());
 
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, fullMinBase, primeIndex, trialDivisionPrimes, rng);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, primeIndex, trialDivisionPrimes, rng);
 #else
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, fullMinBase, primeIndex, trialDivisionPrimes);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, primeIndex, trialDivisionPrimes);
 #endif
 }
 } // namespace Qimcifa
