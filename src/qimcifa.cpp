@@ -493,7 +493,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         const bitCapInt threadMin = nodeMin + threadRange * cpu;
-        futures[cpu] = std::async(std::launch::async, workerFn, threadMin ? threadMin : 1U);
+        futures[cpu] = std::async(std::launch::async, workerFn, threadMin);
     }
 
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
