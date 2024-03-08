@@ -314,7 +314,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
                 base = base + (base + p - 2U) / (p - 1U);
             }
 
-            // Make this odd, and shift the range.
+            // Make this odd.
             base = ((base << 1U) | 1U);
 
 #if IS_RSA_SEMIPRIME
