@@ -479,13 +479,13 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         rngMutex.lock();
         boost::random::mt19937_64 rng(seeder());
         rngMutex.unlock();
-        singleWordLoop<bitCapInt>(toFactor, threadMin ? threadRange : (threadRange + 1U), threadMin, fullMinBase, primeIndex, iterClock,
+        singleWordLoop<bitCapInt>(toFactor, threadMin ? threadRange : (threadRange + 1U), threadMin ? threadMin : (threadMin + 1U), fullMinBase, primeIndex, iterClock,
             trialDivisionPrimes, rng);
     };
 #else
     const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, threadRange, fullMinBase, &trialDivisionPrimes]
         (bitCapInt threadMin) {
-        singleWordLoop<bitCapInt>(toFactor, threadMin ? threadRange : (threadRange + 1U), threadMin, fullMinBase, primeIndex, iterClock,
+        singleWordLoop<bitCapInt>(toFactor, threadMin ? threadRange : (threadRange + 1U), threadMin ? threadMin : (threadMin + 1U), fullMinBase, primeIndex, iterClock,
             trialDivisionPrimes);
     };
 #endif
@@ -503,9 +503,9 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     const bitCapInt nodeMin = nodeRange * nodeId;
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, nodeMin ? nodeRange : (nodeRange + 1U), nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
+    singleWordLoop<bitCapInt>(toFactor, nodeMin ? nodeRange : (nodeRange + 1U), nodeMin ? nodeMin : (nodeMin + 1U), fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, nodeMin ? nodeRange : (nodeRange + 1U), nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
+    singleWordLoop<bitCapInt>(toFactor, nodeMin ? nodeRange : (nodeRange + 1U), nodeMin ? nodeMin : (nodeMin + 1U), fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 #else
 #if IS_RANDOM
