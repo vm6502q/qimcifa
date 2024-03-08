@@ -454,7 +454,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         fullMinBase += fullMinBase / (trialDivisionPrimes[primeIndex] - 1U) + 1U;
     }
     // 0th-index possibility should be next prime (as potential factor).
-    fullMinBase = trialDivisionPrimes[tdLevel - 1U] - fullMinBase;
+    fullMinBase = 1U - fullMinBase;
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
@@ -479,13 +479,13 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         rngMutex.lock();
         boost::random::mt19937_64 rng(seeder());
         rngMutex.unlock();
-        singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin, fullMinBase, primeIndex, iterClock,
+        singleWordLoop<bitCapInt>(toFactor, threadMin ? threadRange : (threadRange + 1U), threadMin, fullMinBase, primeIndex, iterClock,
             trialDivisionPrimes, rng);
     };
 #else
     const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, threadRange, fullMinBase, &trialDivisionPrimes]
         (bitCapInt threadMin) {
-        singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin, fullMinBase, primeIndex, iterClock,
+        singleWordLoop<bitCapInt>(toFactor, threadMin ? threadRange : (threadRange + 1U), threadMin, fullMinBase, primeIndex, iterClock,
             trialDivisionPrimes);
     };
 #endif
@@ -503,16 +503,16 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     const bitCapInt nodeMin = nodeRange * nodeId;
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
+    singleWordLoop<bitCapInt>(toFactor, nodeMin ? nodeRange : (nodeRange + 1U), nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
+    singleWordLoop<bitCapInt>(toFactor, nodeMin ? nodeRange : (nodeRange + 1U), nodeMin, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 #else
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
+    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, fullMinBase, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
+    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, fullMinBase, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 #endif
 
