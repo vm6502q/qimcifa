@@ -103,26 +103,25 @@ inline void finish() {
     isFinished = true;
 }
 #else
-bitCapIntInput batchNumber = 0U;
+bitCapIntInput batchNumber;
+bitCapIntInput batchBound;
 std::mutex batchMutex;
 
 inline void finish() {
     std::lock_guard<std::mutex> lock(batchMutex);
-    batchNumber = (bitCapIntInput)(-1);
+    batchNumber = batchBound;
 }
 
 inline bitCapIntInput getNextBatch() {
     std::lock_guard<std::mutex> lock(batchMutex);
     const bitCapIntInput result = batchNumber;
+    if (batchNumber < batchBound) {
 #if USE_GMP || USE_BOOST
-    if (batchNumber != (bitCapIntInput)-1) {
         ++batchNumber;
-    }
 #else
-    if (bi_compare(batchNumber, (bitCapIntInput)-1) != 0) {
         bi_increment(&batchNumber, 1U);
-    }
 #endif
+    }
 
     return result;
 }
@@ -395,15 +394,15 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
             bitCapInt base = rngDist(rng);
 #else
 template <typename bitCapInt>
-bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& threadMin, const size_t& primeIndex,
+bool singleWordLoop(const bitCapInt& toFactor, const size_t& primeIndex,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
-    for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum != (bitCapInt)(-1); batchNum = (bitCapInt)getNextBatch()) {
-        const bitCapInt batchStart = batchNum * BASE_TRIALS;
+    for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
+        const bitCapInt batchStart = batchNum * BASE_TRIALS + 1U;
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = batchStart + batchItem + threadMin;
+            bitCapInt base = batchStart + batchItem;
 #endif
             for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
@@ -500,9 +499,9 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
 #if IS_PARALLEL
     const unsigned cpuCount = std::thread::hardware_concurrency();
     const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
+#if IS_RANDOM
     const bitCapInt threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
     const bitCapInt nodeMin = nodeRange * nodeId;
-#if IS_RANDOM
     std::mutex rngMutex;
     const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, threadRange, &trialDivisionPrimes, &seeder, &rngMutex]
         (bitCapInt threadMin) {
@@ -512,36 +511,42 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin + 1U, primeIndex, iterClock,
             trialDivisionPrimes, rng);
     };
-#else
-    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, &trialDivisionPrimes]
-        (bitCapInt threadMin) {
-        singleWordLoop<bitCapInt>(toFactor, threadMin + 1U, primeIndex, iterClock, trialDivisionPrimes);
-    };
-#endif
+
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         const bitCapInt threadMin = nodeMin + threadRange * cpu;
         futures[cpu] = std::async(std::launch::async, workerFn, threadMin);
     }
+#else
+    batchNumber = (nodeId * nodeRange) / BASE_TRIALS;
+    batchBound = ((nodeId + 1) * nodeRange) / BASE_TRIALS;
+    const auto workerFn = [toFactor, iterClock, primeIndex, qubitCount, &trialDivisionPrimes]() {
+        singleWordLoop<bitCapInt>(toFactor, primeIndex, iterClock, trialDivisionPrimes);
+    };
+
+    std::vector<std::future<void>> futures(cpuCount);
+    for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
+        futures[cpu] = std::async(std::launch::async, workerFn);
+    }
+#endif
 
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         futures[cpu].get();
     }
 #elif IS_DISTRIBUTED
-    const bitCapInt nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     const bitCapInt nodeMin = nodeRange * nodeId;
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin + 1U, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, nodeMin + 1U, primeIndex, iterClock, trialDivisionPrimes);
+    singleWordLoop<bitCapInt>(toFactor, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 #else
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, (bitCapInt)1U, primeIndex, iterClock, trialDivisionPrimes);
+    singleWordLoop<bitCapInt>(toFactor, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 #endif
 
