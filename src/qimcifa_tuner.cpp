@@ -45,8 +45,8 @@
 namespace Qimcifa {
 
 constexpr int BASE_TRIALS = 1U << 16U;
-constexpr int MIN_RTD_LEVEL = 3;
-constexpr int MIN_RTD_INDEX = 2;
+constexpr int MIN_RTD_LEVEL = 1;
+constexpr int MIN_RTD_INDEX = 0;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -309,16 +309,10 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 #endif
 
             for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
-                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                const unsigned pm1 = (trialDivisionPrimes[i] - 1U);
-                base = base + base / pm1 + pm1;
+                // Make this NOT a multiple of prime "p" by "reverse trial division."
+                const unsigned p = trialDivisionPrimes[i];
+                base = base + (base + p - 2U) / (p - 1U);
             }
-
-            // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 4U;
-
-            // Make this not a multiple of 3.
-            base = base + (base >> 1U) + 2U;
 
             // Make this odd, and shift the range.
             base = ((base << 1U) | 1U);
@@ -358,16 +352,10 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 #endif
 
             for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
-                // Make this NOT a multiple of prime "p", by adding it to itself divided by (p - 1), + 1.
-                const unsigned pm1 = (trialDivisionPrimes[i] - 1U);
-                base = base + base / pm1 + pm1;
+                // Make this NOT a multiple of prime "p" by "reverse trial division."
+                const unsigned p = trialDivisionPrimes[i];
+                base = base + (base + p - 2U) / (p - 1U);
             }
-
-            // Make this not a multiple of 5.
-            base = base + (base >> 2U) + 4U;
-
-            // Make this not a multiple of 3.
-            base = base + (base >> 1U) + 2U;
 
             // Make this odd, and shift the range.
             base = ((base << 1U) | 1U);
