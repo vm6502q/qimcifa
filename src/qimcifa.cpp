@@ -449,12 +449,12 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         ++primeIndex;
     }
 
-    bitCapInt fullMinBase = 0U;
+    bitCapInt fullMinBase = (bitCapInt)(-1U);
     for (int64_t primeIndex = tdLevel - 1; primeIndex >= 0; --primeIndex) {
         fullMinBase += fullMinBase / (trialDivisionPrimes[primeIndex] - 1U) + 1U;
     }
     // 0th-index possibility should be next prime (as potential factor).
-    fullMinBase = trialDivisionPrimes[tdLevel] - fullMinBase;
+    fullMinBase = 1U - fullMinBase;
     bitCapInt fullRange = fullMaxBase + 1U - fullMinBase;
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
