@@ -403,14 +403,14 @@ bool singleWordLoop(const bitCapInt& toFactor, const size_t& primeIndex,
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = batchStart + batchItem;
 #endif
+            bitCapInt offset = 1U;
             for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
-                const unsigned p = trialDivisionPrimes[i];
-                base = base + base / (p - 1U) + p;
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+                offset += 2U;
             }
-            
             // Make this odd.
-            base = (base << 1U) + 1U;
+            base = (base << 1U) + offset;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
