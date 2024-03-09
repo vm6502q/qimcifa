@@ -86,7 +86,6 @@ namespace Qimcifa {
 
 constexpr int BASE_TRIALS = 1U << 20U;
 constexpr int MIN_RTD_LEVEL = 1;
-constexpr int MIN_RTD_INDEX = 0;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -399,19 +398,23 @@ bool singleWordLoop(const bitCapInt& toFactor, const size_t& primeIndex,
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
-        const bitCapInt batchStart = batchNum * BASE_TRIALS + 1U;
+        const bitCapInt batchStart = batchNum * BASE_TRIALS + 2U + primeIndex;
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = batchStart + batchItem;
 #endif
-            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
+            // Make this odd.
+            base = ((base << 1U) | 1U) - 2U;
+
+            for (size_t i = MIN_RTD_LEVEL; i <= primeIndex; ++i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
                 const unsigned p = trialDivisionPrimes[i];
-                base = base + (base + p - 2U) / (p - 1U);
+                base = base + base / (p - 1U) + 1U - p;
             }
 
-            // Make this odd.
-            base = ((base << 1U) | 1U);
+            if (base < 2U) {
+                continue;
+            }
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST

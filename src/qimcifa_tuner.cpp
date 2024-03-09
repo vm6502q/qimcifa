@@ -46,7 +46,6 @@ namespace Qimcifa {
 
 constexpr int BASE_TRIALS = 1U << 16U;
 constexpr int MIN_RTD_LEVEL = 1;
-constexpr int MIN_RTD_INDEX = 0;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -301,21 +300,25 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
     const std::vector<unsigned>& trialDivisionPrimes)
 {
     // for (bitCapInt batchStart = 0; batchStart < range; batchStart += BASE_TRIALS) {
-        bitCapInt batchStart = 0;
+        bitCapInt batchStart = 1U;
         auto iterClock = std::chrono::high_resolution_clock::now();
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = batchStart + batchItem + threadMin;
 #endif
 
-            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
+            // Make this odd.
+            base = ((base << 1U) | 1U) - 2U;
+
+            for (size_t i = MIN_RTD_LEVEL; i < primeIndex; ++i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
                 const unsigned p = trialDivisionPrimes[i];
-                base = base + (base + p - 2U) / (p - 1U);
+                base = base + base / (p - 1U) + 1U - p;
             }
 
-            // Make this odd.
-            base = ((base << 1U) | 1U);
+            if (base < 2U) {
+                continue;
+            }
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -351,14 +354,18 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             bitCapInt base = batchStart + batchItem + threadMin;
 #endif
 
-            for (size_t i = primeIndex; i > MIN_RTD_INDEX; --i) {
+            // Make this odd.
+            base = ((base << 1U) | 1U) - 2U;
+
+            for (size_t i = MIN_RTD_LEVEL; i < primeIndex; ++i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
                 const unsigned p = trialDivisionPrimes[i];
-                base = base + (base + p - 2U) / (p - 1U);
+                base = base + base / (p - 1U) + 1U - p;
             }
 
-            // Make this odd, and shift the range.
-            base = ((base << 1U) | 1U);
+            if (base < 2U) {
+                continue;
+            }
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -399,10 +406,10 @@ template <typename bitCapInt>
 CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t& threadCount, const std::vector<unsigned>& trialDivisionPrimes)
 {
     // When we factor this number, we split it into two factors (which themselves may be composite).
-    // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
+    // Those two numbers are either equal to the squatdLevel + 1Ure root, or in a pair where one is higher and one lower than the square root.
     const bitCapInt fullMaxBase = sqrt<bitCapInt>(toFactor);
 
-    bitCapInt fullRange = fullMaxBase;
+    bitCapInt fullRange = fullMaxBase - (tdLevel + 1U);
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
