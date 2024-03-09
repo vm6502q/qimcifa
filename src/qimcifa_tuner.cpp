@@ -309,7 +309,8 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 
             for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U + i * 2;
+                const unsigned p = trialDivisionPrimes[i];
+                base = base + base / (p - 1U) + p;
             }
             
             // Make this odd.
@@ -351,7 +352,8 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 
             for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U + i * 2;
+                const unsigned p = trialDivisionPrimes[i];
+                base = base + base / (p - 1U) + p;
             }
             
             // Make this odd.
@@ -592,7 +594,7 @@ int main() {
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
-    for (size_t i = MIN_RTD_LEVEL; i < 100U; ++i) {
+    for (size_t i = MIN_RTD_LEVEL; i < 3U; ++i) {
         // Test
         CsvRow row = mainCase(toFactor, threadCount, i);
 #if USE_GMP || USE_BOOST

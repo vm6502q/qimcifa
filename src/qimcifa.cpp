@@ -405,7 +405,8 @@ bool singleWordLoop(const bitCapInt& toFactor, const size_t& primeIndex,
 #endif
             for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U + i * 2;
+                const unsigned p = trialDivisionPrimes[i];
+                base = base + base / (p - 1U) + p;
             }
             
             // Make this odd.
