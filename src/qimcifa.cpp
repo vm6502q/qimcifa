@@ -403,13 +403,13 @@ bool singleWordLoop(const bitCapInt& toFactor, const size_t& primeIndex,
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = batchStart + batchItem;
 #endif
-            // Make this odd.
-            base = ((base << 1U) | 1U) - 2U;
-
-            for (size_t i = MIN_RTD_LEVEL; i <= primeIndex; ++i) {
+            for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U + i * 2;
             }
+            
+            // Make this odd.
+            base = (base << 1U) + 1U;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -506,7 +506,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         rngMutex.lock();
         boost::random::mt19937_64 rng(seeder());
         rngMutex.unlock();
-        singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin + 1U, primeIndex, iterClock,
+        singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin, primeIndex, iterClock,
             trialDivisionPrimes, rng);
     };
 
@@ -535,14 +535,14 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     const bitCapInt nodeMin = nodeRange * nodeId;
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin + 1U, primeIndex, iterClock, trialDivisionPrimes, rng);
+    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
     singleWordLoop<bitCapInt>(toFactor, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 #else
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, primeIndex, iterClock, trialDivisionPrimes, rng);
+    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
     singleWordLoop<bitCapInt>(toFactor, primeIndex, iterClock, trialDivisionPrimes);
 #endif

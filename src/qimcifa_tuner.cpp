@@ -307,13 +307,13 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             bitCapInt base = batchStart + batchItem + threadMin;
 #endif
 
-            // Make this odd.
-            base = ((base << 1U) | 1U) - 2U;
-
-            for (size_t i = MIN_RTD_LEVEL; i < primeIndex; ++i) {
+            for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U + i * 2;
             }
+            
+            // Make this odd.
+            base = (base << 1U) + 1U;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -349,13 +349,13 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             bitCapInt base = batchStart + batchItem + threadMin;
 #endif
 
-            // Make this odd.
-            base = ((base << 1U) | 1U) - 2U;
-
-            for (size_t i = MIN_RTD_LEVEL; i < primeIndex; ++i) {
+            for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
+                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U + i * 2;
             }
+            
+            // Make this odd.
+            base = (base << 1U) + 1U;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -413,9 +413,9 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     std::random_device seeder;
     boost::random::mt19937_64 rng(seeder());
 
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, primeIndex, trialDivisionPrimes, rng);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, primeIndex, trialDivisionPrimes, rng);
 #else
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)1U, primeIndex, trialDivisionPrimes);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, primeIndex, trialDivisionPrimes);
 #endif
 }
 } // namespace Qimcifa
