@@ -122,7 +122,7 @@ inline bitCapIntInput getNextBatch() {
 #endif
     }
 
-    return result;
+    return batchBound - (result + 1);
 }
 #endif
 
