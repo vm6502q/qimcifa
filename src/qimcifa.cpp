@@ -113,8 +113,9 @@ inline void finish() {
 
 inline bitCapIntInput getNextBatch() {
     std::lock_guard<std::mutex> lock(batchMutex);
-    const bitCapIntInput result = batchNumber;
+    bitCapIntInput result = batchNumber;
     if (batchNumber < batchBound) {
+        result = batchBound - (result + 1);
 #if USE_GMP || USE_BOOST
         ++batchNumber;
 #else
@@ -122,7 +123,7 @@ inline bitCapIntInput getNextBatch() {
 #endif
     }
 
-    return batchBound - (result + 1);
+    return result;
 }
 #endif
 
@@ -625,7 +626,7 @@ int main()
     std::cin >> toFactor;
 
     uint32_t qubitCount = 0;
-    bitCapIntInput p = toFactor;
+    bitCapIntInput p = toFactor >> 1U;
 #if USE_GMP || USE_BOOST
     while (p) {
         p >>= 1U;
