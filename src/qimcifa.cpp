@@ -403,14 +403,12 @@ bool singleWordLoop(const bitCapInt& toFactor, const size_t& primeIndex,
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = batchStart + batchItem;
 #endif
-            bitCapInt offset = 1U;
             for (size_t i = primeIndex; i > 0U; --i) {
                 // Make this NOT a multiple of prime "p" by "reverse trial division."
-                base = base + base / (trialDivisionPrimes[i] - 1U) + 1U;
-                offset += 2U;
+                const int p = trialDivisionPrimes[i];
+                base = (p * base) / (p - 1);
             }
-            // Make this odd.
-            base = (base << 1U) + offset;
+            base = (base << 1U) - 1U;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -487,8 +485,8 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.
-        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
+        const unsigned p = trialDivisionPrimes[primeIndex];
+        fullRange = (fullRange * (p - 1U)) / p;
     }
     int64_t primeIndex = tdLevel - 1;
 #if IS_RANDOM
@@ -507,7 +505,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         rngMutex.lock();
         boost::random::mt19937_64 rng(seeder());
         rngMutex.unlock();
-        singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin, primeIndex, iterClock,
+        singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin + 2, primeIndex, iterClock,
             trialDivisionPrimes, rng);
     };
 
@@ -536,14 +534,14 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     const bitCapInt nodeMin = nodeRange * nodeId;
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, primeIndex, iterClock, trialDivisionPrimes, rng);
+    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin + 2, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
     singleWordLoop<bitCapInt>(toFactor, primeIndex, iterClock, trialDivisionPrimes);
 #endif
 #else
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)0U, primeIndex, iterClock, trialDivisionPrimes, rng);
+    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, primeIndex, iterClock, trialDivisionPrimes, rng);
 #else
     singleWordLoop<bitCapInt>(toFactor, primeIndex, iterClock, trialDivisionPrimes);
 #endif
