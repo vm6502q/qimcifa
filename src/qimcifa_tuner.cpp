@@ -306,7 +306,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 #endif
 
             // Make this NOT a multiple of 2 or 3.
-            base = (((base + (base << 1)) & ~1U) << 1U) - 1U;
+            base = (base + (base << 1U)) - 1U;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
@@ -343,7 +343,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 #endif
 
             // Make this NOT a multiple of 2 or 3.
-            base = (((base + (base << 1)) & ~1U) << 1U) - 1U;
+            base = (base + (base << 1U)) - 1U;
 
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST

@@ -84,7 +84,12 @@
 
 namespace Qimcifa {
 
+// Make this a power of 10, to help skip multiples of 5.
+#if IS_RANDOM
 constexpr int BASE_TRIALS = 1U << 20U;
+#else
+constexpr int BASE_TRIALS = 1000000;
+#endif
 constexpr int MIN_RTD_LEVEL = 1;
 
 #if USE_GMP
@@ -381,6 +386,38 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 }
 #endif
 
+template <typename bitCapInt>
+inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
+#if IS_RSA_SEMIPRIME
+#if USE_GMP || USE_BOOST
+    if ((toFactor % base) == 0U) {
+#else
+    if (bi_compare_0(toFactor % base) == 0U) {
+#endif
+        finish();
+        printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
+        return true;
+    }
+#else
+    bitCapInt n = gcd(base, toFactor);
+    if (n != 1U) {
+        finish();
+        printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
+        return true;
+    }
+#endif
+
+#if IS_SQUARES_CONGRUENCE_CHECK
+    if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
+        finish();
+        return true;
+    }
+#endif
+
+    return false;
+}
+
 #if IS_RANDOM
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin,
@@ -392,57 +429,53 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
             bitCapInt base = rngDist(rng);
+
+            // Make this NOT a multiple of 2 or 3.
+            base = (base + (base << 1U)) - 1U;
+
+            if (singleWordLoopBody(toFactor, base, iterClock)) {
+                return true;
+            }
+        }
+        // Check if finished, between batches.
+        if (isFinished) {
+            return false;
+        }
+    }
 #else
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = batchNum * BASE_TRIALS + 2U;
-        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-            // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = batchStart + batchItem;
-#endif
+        for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup+=10) {
+            for (int batchItem = 1; batchItem < 8; ++batchItem) {
+                bitCapInt base = batchStart + batchGroup + batchItem;
 
-            // Make this NOT a multiple of 2 or 3.
-            base = ((base + (base << 1)) & ~1U) - 1U;
+                // Make this NOT a multiple of 2 or 3.
+                base = (base + (base << 1U)) - 1U;
 
-#if IS_RSA_SEMIPRIME
-#if USE_GMP || USE_BOOST
-            if ((toFactor % base) == 0U) {
-#else
-            if (bi_compare_0(toFactor % base) == 0U) {
-#endif
-                finish();
-                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
-                return true;
+                if (singleWordLoopBody(toFactor, base, iterClock)) {
+                    return true;
+                }
             }
-#else
-            bitCapInt n = gcd(base, toFactor);
-            if (n != 1U) {
-                finish();
-                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
-                return true;
-            }
-#endif
 
-#if IS_SQUARES_CONGRUENCE_CHECK
-            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
-                finish();
-                return true;
+            for (int batchItem = 9; batchItem < 10; ++batchItem) {
+                bitCapInt base = batchStart + batchGroup + batchItem;
+
+                // Make this NOT a multiple of 2 or 3.
+                base = (base + (base << 1U)) - 1U;
+
+                if (singleWordLoopBody(toFactor, base, iterClock)) {
+                    return true;
+                }
             }
-#endif
         }
-
-#if IS_RANDOM
-        // Check if finished, between batches.
-        if (isFinished) {
-            return false;
-        }
-#endif
     }
 
     return true;
 }
+#endif
 
 #if IS_PARALLEL
 template <typename bitCapInt>
@@ -557,7 +590,7 @@ int main()
     // First 1000 primes
     // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
-    const std::vector<unsigned> trialDivisionPrimes = { 2, 3 }; //, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5 }; //, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
 #if 0
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
