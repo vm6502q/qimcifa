@@ -281,105 +281,89 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 }
 #endif
 
-#if IS_RANDOM
-template <typename WORD, typename bitCapInt>
-CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, boost::random::mt19937_64& rng)
-{
-    // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
-    boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
-
-    // for (bitCapInt lcv = 0; lcv < range; lcv += BASE_TRIALS) {
-        auto iterClock = std::chrono::high_resolution_clock::now();
-        for (int batchItem = 0; batchItem < BASE_TRIALS; ++batchItem) {
-            // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = rngDist(rng);
-#else
-template <typename WORD, typename bitCapInt>
-CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin)
-{
-    // for (bitCapInt batchStart = 0; batchStart < range; batchStart += BASE_TRIALS) {
-        bitCapInt batchStart = 1U;
-        auto iterClock = std::chrono::high_resolution_clock::now();
-        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-            // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = batchStart + batchItem + threadMin;
-#endif
-
-            // Make this NOT a multiple of 2 or 3.
-            base = ((base & ~1U) + (base << 1U)) - 1U;
-
+template <typename bitCapInt>
+inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base) {
 #if IS_RSA_SEMIPRIME
 #if USE_GMP || USE_BOOST
-            if ((toFactor % base) == 0U) {
+    if ((toFactor % base) == 0U) {
 #else
-            if (bi_compare_0(toFactor % base) == 0U) {
+    if (bi_compare_0(toFactor % base) == 0U) {
 #endif
-                // isFinished = true;
-                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
-                // return true;
-            }
+        // finish();
+        // printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
+        // return true;
+    }
 #else
-            bitCapInt n = gcd(base, toFactor);
-            if (n != 1U) {
-                // isFinished = true;
-                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
-                // return true;
-            }
+    bitCapInt n = gcd(base, toFactor);
+    if (n != 1U) {
+        // finish();
+        // printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
+        // return true;
+    }
 #endif
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
-                // return true;
-            }
+    if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
+        // finish();
+        // return true;
+    }
 #endif
-        }
-        iterClock = std::chrono::high_resolution_clock::now();
-        for (int batchItem = 0; batchItem < BASE_TRIALS; ++batchItem) {
-            // Choose a base at random, >1 and <toFactor.
+
+    return false;
+}
+
 #if IS_RANDOM
+template <typename bitCapInt>
+CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, boost::random::mt19937_64& rng)
+{
+    boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
+    auto iterClock = std::chrono::high_resolution_clock::now();
+
+    // for (;;) {
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+            // Choose a base at random, >1 and <toFactor.
             bitCapInt base = rngDist(rng);
-#else
-            bitCapInt base = batchStart + batchItem + threadMin;
-#endif
 
             // Make this NOT a multiple of 2 or 3.
             base += (base >> 1U);
             base = (base << 1U) - 1U;
 
-#if IS_RSA_SEMIPRIME
-#if USE_GMP || USE_BOOST
-            if ((toFactor % base) == 0U) {
-#else
-            if (bi_compare_0(toFactor % base) == 0U) {
-#endif
-                // isFinished = true;
-                printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
+            if (singleWordLoopBody(toFactor, base)) {
                 // return true;
             }
-#else
-            bitCapInt n = gcd(base, toFactor);
-            if (n != 1U) {
-                // isFinished = true;
-                printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
-                // return true;
-            }
-#endif
-
-#if IS_SQUARES_CONGRUENCE_CHECK
-            if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
-                // return true;
-            }
-#endif
         }
-
         // Check if finished, between batches.
         // if (isFinished) {
-        //     return true;
+        //    return false;
         // }
     // }
 
     return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9);
 }
+#else
+template <typename bitCapInt>
+CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range)
+{
+    auto iterClock = std::chrono::high_resolution_clock::now();
+
+    // for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
+        const bitCapInt batchStart = 2U;
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+            bitCapInt base = batchStart + batchItem;
+
+            // Make this NOT a multiple of 2 or 3.
+            base += (base >> 1U);
+            base = (base << 1U) - 1U;
+
+            if (singleWordLoopBody(toFactor, base)) {
+                // return true;
+            }
+        }
+    // }
+
+    return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9);
+}
+#endif
 
 template <typename bitCapInt>
 CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t& threadCount, const std::vector<unsigned>& trialDivisionPrimes)
@@ -403,7 +387,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
 
     return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, rng);
 #else
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U);
+    return singleWordLoop<bitCapInt>(toFactor, fullRange);
 #endif
 }
 } // namespace Qimcifa
