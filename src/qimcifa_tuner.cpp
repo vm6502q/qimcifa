@@ -602,7 +602,11 @@ int main() {
     iSettingsFile.close();
 #endif
 
+#if IS_RANDOM
     CsvRow row = mainCase(toFactor, threadCount, 2);
+#else
+    CsvRow row = mainCase(toFactor, threadCount, 3);
+#endif
 #if USE_GMP || USE_BOOST
     const double cost = row.range.convert_to<double>() * (row.time_s / BASE_TRIALS);
 #else
