@@ -85,11 +85,7 @@
 namespace Qimcifa {
 
 // Make this a power of 10, to help skip multiples of 5.
-#if IS_RANDOM
 constexpr int BASE_TRIALS = 1U << 20U;
-#else
-constexpr int BASE_TRIALS = 1000000;
-#endif
 constexpr int MIN_RTD_LEVEL = 1;
 
 #if USE_GMP
@@ -448,40 +444,15 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = batchNum * BASE_TRIALS + 2U;
-        for (int batchGroup = 0U; batchGroup < BASE_TRIALS; ++batchGroup) {
-            // By (sub-)batching 10 at a time, we can also skip all multiples of 5.
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+            bitCapInt base = batchStart + batchItem;
 
-            // Before removing multiples of 2 and 3, the 5th and 10th elements of
-            // every set of 10 (starting from 1) is a multiple of 5.
+            // Make this NOT a multiple of 2 or 3.
+            base = ((base & ~1U) + (base << 1U)) - 1U;
 
-            // It turns out that this well-known property of multiples of 5
-            // continues to hold when we remove all multiples of 2 and 3,
-            // but the multiples of 5 in every set of 10 (starting from 1)
-            // are the 2nd and the 9th. (One can check this, on one's own.)
-
-            // for (int batchItem = 1; batchItem < 7; ++batchItem) {
-                bitCapInt base = batchStart + batchGroup; // + batchItem;
-
-                // Make this NOT a multiple of 2 or 3.
-                base = ((base & ~1U) + (base << 1U)) - 1U;
-
-                if (singleWordLoopBody(toFactor, base, iterClock)) {
-                    return true;
-                }
-            // }
-
-#if 0
-            for (int batchItem = 8; batchItem < 10; ++batchItem) {
-                bitCapInt base = batchStart + batchGroup + batchItem;
-
-                // Make this NOT a multiple of 2 or 3.
-                base = ((base & ~1U) + (base << 1U)) - 1U;
-
-                if (singleWordLoopBody(toFactor, base, iterClock)) {
-                    return true;
-                }
+            if (singleWordLoopBody(toFactor, base, iterClock)) {
+                return true;
             }
-#endif
         }
     }
 
@@ -709,11 +680,7 @@ int main()
     }
 #endif
 
-// #if IS_RANDOM
     const int64_t tdLevel = 2;
-// #else
-//     const int64_t tdLevel = 3;
-// #endif
     /*std::cout << "Reverse trial division level (minimum of " << MIN_RTD_LEVEL << ", or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
