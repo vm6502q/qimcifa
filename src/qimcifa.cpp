@@ -459,7 +459,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
             // but the multiples of 5 in every set of 10 (starting from 1)
             // are the 2nd and the 9th. (One can check this, on one's own.)
 
-            for (int batchItem = 1; batchItem < 8; ++batchItem) {
+            for (int batchItem = 1; batchItem < 7; ++batchItem) {
                 bitCapInt base = batchStart + batchGroup; // + batchItem;
 
                 // Make this NOT a multiple of 2 or 3.
@@ -470,7 +470,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
                 }
             }
 
-            for (int batchItem = 9; batchItem <= 10; ++batchItem) {
+            for (int batchItem = 8; batchItem < 10; ++batchItem) {
                 bitCapInt base = batchStart + batchGroup + batchItem;
 
                 // Make this NOT a multiple of 2 or 3.
