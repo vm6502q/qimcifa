@@ -438,6 +438,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
             return false;
         }
     }
+}
 #else
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
