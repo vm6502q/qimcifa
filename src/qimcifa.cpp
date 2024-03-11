@@ -116,7 +116,6 @@ inline bitCapIntInput getNextBatch() {
     std::lock_guard<std::mutex> lock(batchMutex);
     bitCapIntInput result = batchNumber;
     if (batchNumber < batchBound) {
-        result = batchBound - (result + 1);
 #if USE_GMP || USE_BOOST
         ++batchNumber;
 #else
