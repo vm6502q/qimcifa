@@ -464,7 +464,8 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
                 bitCapInt base = batchStart + batchGroup + batchItem;
 
                 // Make this NOT a multiple of 2 or 3.
-                base = ((base & ~1U) + (base << 1U)) - 1U;
+                base = (base >> 1U) + base;
+                base = (base << 1U) - 1U;
 
                 if (singleWordLoopBody(toFactor, base, iterClock)) {
                     return true;
@@ -475,7 +476,8 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
                 bitCapInt base = batchStart + batchGroup + batchItem;
 
                 // Make this NOT a multiple of 2 or 3.
-                base = ((base & ~1U) + (base << 1U)) - 1U;
+                base = (base >> 1U) + base;
+                base = (base << 1U) - 1U;
 
                 if (singleWordLoopBody(toFactor, base, iterClock)) {
                     return true;
