@@ -460,7 +460,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
             // are the 2nd and the 9th. (One can check this, on one's own.)
 
             for (int batchItem = 1; batchItem < 7; ++batchItem) {
-                bitCapInt base = batchStart + batchGroup; // + batchItem;
+                bitCapInt base = batchStart + batchGroup + batchItem;
 
                 // Make this NOT a multiple of 2 or 3.
                 base = ((base & ~1U) + (base << 1U)) - 1U;
