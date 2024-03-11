@@ -448,7 +448,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = batchNum * BASE_TRIALS + 2U;
-        for (int batchGroup = 0U; batchGroup < BASE_TRIALS; ++batchGroup) {
+        for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup += 10) {
             // By (sub-)batching 10 at a time, we can also skip all multiples of 5.
 
             // Before removing multiples of 2 and 3, the 5th and 10th elements of
@@ -459,7 +459,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
             // but the multiples of 5 in every set of 10 (starting from 1)
             // are the 2nd and the 9th. (One can check this, on one's own.)
 
-            // for (int batchItem = 1; batchItem < 8; ++batchItem) {
+            for (int batchItem = 1; batchItem < 8; ++batchItem) {
                 bitCapInt base = batchStart + batchGroup; // + batchItem;
 
                 // Make this NOT a multiple of 2 or 3.
@@ -468,9 +468,9 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
                 if (singleWordLoopBody(toFactor, base, iterClock)) {
                     return true;
                 }
-            // }
+            }
 
-            /* for (int batchItem = 9; batchItem < 10; ++batchItem) {
+            for (int batchItem = 9; batchItem <= 10; ++batchItem) {
                 bitCapInt base = batchStart + batchGroup + batchItem;
 
                 // Make this NOT a multiple of 2 or 3.
@@ -479,7 +479,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
                 if (singleWordLoopBody(toFactor, base, iterClock)) {
                     return true;
                 }
-            } */
+            }
         }
     }
 
@@ -707,11 +707,11 @@ int main()
     }
 #endif
 
-// #if IS_RANDOM
+#if IS_RANDOM
     const int64_t tdLevel = 2;
-// #else
-//     const int64_t tdLevel = 3;
-// #endif
+#else
+    const int64_t tdLevel = 3;
+#endif
     /*std::cout << "Reverse trial division level (minimum of " << MIN_RTD_LEVEL << ", or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
