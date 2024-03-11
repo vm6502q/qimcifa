@@ -529,8 +529,8 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         futures[cpu] = std::async(std::launch::async, workerFn, threadMin);
     }
 #else
-    batchNumber = (nodeId * nodeRange) / BASE_TRIALS;
-    batchBound = ((nodeId + 1) * nodeRange) / BASE_TRIALS;
+    batchNumber = ((nodeId * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
+    batchBound = (((nodeId + 1) * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     const auto workerFn = [toFactor, iterClock, qubitCount]() {
         singleWordLoop<bitCapInt>(toFactor, iterClock);
     };
