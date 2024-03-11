@@ -450,12 +450,21 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = batchNum * BASE_TRIALS + 2U;
         for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup+=10) {
+            // By (sub-)batching 10 at a time, we can also skip all multiples of 5.
+
+            // Before removing multiples of 2 and 3, the 5th and 10th elements of
+            // every set of 10 (starting from 1) is a multiple of 5.
+
+            // It turns out that this well-known property of multiples of 5
+            // continues to hold when we remove all multiples of 2 and 3,
+            // but the multiples of 5 in every set of 10 (starting from 1)
+            // are the 2nd and the 9th. (One can check this, on one's own.)
+
             for (int batchItem = 1; batchItem < 8; ++batchItem) {
                 bitCapInt base = batchStart + batchGroup + batchItem;
 
                 // Make this NOT a multiple of 2 or 3.
-                base = (base >> 1U) + base;
-                base = (base << 1U) - 1U;
+                base = ((base & ~1U) + (base << 1U)) - 1U;
 
                 if (singleWordLoopBody(toFactor, base, iterClock)) {
                     return true;
@@ -699,7 +708,11 @@ int main()
     }
 #endif
 
+#if IS_RANDOM
+    const int64_t tdLevel = 2;
+#else
     const int64_t tdLevel = 3;
+#endif
     /*std::cout << "Reverse trial division level (minimum of " << MIN_RTD_LEVEL << ", or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
