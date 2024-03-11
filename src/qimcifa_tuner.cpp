@@ -387,7 +387,7 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     // Those two numbers are either equal to the squatdLevel + 1Ure root, or in a pair where one is higher and one lower than the square root.
     const bitCapInt fullMaxBase = sqrt<bitCapInt>(toFactor);
 
-    bitCapInt fullRange = fullMaxBase - (tdLevel + 1U);
+    bitCapInt fullRange = fullMaxBase;
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         // The truncation here is a conservative bound, but it's exact if we
         // happen to be aligned to a perfect factor of all trial division.

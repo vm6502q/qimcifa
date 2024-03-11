@@ -699,7 +699,7 @@ int main()
     }
 #endif
 
-    const int64_t tdLevel = 2;
+    const int64_t tdLevel = 3;
     /*std::cout << "Reverse trial division level (minimum of " << MIN_RTD_LEVEL << ", or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
