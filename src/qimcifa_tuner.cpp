@@ -312,7 +312,7 @@ inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base)
     return false;
 }
 
-#if IS_RANDOM
+// #if IS_RANDOM
 template <typename bitCapInt>
 CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, boost::random::mt19937_64& rng)
 {
@@ -340,7 +340,8 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 
     return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9);
 }
-#else
+#if 0
+// #else
 template <typename bitCapInt>
 CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range)
 {
