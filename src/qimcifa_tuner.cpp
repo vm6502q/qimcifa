@@ -312,7 +312,7 @@ inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base)
     return false;
 }
 
-// #if IS_RANDOM
+#if IS_RANDOM
 template <typename bitCapInt>
 CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, boost::random::mt19937_64& rng)
 {
@@ -340,8 +340,7 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 
     return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9);
 }
-#if 0
-// #else
+#else
 template <typename bitCapInt>
 CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range)
 {
@@ -382,14 +381,14 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     }
     fullRange = (fullRange / threadCount) * threadCount;
 
-// #if IS_RANDOM
+#if IS_RANDOM
     std::random_device seeder;
     boost::random::mt19937_64 rng(seeder());
 
     return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, rng);
-// #else
-//     return singleWordLoop<bitCapInt>(toFactor, fullRange);
-// #endif
+#else
+    return singleWordLoop<bitCapInt>(toFactor, fullRange);
+#endif
 }
 } // namespace Qimcifa
 
