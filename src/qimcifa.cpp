@@ -716,7 +716,7 @@ int main()
 
 // #if IS_RANDOM
     // Because removing multiples of 5 is based on skipping 1/5 of elements in sequence,
-    // we need to the same range value as multiples of 2 and 3, but the tuner should
+    // we need to use the same range value as multiples of 2 and 3, but the tuner should
     // estimate 4/5 the cardinality.
     const int64_t tdLevel = 2;
 // #else
