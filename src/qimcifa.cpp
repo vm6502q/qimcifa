@@ -446,7 +446,7 @@ template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
-        const bitCapInt batchStart = batchNum * BASE_TRIALS + 2U;
+        const bitCapInt batchStart = (bitCapInt)(((batchBound - 1U) - batchNum) * BASE_TRIALS + 2U);
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             bitCapInt base = batchStart + batchItem;
 
