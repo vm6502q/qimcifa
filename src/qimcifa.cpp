@@ -94,6 +94,8 @@ typedef boost::multiprecision::mpz_int bitCapIntInput;
 typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
     boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
     bitCapIntInput;
+#else
+typedef BigInteger bitCapIntInput;
 #endif
 
 #if IS_RANDOM
