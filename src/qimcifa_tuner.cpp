@@ -382,14 +382,14 @@ CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t&
     }
     fullRange = (fullRange / threadCount) * threadCount;
 
-#if IS_RANDOM
+// #if IS_RANDOM
     std::random_device seeder;
     boost::random::mt19937_64 rng(seeder());
 
     return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, rng);
-#else
-    return singleWordLoop<bitCapInt>(toFactor, fullRange);
-#endif
+// #else
+//     return singleWordLoop<bitCapInt>(toFactor, fullRange);
+// #endif
 }
 } // namespace Qimcifa
 
