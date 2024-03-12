@@ -714,11 +714,14 @@ int main()
     }
 #endif
 
-#if IS_RANDOM
+// #if IS_RANDOM
+    // Because removing multiples of 5 is based on skipping 1/5 of elements in sequence,
+    // we need to the same range value as multiples of 2 and 3, but the tuner should
+    // estimate 4/5 the cardinality.
     const int64_t tdLevel = 2;
-#else
-    const int64_t tdLevel = 3;
-#endif
+// #else
+//     const int64_t tdLevel = 3;
+// #endif
     /*std::cout << "Reverse trial division level (minimum of " << MIN_RTD_LEVEL << ", or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
