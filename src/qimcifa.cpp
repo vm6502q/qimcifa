@@ -85,7 +85,11 @@
 namespace Qimcifa {
 
 // Make this a power of 10, to help skip multiples of 5.
+#if IS_RANDOM
 constexpr int BASE_TRIALS = 1U << 20U;
+#else
+constexpr int BASE_TRIALS = 1000000;
+#endif
 constexpr int MIN_RTD_LEVEL = 1;
 
 #if USE_GMP
@@ -448,15 +452,39 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 2U);
-        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-            bitCapInt base = batchStart + batchItem;
+        for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup += 10) {
+            // By (sub-)batching 10 at a time, we can also skip all multiples of 5.
 
-            // Make this NOT a multiple of 2 or 3.
-            base += (base >> 1U);
-            base = (base << 1U) - 1U;
+            // Before removing multiples of 2 and 3, the 5th and 10th elements of
+            // every set of 10 (starting from 1) is a multiple of 5.
 
-            if (singleWordLoopBody(toFactor, base, iterClock)) {
-                return true;
+            // It turns out that this well-known property of multiples of 5
+            // continues to hold when we remove all multiples of 2 and 3,
+            // but the multiples of 5 in every set of 10 (starting from 1)
+            // are the 2nd and the 9th. (One can check this, on one's own.)
+
+            for (int batchItem = 1; batchItem < 7; ++batchItem) {
+                bitCapInt base = batchStart + batchGroup + batchItem;
+
+                // Make this NOT a multiple of 2 or 3.
+                base += (base >> 1U);
+                base = (base << 1U) - 1U;
+
+                if (singleWordLoopBody(toFactor, base, iterClock)) {
+                    return true;
+                }
+            }
+
+            for (int batchItem = 8; batchItem < 10; ++batchItem) {
+                bitCapInt base = batchStart + batchGroup + batchItem;
+
+                // Make this NOT a multiple of 2 or 3.
+                base += (base >> 1U);
+                base = (base << 1U) - 1U;
+
+                if (singleWordLoopBody(toFactor, base, iterClock)) {
+                    return true;
+                }
             }
         }
     }
@@ -579,7 +607,7 @@ int main()
     // First 1000 primes
     // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
-    const std::vector<unsigned> trialDivisionPrimes = { 2, 3 }; //, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5 }; //, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
 #if 0
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
@@ -686,7 +714,11 @@ int main()
     }
 #endif
 
+#if IS_RANDOM
     const int64_t tdLevel = 2;
+#else
+    const int64_t tdLevel = 3;
+#endif
     /*std::cout << "Reverse trial division level (minimum of " << MIN_RTD_LEVEL << ", or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
