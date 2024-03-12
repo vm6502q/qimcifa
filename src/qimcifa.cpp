@@ -107,6 +107,7 @@ inline void finish() {
 #else
 bitCapIntInput batchNumber;
 bitCapIntInput batchBound;
+bitCapIntInput batchCount;
 std::mutex batchMutex;
 
 inline void finish() {
@@ -446,7 +447,7 @@ template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
-        const bitCapInt batchStart = (bitCapInt)(((batchBound - 1U) - batchNum) * BASE_TRIALS + 2U);
+        const bitCapInt batchStart = (bitCapInt)((batchCount - (batchBound + 1U)) * BASE_TRIALS + 2U);
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             bitCapInt base = batchStart + batchItem;
 
@@ -532,6 +533,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
 #else
     batchNumber = ((nodeId * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchBound = (((nodeId + 1) * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
+    batchCount = ((nodeCount * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     const auto workerFn = [toFactor, iterClock, qubitCount]() {
         singleWordLoop<bitCapInt>(toFactor, iterClock);
     };
