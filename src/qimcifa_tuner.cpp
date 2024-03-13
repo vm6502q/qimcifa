@@ -312,7 +312,7 @@ inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base)
     return false;
 }
 
-#if IS_RANDOM
+// #if IS_RANDOM
 template <typename bitCapInt>
 CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, boost::random::mt19937_64& rng)
 {
@@ -340,23 +340,75 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 
     return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9);
 }
-#else
+#if 0
+// #else
 template <typename bitCapInt>
 CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
 
     // for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
-        const bitCapInt batchStart = 2U;
-        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-            bitCapInt base = batchStart + batchItem;
+        const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 17U);
+        int counter7 = 11;
+        for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup += 10) {
+            // By (sub-)batching 10 at a time, we can also skip all multiples of 5.
 
-            // Make this NOT a multiple of 2 or 3.
-            base += (base >> 1U);
-            base = (base << 1U) - 1U;
+            // Before removing multiples of 2 and 3, the 5th and 10th elements of
+            // every set of 10 (starting from 1) is a multiple of 5.
 
-            if (singleWordLoopBody(toFactor, base)) {
-                // return true;
+            // It turns out that this well-known property of multiples of 5
+            // continues to hold when we remove all multiples of 2 and 3,
+            // but the multiples of 5 in every set of 10 (starting from 1)
+            // are the 2nd and the 9th. (One can check this, on one's own.)
+
+            // Once all multiples of 5 are removed, renumerating from 1,
+            // we can carry this further: in base 11, every 7th and 11th
+            // element is a multiple of 7 (after 49 occurs in the list).
+            // 8 elements out of every 10 are retained after removing
+            // multiples of 5, then we skip every 7th and 11th.
+
+            for (int batchItem = 1; batchItem < 7; ++batchItem) {
+                if (counter7 == 11) {
+                    counter7 = 1;
+                    continue;
+                }
+                if (counter7 == 7) {
+                    counter7 = 8;
+                    continue;
+                }
+                ++counter7;
+
+                bitCapInt base = batchStart + batchGroup + batchItem;
+
+                // Make this NOT a multiple of 2 or 3.
+                base += (base >> 1U);
+                base = (base << 1U) - 1U;
+
+                if (singleWordLoopBody(toFactor, base, iterClock)) {
+                    return true;
+                }
+            }
+
+            for (int batchItem = 8; batchItem < 10; ++batchItem) {
+                if (counter7 == 11) {
+                    counter7 = 1;
+                    continue;
+                }
+                if (counter7 == 7) {
+                    counter7 = 8;
+                    continue;
+                }
+                ++counter7;
+
+                bitCapInt base = batchStart + batchGroup + batchItem;
+
+                // Make this NOT a multiple of 2 or 3.
+                base += (base >> 1U);
+                base = (base << 1U) - 1U;
+
+                if (singleWordLoopBody(toFactor, base, iterClock)) {
+                    return true;
+                }
             }
         }
     // }
