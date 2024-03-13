@@ -88,7 +88,8 @@ namespace Qimcifa {
 #if IS_RANDOM
 constexpr int BASE_TRIALS = 1U << 20U;
 #else
-constexpr int BASE_TRIALS = 1000000;
+// constexpr int BASE_TRIALS = 100000;
+constexpr int BASE_TRIALS = 1000010;
 #endif
 constexpr int MIN_RTD_LEVEL = 1;
 
@@ -451,7 +452,8 @@ template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
-        const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 2U);
+        const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 17U);
+        int counter7 = 11;
         for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup += 10) {
             // By (sub-)batching 10 at a time, we can also skip all multiples of 5.
 
@@ -463,7 +465,23 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
             // but the multiples of 5 in every set of 10 (starting from 1)
             // are the 2nd and the 9th. (One can check this, on one's own.)
 
+            // Once all multiples of 5 are removed, renumerating from 1,
+            // we can carry this further: in base 11, every 7th and 11th
+            // element is a multiple of 7 (after 49 occurs in the list).
+            // 8 elements out of every 10 are retained after removing
+            // multiples of 5, then we skip every 7th and 11th.
+
             for (int batchItem = 1; batchItem < 7; ++batchItem) {
+                if (counter7 == 11) {
+                    counter7 = 1;
+                    continue;
+                }
+                if (counter7 == 7) {
+                    counter7 = 8;
+                    continue;
+                }
+                ++counter7;
+
                 bitCapInt base = batchStart + batchGroup + batchItem;
 
                 // Make this NOT a multiple of 2 or 3.
@@ -476,6 +494,16 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
             }
 
             for (int batchItem = 8; batchItem < 10; ++batchItem) {
+                if (counter7 == 11) {
+                    counter7 = 1;
+                    continue;
+                }
+                if (counter7 == 7) {
+                    counter7 = 8;
+                    continue;
+                }
+                ++counter7;
+
                 bitCapInt base = batchStart + batchGroup + batchItem;
 
                 // Make this NOT a multiple of 2 or 3.
@@ -515,6 +543,21 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
 
     for (uint64_t primeIndex = 0; primeIndex < trialDivisionPrimes.size(); ++primeIndex) {
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
+#if USE_GMP || USE_BOOST
+        if ((toFactor % currentPrime) == 0) {
+#else
+        if (bi_compare_0(toFactor % currentPrime) == 0) {
+#endif
+            std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
+                      << std::endl;
+            return 0;
+        }
+        ++primeIndex;
+    }
+    // One-off for 7:
+    const std::vector<unsigned>& td7Test = { 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47 };
+    for (uint64_t primeIndex = 0; primeIndex < td7Test.size(); ++primeIndex) {
+        const unsigned currentPrime = td7Test[primeIndex];
 #if USE_GMP || USE_BOOST
         if ((toFactor % currentPrime) == 0) {
 #else
@@ -607,7 +650,7 @@ int main()
     // First 1000 primes
     // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
-    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5 }; //, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7 }; //, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
 #if 0
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
