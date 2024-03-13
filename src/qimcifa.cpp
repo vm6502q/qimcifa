@@ -513,7 +513,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         return 0;
     }
 
-    for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
+    for (uint64_t primeIndex = 0; primeIndex < trialDivisionPrimes.size(); ++primeIndex) {
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
 #if USE_GMP || USE_BOOST
         if ((toFactor % currentPrime) == 0) {
