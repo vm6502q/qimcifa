@@ -28,6 +28,10 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -O3")
 
+add_executable (prime_generator
+    src/prime_generator.cpp
+    )
+
 if (USE_GMP OR USE_BOOST)
 add_executable (qimcifa
     src/qimcifa.cpp
