@@ -18,7 +18,7 @@ void SieveOfEratosthenes(const int& n)
     bool prime[cardinality + 1];
     memset(prime, true, sizeof(prime));
  
-    for (int p = 5; p * p <= n; p++) {
+    for (int p = 7; p * p <= n; p++) {
         int o = p;
         for (int j = knownPrimes.size() - 1; j >= 0; --j) {
             const int q = knownPrimes[j];
