@@ -3,6 +3,7 @@
 // n using Sieve of Eratosthenes
 #include <bits/stdc++.h>
 
+// 1/3 overall space and time complexity!
 std::vector<int> knownPrimes = { 2, 3 };
 
 int backward(int ni) {
@@ -21,14 +22,19 @@ int forward(int p) {
  
 void SieveOfEratosthenes(const int& n)
 {
+    // We are excluding multiples of the first few
+    // small primes from outset. For multiples of
+    // 2 and 3, this reduces complexity by 2/3.
     int cardinality = n;
     for (int p : knownPrimes) {
         cardinality = ((p - 1) * cardinality) / p;
     }
 
-    // Create a boolean array "prime[0..n]" and initialize
-    // all entries it as true. A value in prime[i] will
-    // finally be false if i is Not a prime, else true.
+    // Create a boolean array "prime[0..cardinality]"
+    // and initialize all entries it as true. Rather,
+    // reverse the true/false meaning, so we can use
+    // default initialization. A value in notPrime[i]
+    // will finally be false only if i is a prime.
     std::vector<bool> notPrime(cardinality + 1);
  
     int o = 2;
@@ -44,17 +50,23 @@ void SieveOfEratosthenes(const int& n)
             // Update all multiples of p greater than or
             // equal to the square of it numbers which are
             // multiple of p and are less than p^2 are
-            // already been marked
+            // already been marked.
 
             for (int i = p * p; i <= n; i += p) {
-                bool isSkip = false;
+
+                // If this is a multiple of one of the
+                // filtered primes, then backwards(i)
+                // will not return the correct number,
+                // but this multiple has already been
+                // struck from the set.
+                bool isMultiple = false;
                 for (int j : knownPrimes) {
                     if ((i % j) == 0) {
-                        isSkip = true;
+                        isMultiple = true;
                         break;
                     }
                 }
-                if (isSkip) {
+                if (isMultiple) {
                     continue;
                 }
 
