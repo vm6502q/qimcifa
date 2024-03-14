@@ -5,7 +5,10 @@
 
 // 1/3 overall space and time complexity!
 std::vector<int> knownPrimes = { 2, 3 };
-// std::vector<int> knownPrimes = { 2, 3, 5 };
+// Working on 5, for 11/15 reduction. (See Qimcifa.)
+//std::vector<int> knownPrimes = { 2, 3, 5 };
+// Working on 7, for 27/35 reduction. (See Qimcifa.)
+//std::vector<int> knownPrimes = { 2, 3, 5, 7 };
 
 int backward(int ni) {
     ni = (ni + 1) >> 1;
@@ -93,6 +96,7 @@ void SieveOfEratosthenes(const int& n)
         //     ++o;
         //     continue;
         // }
+        
         if (!notPrime[o]) {
             std::cout << forward(o) << " ";
         }
