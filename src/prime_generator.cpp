@@ -9,7 +9,12 @@ void SieveOfEratosthenes(const int& n)
 
     int cardinality = n;
     for (int p : knownPrimes) {
-        cardinality = (p - 1) * cardinality / p;
+        cardinality = ((p - 1) * cardinality) / p;
+    }
+
+    int ni = n;
+    for (int p : knownPrimes) {
+        ni = (p - 1) * (ni + 1) / p;
     }
 
     // Create a boolean array "prime[0..n]" and initialize
@@ -28,17 +33,15 @@ void SieveOfEratosthenes(const int& n)
         if ((p * p) > n) {
             break;
         }
+
         // If prime[o] is not changed, then it is a prime
         if (!notPrime[o]) {
             // Update all multiples of p greater than or
             // equal to the square of it numbers which are
             // multiple of p and are less than p^2 are
             // already been marked
-            for (int i = p * p; i <= n; i += p) {
-                int o = i;
-                for (int p : knownPrimes) {
-                    o = (p - 1) * (o + 1) / p;
-                }
+
+            for (int i = o * o; i <= ni; i += o) {
                 notPrime[o] = true;
             }
         }
