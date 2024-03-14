@@ -40,7 +40,7 @@ def SieveOfEratosthenes(n):
     # We are excluding multiples of the first few
     # small primes from outset. For multiples of
     # 2 and 3, this reduces complexity by 2/3.
-    cardinality = int((n & ~1) / 3)
+    cardinality = int((~((~n) | 1)) / 3)
  
     o = 2;
     while True:
@@ -67,9 +67,9 @@ def SieveOfEratosthenes(n):
             # Skip
             continue
 
-        knownPrimes.add(p);
+        knownPrimes.append(p);
 
-    return outputPrimes
+    return knownPrimes
 
 # Driver Code
 if __name__ == '__main__':

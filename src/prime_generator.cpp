@@ -81,7 +81,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
-    const BigInteger cardinality = (n & ~BigInteger(1)) / 3;
+    const BigInteger cardinality = (~((~n) | 1)) / 3;
  
     BigInteger o = 2;
     while (true) {
