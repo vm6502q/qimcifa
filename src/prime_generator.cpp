@@ -2,20 +2,34 @@
 // C++ program to print all primes smaller than or equal to
 // n using Sieve of Eratosthenes
 #include <bits/stdc++.h>
+
+std::vector<int> knownPrimes = { 2, 3 };
+
+int backward(int ni) {
+    for (int p : knownPrimes) {
+        ni = ((p - 1) * (ni + 1)) / p;
+    }
+
+    return ni;
+}
+
+int forward(int p) {
+    // Make this NOT a multiple of 2 or 3.
+    p += (p >> 1U);
+    return (p << 1U) - 1U;
+}
  
 void SieveOfEratosthenes(const int& n)
 {
-    std::vector<int> knownPrimes = { 2, 3 };
-
     int cardinality = n;
     for (int p : knownPrimes) {
         cardinality = ((p - 1) * cardinality) / p;
     }
 
-    int ni = n;
-    for (int p : knownPrimes) {
-        ni = (p - 1) * (ni + 1) / p;
-    }
+    // int ni = n;
+    // for (int p : knownPrimes) {
+    //     ni = (p - 1) * (ni + 1) / p;
+    // }
 
     // Create a boolean array "prime[0..n]" and initialize
     // all entries it as true. A value in prime[i] will
@@ -24,11 +38,7 @@ void SieveOfEratosthenes(const int& n)
  
     int o = 2;
     while (true) {
-        int p = o;
-
-        // Make this NOT a multiple of 2 or 3.
-        p = p + (p >> 1U);
-        p = (p << 1U) - 1U;
+        int p = forward(o);
 
         if ((p * p) > n) {
             break;
@@ -41,8 +51,8 @@ void SieveOfEratosthenes(const int& n)
             // multiple of p and are less than p^2 are
             // already been marked
 
-            for (int i = o * o; i <= ni; i += o) {
-                notPrime[o] = true;
+            for (int i = p * p; i <= n; i += p) {
+                notPrime[backward(i)] = true;
             }
         }
 
@@ -56,11 +66,7 @@ void SieveOfEratosthenes(const int& n)
     // Print all prime numbers
     for (int o = 2; o <= cardinality; ++o) {
         if (!notPrime[o]) {
-            // Make this NOT a multiple of 2 or 3.
-            int p = o + (o >> 1U);
-            p = (p << 1U) - 1U;
-
-            std::cout << p << " ";
+            std::cout << forward(o) << " ";
         }
     }
 }
