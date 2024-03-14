@@ -2,6 +2,10 @@
 // C++ program to print all primes smaller than or equal to
 // n using Sieve of Eratosthenes
 
+// Improvements by Dan Strano of Unitary Fund, 2024:
+// log overall space complexity!
+// log reduction in time complexity!
+
 #include "config.h"
 
 #include <iostream>
@@ -27,11 +31,6 @@ typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG
 typedef BigInteger BigInteger;
 #endif
 
-// Improvements by Dan Strano of Unitary Fund, 2024:
-// log overall space complexity!
-// log reduction in time complexity!
-std::vector<BigInteger> knownPrimes = { 2, 3 };
-
 BigInteger backward(BigInteger ni) {
     ni = (ni + 1) >> 1;
     ni = ((ni + 1) << 1) / 3;
@@ -44,7 +43,8 @@ BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
-bool isTimeOrSpaceMultiple(BigInteger p) {
+#if 0
+bool isTimeOrSpaceMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     for (BigInteger i : knownPrimes) {
         if ((p % i) == 0) {
             return true;
@@ -52,8 +52,9 @@ bool isTimeOrSpaceMultiple(BigInteger p) {
     }
     return false;
 }
+#endif
 
-bool isTimeMultiple(BigInteger p) {
+bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     for (size_t i = 2U; i < knownPrimes.size(); ++i) {
         if ((p % knownPrimes[i]) == 0) {
             return true;
@@ -64,6 +65,8 @@ bool isTimeMultiple(BigInteger p) {
 
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
+    std::vector<BigInteger> knownPrimes = { 2, 3 };
+
     if (n < 2) {
         return std::vector<BigInteger>();
     }
@@ -86,7 +89,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             break;
         }
 
-        if (isTimeMultiple(p)) {
+        if (isTimeMultiple(p, knownPrimes)) {
             ++o;
             continue;
         }
@@ -101,7 +104,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     for (BigInteger o = backward(knownPrimes.back()) + 1; o <= cardinality; ++o) {
         const BigInteger p = forward(o);
 
-        if (isTimeMultiple(p)) {
+        if (isTimeMultiple(p, knownPrimes)) {
             continue;
         }
 
