@@ -61,6 +61,7 @@ void SieveOfEratosthenes(const int& n)
             std::cout << forward(o) << " ";
         }
     }
+    std::cout << std::endl;
 }
  
 // Driver Code
