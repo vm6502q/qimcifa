@@ -70,7 +70,7 @@ def SieveOfEratosthenes(n):
         outputPrimes.add(p);
 
     return outputPrimes
- 
+
 # Driver Code
 if __name__ == '__main__':
     n = 100
