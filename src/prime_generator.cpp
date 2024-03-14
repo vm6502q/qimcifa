@@ -4,10 +4,9 @@
 #include <bits/stdc++.h>
 
 // 1/3 overall space complexity!
-// std::vector<int> memoryPrimes = { 2, 3 };
-// 11/15 reduction in time complexity!
-std::vector<int> knownPrimes = { 2, 3, 5 };
-// Working on 7, for 27/35 reduction. (See Qimcifa.)
+// 27/35 reduction in time complexity!
+std::vector<int> knownPrimes = { 2, 3, 5, 7 };
+// Working on 7, for  reduction. (See Qimcifa.)
 //std::vector<int> knownPrimes = { 2, 3, 5, 7 };
 
 int backward(int ni) {
@@ -36,15 +35,22 @@ void SieveOfEratosthenes(const int& n)
     // will finally be false only if i is a prime.
     std::vector<bool> notPrime(cardinality + 1);
  
-    int o = 3;
+    int o = 4;
     while (true) {
         const int p = forward(o);
         if ((p * p) > n) {
             break;
         }
+
         // This reduces time complexity by
         // skipping multiples of 5.
-        if ((p % 10) == 5) {
+        if ((p % 5) == 0) {
+            ++o;
+            continue;
+        }
+        // This reduces time complexity by
+        // skipping multiples of 7.
+        if ((p % 7) == 0) {
             ++o;
             continue;
         }
@@ -88,11 +94,17 @@ void SieveOfEratosthenes(const int& n)
     // Print all prime numbers
     for (int o = 3; o <= cardinality; ++o) {
         if (!notPrime[o]) {
-            // Skip multiples of 5.
             const int p = forward(o);
-            if ((p % 10) == 5) {
+
+            // Skip multiples of 5.
+            if ((p % 5) == 0) {
                 continue;
             }
+            // Skip multiples of 7.
+            if ((p % 7) == 0) {
+                continue;
+            }
+
             std::cout << p << " ";
         }
     }
