@@ -4,10 +4,8 @@
 #include <bits/stdc++.h>
 
 // 1/3 overall space complexity!
-// 27/35 reduction in time complexity!
+// 27/35 reduction in time complexity (and higher)!
 std::vector<int> knownPrimes = { 2, 3, 5, 7 };
-// Working on 7, for  reduction. (See Qimcifa.)
-//std::vector<int> knownPrimes = { 2, 3, 5, 7 };
 
 int backward(int ni) {
     ni = (ni + 1) >> 1;
