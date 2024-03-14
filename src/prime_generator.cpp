@@ -60,9 +60,7 @@ void SieveOfEratosthenes(const int& n)
             // equal to the square of it numbers which are
             // multiple of p and are less than p^2 are
             // already been marked.
-
             for (int i = p * p; i <= n; i += p) {
-
                 // If this is a multiple of one of the
                 // filtered primes, then backwards(i)
                 // will not return the correct number,
