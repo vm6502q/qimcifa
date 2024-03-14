@@ -2,6 +2,7 @@
 # C++ program to print all primes smaller than or equal to
 # n using Sieve of Eratosthenes
 
+# Improvements by Dan Strano of Unitary Fund, 2024:
 # log space complexity!
 # log reduction in time complexity!
 knownPrimes = [ 2, 3 ]

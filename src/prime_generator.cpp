@@ -6,6 +6,7 @@
 #include <set>
 #include <vector>
 
+// Improvements by Dan Strano of Unitary Fund, 2024:
 // log overall space complexity!
 // log reduction in time complexity!
 std::vector<size_t> knownPrimes = { 2, 3 };
