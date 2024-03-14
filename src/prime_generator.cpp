@@ -78,23 +78,6 @@ std::set<size_t> SieveOfEratosthenes(const size_t& n)
 
         // If prime[o] is not changed, then it is a prime
         if (!notPrime[o]) {
-            // Update all multiples of p greater than or
-            // equal to the square of it numbers which are
-            // multiple of p and are less than p^2 are
-            // already been marked.
-            for (size_t i = p * p; i <= n; i += p) {
-                // If this is a multiple of one of the
-                // filtered primes, then backwards(i)
-                // will not return the correct number,
-                // but this multiple has already been
-                // struck from the set.
-                if (isTimeOrSpaceMultiple(i)) {
-                    continue;
-                }
-
-                notPrime[backward(i)] = true;
-            }
-            
             knownPrimes.push_back(p);
         }
 

@@ -60,22 +60,7 @@ def SieveOfEratosthenes(n):
             continue
 
         # If prime[o] is not changed, then it is a prime
-        if not notPrime[o]:
-            # Update all multiples of p greater than or
-            # equal to the square of it numbers which are
-            # multiple of p and are less than p^2 are
-            # already been marked.
-            for i in range(p * p, n + 1, p):
-                # If this is a multiple of one of the
-                # filtered primes, then backwards(i)
-                # will not return the correct number,
-                # but this multiple has already been
-                # struck from the set.
-                if isTimeOrSpaceMultiple(i):
-                    continue
-
-                notPrime[backward(i)] = True;
-            
+        if not notPrime[o]:            
             knownPrimes.append(p)
 
         # Increment "while" loop.
