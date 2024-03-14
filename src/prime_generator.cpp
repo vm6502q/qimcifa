@@ -1,27 +1,29 @@
 // Source: https://www.geeksforgeeks.org/sieve-of-eratosthenes/
 // C++ program to print all primes smaller than or equal to
 // n using Sieve of Eratosthenes
-#include <bits/stdc++.h>
+
+#include <iostream>
+#include <vector>
 
 // 1/3 overall space complexity!
 // 27/35 reduction in time complexity (and higher)!
-std::vector<int> knownPrimes = { 2, 3, 5, 7 };
+std::vector<size_t> knownPrimes = { 2, 3, 5, 7 };
 // Try adding more successive primes!
 
-int backward(int ni) {
+size_t backward(size_t ni) {
     ni = (ni + 1) >> 1;
     ni = ((ni + 1) << 1) / 3;
     return ni;
 }
 
-int forward(int p) {
+size_t forward(size_t p) {
     // Make this NOT a multiple of 2 or 3.
     p += (p >> 1U);
     return (p << 1U) - 1U;
 }
 
-int isTimeOrSpaceMultiple(int p) {
-    for (int i : knownPrimes) {
+bool isTimeOrSpaceMultiple(size_t p) {
+    for (size_t i : knownPrimes) {
         if ((p % i) == 0) {
             return true;
         }
@@ -29,7 +31,7 @@ int isTimeOrSpaceMultiple(int p) {
     return false;
 }
 
-int isTimeMultiple(int p) {
+bool isTimeMultiple(size_t p) {
     for (size_t i = 2U; i < knownPrimes.size(); ++i) {
         if ((p % knownPrimes[i]) == 0) {
             return true;
@@ -38,12 +40,12 @@ int isTimeMultiple(int p) {
     return false;
 }
  
-void SieveOfEratosthenes(const int& n)
+void SieveOfEratosthenes(const size_t& n)
 {
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
-    const int cardinality = (n & ~1) / 3;
+    const size_t cardinality = (n & ~1) / 3;
 
     // Create a boolean array "prime[0..cardinality]"
     // and initialize all entries it as true. Rather,
@@ -52,9 +54,9 @@ void SieveOfEratosthenes(const int& n)
     // will finally be false only if i is a prime.
     std::vector<bool> notPrime(cardinality + 1);
  
-    int o = 4;
+    size_t o = 2;
     while (true) {
-        const int p = forward(o);
+        const size_t p = forward(o);
         if ((p * p) > n) {
             break;
         }
@@ -70,7 +72,7 @@ void SieveOfEratosthenes(const int& n)
             // equal to the square of it numbers which are
             // multiple of p and are less than p^2 are
             // already been marked.
-            for (int i = p * p; i <= n; i += p) {
+            for (size_t i = p * p; i <= n; i += p) {
                 // If this is a multiple of one of the
                 // filtered primes, then backwards(i)
                 // will not return the correct number,
@@ -87,14 +89,14 @@ void SieveOfEratosthenes(const int& n)
         ++o;
     }
 
-    for (int p : knownPrimes) {
+    for (size_t p : knownPrimes) {
         std::cout << p << " ";
     }
  
     // Print all prime numbers
-    for (int o = 4; o <= cardinality; ++o) {
+    for (size_t o = 2; o <= cardinality; ++o) {
         if (!notPrime[o]) {
-            const int p = forward(o);
+            const size_t p = forward(o);
 
             if (isTimeMultiple(p)) {
                 continue;
@@ -109,7 +111,7 @@ void SieveOfEratosthenes(const int& n)
 // Driver Code
 int main()
 {
-    int n = 100;
+    size_t n = 100;
     std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
     SieveOfEratosthenes(n);
     return 0;
