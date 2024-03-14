@@ -3,10 +3,10 @@
 // n using Sieve of Eratosthenes
 #include <bits/stdc++.h>
 
-// 1/3 overall space and time complexity!
-std::vector<int> knownPrimes = { 2, 3 };
-// Working on 5, for 11/15 reduction. (See Qimcifa.)
-//std::vector<int> knownPrimes = { 2, 3, 5 };
+// 1/3 overall space complexity!
+// std::vector<int> memoryPrimes = { 2, 3 };
+// 11/15 reduction in time complexity!
+std::vector<int> knownPrimes = { 2, 3, 5 };
 // Working on 7, for 27/35 reduction. (See Qimcifa.)
 //std::vector<int> knownPrimes = { 2, 3, 5, 7 };
 
@@ -36,20 +36,17 @@ void SieveOfEratosthenes(const int& n)
     // will finally be false only if i is a prime.
     std::vector<bool> notPrime(cardinality + 1);
  
-    int o = 2;
+    int o = 3;
     while (true) {
-        // This reduces time complexity by
-        // skipping multiples of 5.
-        // const int digit = o % 10;
-        // if ((digit == 2) || (digit == 9)) {
-        //     ++o;
-        //     continue;
-        // }
-
         const int p = forward(o);
-
         if ((p * p) > n) {
             break;
+        }
+        // This reduces time complexity by
+        // skipping multiples of 5.
+        if ((p % 10) == 5) {
+            ++o;
+            continue;
         }
 
         // If prime[o] is not changed, then it is a prime
@@ -89,16 +86,14 @@ void SieveOfEratosthenes(const int& n)
     }
  
     // Print all prime numbers
-    for (int o = 2; o <= cardinality; ++o) {
-        // Skip multiples of 5.
-        // const int digit = o % 10;
-        // if ((digit == 2) || (digit == 9)) {
-        //     ++o;
-        //     continue;
-        // }
-        
+    for (int o = 3; o <= cardinality; ++o) {
         if (!notPrime[o]) {
-            std::cout << forward(o) << " ";
+            // Skip multiples of 5.
+            const int p = forward(o);
+            if ((p % 10) == 5) {
+                continue;
+            }
+            std::cout << p << " ";
         }
     }
     std::cout << std::endl;
