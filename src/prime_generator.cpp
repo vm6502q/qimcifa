@@ -99,7 +99,7 @@ std::set<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     std::set<BigInteger> outputPrimes(knownPrimes.begin(), knownPrimes.end());
  
     // Get the remaining prime numbers.
-    for (BigInteger o = 2; o <= cardinality; ++o) {
+    for (BigInteger o = backward(knownPrimes.back()) + 1; o <= cardinality; ++o) {
         const BigInteger p = forward(o);
 
         if (isTimeMultiple(p)) {

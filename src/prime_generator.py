@@ -62,7 +62,7 @@ def SieveOfEratosthenes(n):
     outputPrimes = set(knownPrimes)
  
     # Get the remaining prime numbers.
-    for o in range(2, cardinality + 1):
+    for o in range(backward(knownPrimes[-1]) + 1, cardinality + 1):
         p = forward(o)
 
         if isTimeMultiple(p):
