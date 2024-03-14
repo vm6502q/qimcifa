@@ -90,14 +90,10 @@ std::set<size_t> SieveOfEratosthenes(const size_t& n)
 
         ++o;
     }
-
-    for (size_t p : knownPrimes) {
-        std::cout << p << " ";
-    }
     
     std::set<size_t> outputPrimes(knownPrimes.begin(), knownPrimes.end());
  
-    // Print all prime numbers
+    // Get the remaining prime numbers.
     for (size_t o = 2; o <= cardinality; ++o) {
         if (!notPrime[o]) {
             const size_t p = forward(o);
