@@ -1,0 +1,123 @@
+// Source: https://www.geeksforgeeks.org/sieve-of-eratosthenes/
+// C++ program to print all primes smaller than or equal to
+// n using Sieve of Eratosthenes
+
+// #define USE_GMP 1
+// Use GMP arbitrary precision integers, (or use Boost alternative, if turned off).
+ #define USE_BOOST 1
+// Optionally additionally check random number generator outputs for factoring via congruence of squares.
+// #define IS_SQUARES_CONGRUENCE_CHECK 1
+// Bit width of (OpenCL) arbitrary precision "big integers"
+#define BIG_INT_BITS 128
+
+#include <iostream>
+#include <vector>
+
+#include <pybind11/pybind11.h>
+
+#if USE_GMP
+#include <boost/multiprecision/gmp.hpp>
+#elif USE_BOOST
+#include <boost/multiprecision/cpp_int.hpp>
+#else
+#include "big_integer.hpp"
+#endif
+
+#if USE_GMP
+typedef boost::multiprecision::mpz_int BigInteger;
+#elif USE_BOOST
+typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG_INT_BITS, BIG_INT_BITS,
+    boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+    BigInteger;
+#else
+typedef BigInteger BigInteger;
+#endif
+
+// Improvements by Dan Strano of Unitary Fund, 2024:
+// log overall space complexity!
+// log reduction in time complexity!
+std::vector<BigInteger> knownPrimes = { 2, 3 };
+
+BigInteger backward(BigInteger ni) {
+    ni = (ni + 1) >> 1;
+    ni = ((ni + 1) << 1) / 3;
+    return ni;
+}
+
+BigInteger forward(BigInteger p) {
+    // Make this NOT a multiple of 2 or 3.
+    p += (p >> 1U);
+    return (p << 1U) - 1U;
+}
+
+bool isTimeOrSpaceMultiple(BigInteger p) {
+    for (BigInteger i : knownPrimes) {
+        if ((p % i) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool isTimeMultiple(BigInteger p) {
+    for (size_t i = 2U; i < knownPrimes.size(); ++i) {
+        if ((p % knownPrimes[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
+{
+    if (n < 2) {
+        return std::vector<BigInteger>();
+    }
+    if (n < 3) {
+        return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 1);
+    }
+    if (n < 5) {
+        return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 2);
+    }
+
+    // We are excluding multiples of the first few
+    // small primes from outset. For multiples of
+    // 2 and 3, this reduces complexity by 2/3.
+    const BigInteger cardinality = (n & ~BigInteger(1)) / 3;
+ 
+    BigInteger o = 2;
+    while (true) {
+        const BigInteger p = forward(o);
+        if ((p * p) > n) {
+            break;
+        }
+
+        if (isTimeMultiple(p)) {
+            ++o;
+            continue;
+        }
+
+        // If it's not skipped above, then "p" is a prime.
+        knownPrimes.push_back(p);
+
+        ++o;
+    }
+
+    // Get the remaining prime numbers.
+    for (BigInteger o = backward(knownPrimes.back()) + 1; o <= cardinality; ++o) {
+        const BigInteger p = forward(o);
+
+        if (isTimeMultiple(p)) {
+            continue;
+        }
+
+        knownPrimes.push_back(p);
+    }
+
+    return knownPrimes;
+}
+
+PYBIND11_MODULE(prime_gen, m) {
+    m.doc() = "pybind11 plugin to generate prime numbers";
+    m.def("prime_gen", &SieveOfEratosthenes, "A function that returns all primes up to the value of its argument");
+}
