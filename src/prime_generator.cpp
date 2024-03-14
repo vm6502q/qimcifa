@@ -73,7 +73,7 @@ void SieveOfEratosthenes(const int& n)
 int main()
 {
     int n = 300;
-    std:: cout << "Following are select (biased) prime numbers smaller than or equal to " << n << ":" << std::endl;
+    std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
     SieveOfEratosthenes(n);
     return 0;
 }
