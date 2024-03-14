@@ -44,6 +44,11 @@ void SieveOfEratosthenes(const int& n)
             // already been marked
 
             for (int i = p * p; i <= n; i += p) {
+                for (int j : knownPrimes) {
+                    if ((p % j) == 0) {
+                        continue;
+                    }
+                }
                 notPrime[backward(i)] = true;
             }
         }
