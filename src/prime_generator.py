@@ -2,7 +2,7 @@
 # C++ program to print all primes smaller than or equal to
 # n using Sieve of Eratosthenes
 
-# 1/3 overall space complexity!
+# log space complexity!
 # log reduction in time complexity!
 knownPrimes = [ 2, 3 ]
 
@@ -40,13 +40,6 @@ def SieveOfEratosthenes(n):
     # small primes from outset. For multiples of
     # 2 and 3, this reduces complexity by 2/3.
     cardinality = int((n & ~1) / 3)
-
-    # Create a boolean array "prime[0..cardinality]"
-    # and initialize all entries it as true. Rather,
-    # reverse the true/false meaning, so we can use
-    # default initialization. A value in notPrime[i]
-    # will finally be false only if i is a prime.
-    notPrime= [False] * (cardinality + 1)
  
     o = 2;
     while True:
@@ -60,8 +53,7 @@ def SieveOfEratosthenes(n):
             continue
 
         # If prime[o] is not changed, then it is a prime
-        if not notPrime[o]:            
-            knownPrimes.append(p)
+        knownPrimes.append(p)
 
         # Increment "while" loop.
         o = o + 1;
@@ -70,13 +62,12 @@ def SieveOfEratosthenes(n):
  
     # Get the remaining prime numbers.
     for o in range(2, cardinality + 1):
-        if not notPrime[o]:
-            p = forward(o)
+        p = forward(o)
 
-            if isTimeMultiple(p):
-                continue
+        if isTimeMultiple(p):
+            continue
 
-            outputPrimes.add(p);
+        outputPrimes.add(p);
 
     return outputPrimes
  

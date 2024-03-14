@@ -6,7 +6,7 @@
 #include <set>
 #include <vector>
 
-// 1/3 overall space complexity!
+// log overall space complexity!
 // log reduction in time complexity!
 std::vector<size_t> knownPrimes = { 2, 3 };
 
@@ -56,13 +56,6 @@ std::set<size_t> SieveOfEratosthenes(const size_t& n)
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
     const size_t cardinality = (n & ~1) / 3;
-
-    // Create a boolean array "prime[0..cardinality]"
-    // and initialize all entries it as true. Rather,
-    // reverse the true/false meaning, so we can use
-    // default initialization. A value in notPrime[i]
-    // will finally be false only if i is a prime.
-    std::vector<bool> notPrime(cardinality + 1);
  
     size_t o = 2;
     while (true) {
@@ -77,9 +70,7 @@ std::set<size_t> SieveOfEratosthenes(const size_t& n)
         }
 
         // If prime[o] is not changed, then it is a prime
-        if (!notPrime[o]) {
-            knownPrimes.push_back(p);
-        }
+        knownPrimes.push_back(p);
 
         ++o;
     }
@@ -88,15 +79,13 @@ std::set<size_t> SieveOfEratosthenes(const size_t& n)
  
     // Get the remaining prime numbers.
     for (size_t o = 2; o <= cardinality; ++o) {
-        if (!notPrime[o]) {
-            const size_t p = forward(o);
+        const size_t p = forward(o);
 
-            if (isTimeMultiple(p)) {
-                continue;
-            }
-
-            outputPrimes.insert(p);
+        if (isTimeMultiple(p)) {
+            continue;
         }
+
+        outputPrimes.insert(p);
     }
 
     return outputPrimes;
