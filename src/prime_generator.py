@@ -29,6 +29,13 @@ def isTimeMultiple(p):
     return False
  
 def SieveOfEratosthenes(n):
+    if n < 2:
+        return set([])
+    if n < 3:
+        return set([2])
+    if n < 5:
+        return set([2, 3])
+
     # We are excluding multiples of the first few
     # small primes from outset. For multiples of
     # 2 and 3, this reduces complexity by 2/3.

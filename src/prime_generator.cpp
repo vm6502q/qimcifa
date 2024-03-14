@@ -42,6 +42,16 @@ bool isTimeMultiple(size_t p) {
  
 std::set<size_t> SieveOfEratosthenes(const size_t& n)
 {
+    if (n < 2) {
+        return std::set<size_t>();
+    }
+    if (n < 3) {
+        return std::set<size_t>(knownPrimes.begin(), knownPrimes.begin() + 1);
+    }
+    if (n < 5) {
+        return std::set<size_t>(knownPrimes.begin(), knownPrimes.begin() + 2);
+    }
+
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
