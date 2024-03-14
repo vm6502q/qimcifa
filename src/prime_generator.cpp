@@ -15,6 +15,11 @@
 #include "big_integer.hpp"
 #endif
 
+#if BIG_INT_BITS < 32
+typedef uint32_t BigInteger
+#elif BIG_INT_BITS < 64
+typedef uint64_t BigInteger
+#else
 #if USE_GMP
 typedef boost::multiprecision::mpz_int BigInteger;
 #elif USE_BOOST
@@ -23,6 +28,7 @@ typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG
     BigInteger;
 #else
 typedef BigInteger BigInteger;
+#endif
 #endif
 
 // Improvements by Dan Strano of Unitary Fund, 2024:
