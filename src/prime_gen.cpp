@@ -2,13 +2,7 @@
 // C++ program to print all primes smaller than or equal to
 // n using Sieve of Eratosthenes
 
-// #define USE_GMP 1
-// Use GMP arbitrary precision integers, (or use Boost alternative, if turned off).
- #define USE_BOOST 1
-// Optionally additionally check random number generator outputs for factoring via congruence of squares.
-// #define IS_SQUARES_CONGRUENCE_CHECK 1
-// Bit width of (OpenCL) arbitrary precision "big integers"
-#define BIG_INT_BITS 128
+#include "config.h"
 
 #include <iostream>
 #include <vector>

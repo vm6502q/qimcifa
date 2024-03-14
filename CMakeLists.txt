@@ -28,9 +28,10 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -O3")
 
-add_executable (prime_generator
-    src/prime_generator.cpp
-    )
+find_package(pybind11 CONFIG REQUIRED)
+message(STATUS "Found pybind11 v${pybind11_VERSION}: ${pybind11_INCLUDE_DIRS}")
+add_library(prime_gen MODULE src/prime_gen.cpp)
+target_link_libraries(prime_gen pybind11::module)
 
 if (USE_GMP OR USE_BOOST)
 add_executable (qimcifa
