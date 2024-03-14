@@ -5,7 +5,6 @@
 #include "config.h"
 
 #include <iostream>
-#include <set>
 #include <vector>
 
 #if USE_GMP
@@ -61,16 +60,16 @@ bool isTimeMultiple(BigInteger p) {
     return false;
 }
 
-std::set<BigInteger> SieveOfEratosthenes(const BigInteger& n)
+std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
     if (n < 2) {
-        return std::set<BigInteger>();
+        return std::vector<BigInteger>();
     }
     if (n < 3) {
-        return std::set<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 1);
+        return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 1);
     }
     if (n < 5) {
-        return std::set<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 2);
+        return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 2);
     }
 
     // We are excluding multiples of the first few
@@ -95,9 +94,7 @@ std::set<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
         ++o;
     }
-    
-    std::set<BigInteger> outputPrimes(knownPrimes.begin(), knownPrimes.end());
- 
+
     // Get the remaining prime numbers.
     for (BigInteger o = backward(knownPrimes.back()) + 1; o <= cardinality; ++o) {
         const BigInteger p = forward(o);
@@ -106,10 +103,10 @@ std::set<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             continue;
         }
 
-        outputPrimes.insert(p);
+        knownPrimes.push_back(p);
     }
 
-    return outputPrimes;
+    return knownPrimes;
 }
  
 // Driver Code
@@ -119,7 +116,7 @@ int main()
 
     std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
-    const std::set<BigInteger> primes = SieveOfEratosthenes(n);
+    const std::vector<BigInteger> primes = SieveOfEratosthenes(n);
 
     for (BigInteger p : primes) {
         std::cout << p << " ";

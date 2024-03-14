@@ -31,11 +31,11 @@ def isTimeMultiple(p):
  
 def SieveOfEratosthenes(n):
     if n < 2:
-        return set([])
+        return []
     if n < 3:
-        return set([2])
+        return [2]
     if n < 5:
-        return set([2, 3])
+        return [2, 3]
 
     # We are excluding multiples of the first few
     # small primes from outset. For multiples of
@@ -58,8 +58,6 @@ def SieveOfEratosthenes(n):
 
         # Increment "while" loop.
         o = o + 1;
-    
-    outputPrimes = set(knownPrimes)
  
     # Get the remaining prime numbers.
     for o in range(backward(knownPrimes[-1]) + 1, cardinality + 1):
@@ -69,7 +67,7 @@ def SieveOfEratosthenes(n):
             # Skip
             continue
 
-        outputPrimes.add(p);
+        knownPrimes.add(p);
 
     return outputPrimes
 
