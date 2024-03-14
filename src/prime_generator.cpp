@@ -3,6 +3,7 @@
 // n using Sieve of Eratosthenes
 
 #include <iostream>
+#include <set>
 #include <vector>
 
 // 1/3 overall space complexity!
@@ -93,6 +94,8 @@ void SieveOfEratosthenes(const size_t& n)
     for (size_t p : knownPrimes) {
         std::cout << p << " ";
     }
+    
+    std::set<size_t> outputPrimes(knownPrimes.begin(), knownPrimes.end());
  
     // Print all prime numbers
     for (size_t o = 2; o <= cardinality; ++o) {
@@ -103,8 +106,12 @@ void SieveOfEratosthenes(const size_t& n)
                 continue;
             }
 
-            std::cout << p << " ";
+            outputPrimes.insert(p);
         }
+    }
+
+    for (size_t p : outputPrimes) {
+        std::cout << p << " ";
     }
     std::cout << std::endl;
 }
