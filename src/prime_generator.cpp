@@ -90,7 +90,7 @@ std::set<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             continue;
         }
 
-        // If prime[o] is not changed, then it is a prime
+        // If it's not skipped above, then "p" is a prime.
         knownPrimes.push_back(p);
 
         ++o;

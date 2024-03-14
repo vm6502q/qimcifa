@@ -53,7 +53,7 @@ def SieveOfEratosthenes(n):
             o = o + 1
             continue
 
-        # If prime[o] is not changed, then it is a prime
+        # If it's not skipped above, then "p" is a prime.
         knownPrimes.append(p)
 
         # Increment "while" loop.
@@ -66,6 +66,7 @@ def SieveOfEratosthenes(n):
         p = forward(o)
 
         if isTimeMultiple(p):
+            # Skip
             continue
 
         outputPrimes.add(p);
