@@ -6,6 +6,7 @@
 // 1/3 overall space complexity!
 // 27/35 reduction in time complexity (and higher)!
 std::vector<int> knownPrimes = { 2, 3, 5, 7 };
+// Try adding more successive primes!
 
 int backward(int ni) {
     ni = (ni + 1) >> 1;
@@ -17,6 +18,15 @@ int forward(int p) {
     // Make this NOT a multiple of 2 or 3.
     p += (p >> 1U);
     return (p << 1U) - 1U;
+}
+
+int isTimeMultiple(int p) {
+    for (size_t i = 2U; i < knownPrimes.size(); ++i) {
+        if ((p % knownPrimes[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
 }
  
 void SieveOfEratosthenes(const int& n)
@@ -40,19 +50,10 @@ void SieveOfEratosthenes(const int& n)
             break;
         }
 
-        // This reduces time complexity by
-        // skipping multiples of 5.
-        if ((p % 5) == 0) {
+        if (isTimeMultiple(p)) {
             ++o;
             continue;
         }
-        // This reduces time complexity by
-        // skipping multiples of 7.
-        if ((p % 7) == 0) {
-            ++o;
-            continue;
-        }
-        // (This process can continue, for other primes.)
 
         // If prime[o] is not changed, then it is a prime
         if (!notPrime[o]) {
@@ -89,19 +90,13 @@ void SieveOfEratosthenes(const int& n)
     }
  
     // Print all prime numbers
-    for (int o = 3; o <= cardinality; ++o) {
+    for (int o = 4; o <= cardinality; ++o) {
         if (!notPrime[o]) {
             const int p = forward(o);
 
-            // Skip multiples of 5.
-            if ((p % 5) == 0) {
+            if (isTimeMultiple(p)) {
                 continue;
             }
-            // Skip multiples of 7.
-            if ((p % 7) == 0) {
-                continue;
-            }
-            // (This can continue, for other primes.)
 
             std::cout << p << " ";
         }
