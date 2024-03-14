@@ -67,8 +67,8 @@ void SieveOfEratosthenes(const int& n)
 // Driver Code
 int main()
 {
-    int n = 60;
-    std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
+    int n = 300;
+    std:: cout << "Following are select (biased) prime numbers smaller than or equal to " << n << ":" << std::endl;
     SieveOfEratosthenes(n);
     return 0;
 }
