@@ -21,10 +21,7 @@ int forward(int p) {
  
 void SieveOfEratosthenes(const int& n)
 {
-    int cardinality = n;
-    for (int p : knownPrimes) {
-        cardinality = ((p - 1) * cardinality) / p;
-    }
+    const int cardinality = backward(n);
 
     // int ni = n;
     // for (int p : knownPrimes) {
@@ -38,7 +35,7 @@ void SieveOfEratosthenes(const int& n)
  
     int o = 2;
     while (true) {
-        int p = forward(o);
+        const int p = forward(o);
 
         if ((p * p) > n) {
             break;
