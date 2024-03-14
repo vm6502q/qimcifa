@@ -6,9 +6,8 @@
 #include <vector>
 
 // 1/3 overall space complexity!
-// 27/35 reduction in time complexity (and higher)!
-std::vector<size_t> knownPrimes = { 2, 3, 5, 7 };
-// Try adding more successive primes!
+// log reduction in time complexity!
+std::vector<size_t> knownPrimes = { 2, 3 };
 
 size_t backward(size_t ni) {
     ni = (ni + 1) >> 1;
@@ -84,6 +83,8 @@ void SieveOfEratosthenes(const size_t& n)
 
                 notPrime[backward(i)] = true;
             }
+            
+            knownPrimes.push_back(p);
         }
 
         ++o;
