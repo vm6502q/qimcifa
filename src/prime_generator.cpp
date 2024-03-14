@@ -40,7 +40,7 @@ bool isTimeMultiple(size_t p) {
     return false;
 }
  
-void SieveOfEratosthenes(const size_t& n)
+std::set<size_t> SieveOfEratosthenes(const size_t& n)
 {
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
@@ -110,17 +110,22 @@ void SieveOfEratosthenes(const size_t& n)
         }
     }
 
-    for (size_t p : outputPrimes) {
-        std::cout << p << " ";
-    }
-    std::cout << std::endl;
+    return outputPrimes;
 }
  
 // Driver Code
 int main()
 {
     size_t n = 100;
+
     std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
-    SieveOfEratosthenes(n);
+
+    const std::set<size_t> primes = SieveOfEratosthenes(n);
+
+    for (size_t p : primes) {
+        std::cout << p << " ";
+    }
+    std::cout << std::endl;
+
     return 0;
 }
