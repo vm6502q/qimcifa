@@ -5,12 +5,11 @@
 
 // 1/3 overall space and time complexity!
 std::vector<int> knownPrimes = { 2, 3 };
+// std::vector<int> knownPrimes = { 2, 3, 5 };
 
 int backward(int ni) {
-    for (int p : knownPrimes) {
-        ni = ((p - 1) * (ni + 1)) / p;
-    }
-
+    ni = (ni + 1) >> 1;
+    ni = ((ni + 1) << 1) / 3;
     return ni;
 }
 
@@ -25,10 +24,7 @@ void SieveOfEratosthenes(const int& n)
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
-    int cardinality = n;
-    for (int p : knownPrimes) {
-        cardinality = ((p - 1) * cardinality) / p;
-    }
+    const int cardinality = (n & ~1) / 3;
 
     // Create a boolean array "prime[0..cardinality]"
     // and initialize all entries it as true. Rather,
@@ -39,6 +35,14 @@ void SieveOfEratosthenes(const int& n)
  
     int o = 2;
     while (true) {
+        // This reduces time complexity by
+        // skipping multiples of 5.
+        // const int digit = o % 10;
+        // if ((digit == 2) || (digit == 9)) {
+        //     ++o;
+        //     continue;
+        // }
+
         const int p = forward(o);
 
         if ((p * p) > n) {
@@ -83,6 +87,12 @@ void SieveOfEratosthenes(const int& n)
  
     // Print all prime numbers
     for (int o = 2; o <= cardinality; ++o) {
+        // Skip multiples of 5.
+        // const int digit = o % 10;
+        // if ((digit == 2) || (digit == 9)) {
+        //     ++o;
+        //     continue;
+        // }
         if (!notPrime[o]) {
             std::cout << forward(o) << " ";
         }
