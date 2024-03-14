@@ -46,7 +46,7 @@ void SieveOfEratosthenes(const int& n)
             for (int i = p * p; i <= n; i += p) {
                 bool isSkip = false;
                 for (int j : knownPrimes) {
-                    if ((p % j) == 0) {
+                    if ((i % j) == 0) {
                         isSkip = true;
                         break;
                     }
