@@ -20,6 +20,15 @@ int forward(int p) {
     return (p << 1U) - 1U;
 }
 
+int isTimeOrSpaceMultiple(int p) {
+    for (int i : knownPrimes) {
+        if ((p % i) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int isTimeMultiple(int p) {
     for (size_t i = 2U; i < knownPrimes.size(); ++i) {
         if ((p % knownPrimes[i]) == 0) {
@@ -67,14 +76,7 @@ void SieveOfEratosthenes(const int& n)
                 // will not return the correct number,
                 // but this multiple has already been
                 // struck from the set.
-                bool isMultiple = false;
-                for (int j : knownPrimes) {
-                    if ((i % j) == 0) {
-                        isMultiple = true;
-                        break;
-                    }
-                }
-                if (isMultiple) {
+                if (isTimeOrSpaceMultiple(i)) {
                     continue;
                 }
 
