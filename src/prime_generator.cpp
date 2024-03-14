@@ -23,11 +23,6 @@ void SieveOfEratosthenes(const int& n)
 {
     const int cardinality = backward(n);
 
-    // int ni = n;
-    // for (int p : knownPrimes) {
-    //     ni = (p - 1) * (ni + 1) / p;
-    // }
-
     // Create a boolean array "prime[0..n]" and initialize
     // all entries it as true. A value in prime[i] will
     // finally be false if i is Not a prime, else true.
