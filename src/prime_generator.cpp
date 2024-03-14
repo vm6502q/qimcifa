@@ -2,29 +2,49 @@
 // C++ program to print all primes smaller than or equal to
 // n using Sieve of Eratosthenes
 
+#include "config.h"
+
 #include <iostream>
 #include <set>
 #include <vector>
 
+#if USE_GMP
+#include <boost/multiprecision/gmp.hpp>
+#elif USE_BOOST
+#include <boost/multiprecision/cpp_int.hpp>
+#else
+#include "big_integer.hpp"
+#endif
+
+#if USE_GMP
+typedef boost::multiprecision::mpz_int BigInteger;
+#elif USE_BOOST
+typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG_INT_BITS, BIG_INT_BITS,
+    boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+    BigInteger;
+#else
+typedef BigInteger BigInteger;
+#endif
+
 // Improvements by Dan Strano of Unitary Fund, 2024:
 // log overall space complexity!
 // log reduction in time complexity!
-std::vector<size_t> knownPrimes = { 2, 3 };
+std::vector<BigInteger> knownPrimes = { 2, 3 };
 
-size_t backward(size_t ni) {
+BigInteger backward(BigInteger ni) {
     ni = (ni + 1) >> 1;
     ni = ((ni + 1) << 1) / 3;
     return ni;
 }
 
-size_t forward(size_t p) {
+BigInteger forward(BigInteger p) {
     // Make this NOT a multiple of 2 or 3.
     p += (p >> 1U);
     return (p << 1U) - 1U;
 }
 
-bool isTimeOrSpaceMultiple(size_t p) {
-    for (size_t i : knownPrimes) {
+bool isTimeOrSpaceMultiple(BigInteger p) {
+    for (BigInteger i : knownPrimes) {
         if ((p % i) == 0) {
             return true;
         }
@@ -32,7 +52,7 @@ bool isTimeOrSpaceMultiple(size_t p) {
     return false;
 }
 
-bool isTimeMultiple(size_t p) {
+bool isTimeMultiple(BigInteger p) {
     for (size_t i = 2U; i < knownPrimes.size(); ++i) {
         if ((p % knownPrimes[i]) == 0) {
             return true;
@@ -40,27 +60,27 @@ bool isTimeMultiple(size_t p) {
     }
     return false;
 }
- 
-std::set<size_t> SieveOfEratosthenes(const size_t& n)
+
+std::set<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
     if (n < 2) {
-        return std::set<size_t>();
+        return std::set<BigInteger>();
     }
     if (n < 3) {
-        return std::set<size_t>(knownPrimes.begin(), knownPrimes.begin() + 1);
+        return std::set<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 1);
     }
     if (n < 5) {
-        return std::set<size_t>(knownPrimes.begin(), knownPrimes.begin() + 2);
+        return std::set<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 2);
     }
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
-    const size_t cardinality = (n & ~1) / 3;
+    const BigInteger cardinality = (n & ~BigInteger(1)) / 3;
  
-    size_t o = 2;
+    BigInteger o = 2;
     while (true) {
-        const size_t p = forward(o);
+        const BigInteger p = forward(o);
         if ((p * p) > n) {
             break;
         }
@@ -76,11 +96,11 @@ std::set<size_t> SieveOfEratosthenes(const size_t& n)
         ++o;
     }
     
-    std::set<size_t> outputPrimes(knownPrimes.begin(), knownPrimes.end());
+    std::set<BigInteger> outputPrimes(knownPrimes.begin(), knownPrimes.end());
  
     // Get the remaining prime numbers.
-    for (size_t o = 2; o <= cardinality; ++o) {
-        const size_t p = forward(o);
+    for (BigInteger o = 2; o <= cardinality; ++o) {
+        const BigInteger p = forward(o);
 
         if (isTimeMultiple(p)) {
             continue;
@@ -95,13 +115,13 @@ std::set<size_t> SieveOfEratosthenes(const size_t& n)
 // Driver Code
 int main()
 {
-    size_t n = 100;
+    BigInteger n = 100;
 
     std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
-    const std::set<size_t> primes = SieveOfEratosthenes(n);
+    const std::set<BigInteger> primes = SieveOfEratosthenes(n);
 
-    for (size_t p : primes) {
+    for (BigInteger p : primes) {
         std::cout << p << " ";
     }
     std::cout << std::endl;
