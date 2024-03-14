@@ -52,6 +52,7 @@ void SieveOfEratosthenes(const int& n)
             ++o;
             continue;
         }
+        // (This process can continue, for other primes.)
 
         // If prime[o] is not changed, then it is a prime
         if (!notPrime[o]) {
@@ -102,6 +103,7 @@ void SieveOfEratosthenes(const int& n)
             if ((p % 7) == 0) {
                 continue;
             }
+            // (This can continue, for other primes.)
 
             std::cout << p << " ";
         }
