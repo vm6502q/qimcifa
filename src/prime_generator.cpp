@@ -9,7 +9,7 @@ void SieveOfEratosthenes(const int& n)
 
     int cardinality = n;
     for (int p : knownPrimes) {
-        cardinality = (p - 1) * (cardinality + 1) / p;
+        cardinality = (p - 1) * cardinality / p;
     }
 
     // Create a boolean array "prime[0..n]" and initialize
@@ -33,16 +33,16 @@ void SieveOfEratosthenes(const int& n)
             // Update all multiples of p greater than or
             // equal to the square of it numbers which are
             // multiple of p and are less than p^2 are
-            // already been marked.
+            // already been marked
             for (int i = p * p; i <= n; i += p) {
                 int o = i;
-                for (int j = knownPrimes.size() - 1; j >= 0; --j) {
-                    const int q = knownPrimes[j];
-                    o = ((q - 1) * (o + 1)) / q;
+                for (int p : knownPrimes) {
+                    o = (p - 1) * (o + 1) / p;
                 }
                 notPrime[o] = true;
             }
         }
+
         ++o;
     }
 
@@ -56,6 +56,7 @@ void SieveOfEratosthenes(const int& n)
             // Make this NOT a multiple of 2 or 3.
             int p = o + (o >> 1U);
             p = (p << 1U) - 1U;
+
             std::cout << p << " ";
         }
     }
