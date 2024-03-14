@@ -21,7 +21,10 @@ int forward(int p) {
  
 void SieveOfEratosthenes(const int& n)
 {
-    const int cardinality = backward(n);
+    int cardinality = n;
+    for (int p : knownPrimes) {
+        cardinality = ((p - 1) * cardinality) / p;
+    }
 
     // Create a boolean array "prime[0..n]" and initialize
     // all entries it as true. A value in prime[i] will
@@ -78,7 +81,7 @@ void SieveOfEratosthenes(const int& n)
 // Driver Code
 int main()
 {
-    int n = 300;
+    int n = 100;
     std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
     SieveOfEratosthenes(n);
     return 0;
