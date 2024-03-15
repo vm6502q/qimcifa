@@ -2,6 +2,14 @@
 // C++ program to print all primes smaller than or equal to
 // n using Sieve of Eratosthenes
 
+// Improved by Dan Strano of Unitary Fund, 2024.
+// We can think of trial division as exact inverse of
+// Sieve of Eratosthenes, with log space and log time.
+// The modular division part is a costly atomic operation.
+// It need only be carried out up the square root of the
+// number under trial. Multiples of 2, 3, and 5 can be
+// entirely skipped in loop enumeration.
+
 #include "config.h"
 
 #include <iostream>
@@ -30,11 +38,6 @@ typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG
 typedef BigInteger BigInteger;
 #endif
 #endif
-
-// Improvements by Dan Strano of Unitary Fund, 2024:
-// log overall space complexity!
-// log reduction in time complexity!
-std::vector<BigInteger> knownPrimes = { 2, 3, 5 };
 
 inline BigInteger sqrt(const BigInteger& toTest)
 {
@@ -75,7 +78,7 @@ BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
-bool isTimeOrSpaceMultiple(BigInteger p) {
+bool isTimeOrSpaceMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
     for (BigInteger i : knownPrimes) {
         if (i > sqrtP) {
@@ -88,7 +91,7 @@ bool isTimeOrSpaceMultiple(BigInteger p) {
     return false;
 }
 
-bool isTimeMultiple(BigInteger p) {
+bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
     for (size_t i = 2U; i < knownPrimes.size(); ++i) {
         if (i > sqrtP) {
@@ -103,6 +106,8 @@ bool isTimeMultiple(BigInteger p) {
 
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
+    std::vector<BigInteger> knownPrimes = { 2, 3, 5 };
+
     if (n < 2) {
         return std::vector<BigInteger>();
     }
@@ -133,7 +138,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 break;
             }
 
-            if (isTimeMultiple(p)) {
+            if (isTimeMultiple(p, knownPrimes)) {
                 // Skip
                 continue;
             }
@@ -149,7 +154,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 break;
             }
 
-            if (isTimeMultiple(p)) {
+            if (isTimeMultiple(p, knownPrimes)) {
                 // Skip
                 continue;
             }

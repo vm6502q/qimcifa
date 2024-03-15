@@ -2,9 +2,13 @@
 // C++ program to print all primes smaller than or equal to
 // n using Sieve of Eratosthenes
 
-// Improvements by Dan Strano of Unitary Fund, 2024:
-// log overall space complexity!
-// log reduction in time complexity!
+// Improved by Dan Strano of Unitary Fund, 2024.
+// We can think of trial division as exact inverse of
+// Sieve of Eratosthenes, with log space and log time.
+// The modular division part is a costly atomic operation.
+// It need only be carried out up the square root of the
+// number under trial. Multiples of 2, 3, and 5 can be
+// entirely skipped in loop enumeration.
 
 #include "config.h"
 
