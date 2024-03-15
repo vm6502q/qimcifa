@@ -56,12 +56,13 @@ def TrialDivision(n):
     # cardinality = int((~((~n) | 1)) / 3)
  
     # Get the remaining prime numbers.
-    o = 2
-    lcv7 = -12
-    lcv11 = -17
+    o = 3
+    lcv7 = -11
+    lcv11 = -16
+    # wheel = 1
     isWorking = True
     while isWorking:
-        for i in range(1, 7):
+        for i in range(0, 6):
             if lcv7 == 11:
                 lcv7 = 1
                 continue
@@ -90,7 +91,7 @@ def TrialDivision(n):
 
             knownPrimes.append(p)
 
-        for i in range(8, 10):
+        for i in range(7, 9):
             if lcv7 == 11:
                 lcv7 = 1
                 continue

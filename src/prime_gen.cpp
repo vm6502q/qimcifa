@@ -136,12 +136,13 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // const BigInteger cardinality = (~((~n) | 1)) / 3;
 
     // Get the remaining prime numbers.
-    BigInteger o = 2;
-    int lcv7 = -12;
-    int lcv11 = -17;
+    BigInteger o = 3;
+    // BigInteger wheel = 1;
+    int lcv7 = -11;
+    int lcv11 = -16;
     bool isWorking = true;
     while (isWorking) {
-        for (int i = 1; i < 7; ++i) {
+        for (int i = 0; i < 6; ++i) {
             if (lcv7 == 11) {
                 lcv7 = 1;
                 continue;
@@ -169,15 +170,17 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 break;
             }
 
+            // if (gcd(p, wheel) != 1) {
             if (isTimeMultiple(p, knownPrimes)) {
                 // Skip
                 continue;
             }
 
+            // wheel *= p;
             knownPrimes.push_back(p);
         }
 
-        for (int i = 8; i < 10; ++i) {
+        for (int i = 7; i < 9; ++i) {
             if (lcv7 == 11) {
                 lcv7 = 1;
                 continue;
@@ -205,11 +208,13 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 break;
             }
 
+            // if (gcd(p, wheel) != 1) {
             if (isTimeMultiple(p, knownPrimes)) {
                 // Skip
                 continue;
             }
 
+            // wheel *= p;
             knownPrimes.push_back(p);
         }
 
