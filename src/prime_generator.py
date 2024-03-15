@@ -37,7 +37,7 @@ def isTimeMultiple(p, knownPrimes):
     sqrt_p = math.isqrt(p)
     if (sqrt_p * sqrt_p) == p:
         return True
-    for kp in knownPrimes[4:]:
+    for kp in knownPrimes[5:]:
         if kp > sqrt_p:
             return False
         if (p % kp) == 0:
@@ -58,6 +58,7 @@ def TrialDivision(n):
     # Get the remaining prime numbers.
     o = 2
     lcv7 = -12
+    lcv11 = -17
     isWorking = True
     while isWorking:
         for i in range(1, 7):
@@ -68,6 +69,14 @@ def TrialDivision(n):
                 lcv7 = 8
                 continue
             lcv7 = lcv7 + 1
+
+            if lcv11 == 17:
+                lcv11 = 1
+                continue
+            if lcv11 == 7:
+                lcv11 = 8
+                continue
+            lcv11 = lcv11 + 1
 
             p = forward(o + i)
 
@@ -89,6 +98,14 @@ def TrialDivision(n):
                 lcv7 = 8
                 continue
             lcv7 = lcv7 + 1
+
+            if lcv11 == 17:
+                lcv11 = 1
+                continue
+            if lcv11 == 7:
+                lcv11 = 8
+                continue
+            lcv11 = lcv11 + 1
 
             p = forward(o + i)
 

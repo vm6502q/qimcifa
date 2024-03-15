@@ -101,7 +101,7 @@ bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     if ((sqrtP * sqrtP) == p) {
         return true;
     }
-    for (size_t i = 4U; i < knownPrimes.size(); ++i) {
+    for (size_t i = 5U; i < knownPrimes.size(); ++i) {
         const BigInteger kp = knownPrimes[i];
         if (kp > sqrtP) {
             return false;
@@ -138,6 +138,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // Get the remaining prime numbers.
     BigInteger o = 2;
     int lcv7 = -12;
+    int lcv11 = -17;
     bool isWorking = true;
     while (isWorking) {
         for (int i = 1; i < 7; ++i) {
@@ -150,6 +151,16 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 continue;
             }
             ++lcv7;
+
+            if (lcv11 == 17) {
+                lcv11 = 1;
+                continue;
+            }
+            if (lcv11 == 7) {
+                lcv11 = 8;
+                continue;
+            }
+            ++lcv11;
 
             BigInteger p = forward(o + i);
 
@@ -176,6 +187,16 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 continue;
             }
             ++lcv7;
+
+            if (lcv11 == 17) {
+                lcv11 = 1;
+                continue;
+            }
+            if (lcv11 == 7) {
+                lcv11 = 8;
+                continue;
+            }
+            ++lcv11;
 
             BigInteger p = forward(o + i);
 
