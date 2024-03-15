@@ -94,7 +94,7 @@ bool isTimeOrSpaceMultiple(BigInteger p, const std::vector<BigInteger>& knownPri
 
 bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
-    for (size_t i = 3U; i < knownPrimes.size(); ++i) {
+    for (size_t i = 4U; i < knownPrimes.size(); ++i) {
         if (i > sqrtP) {
             return false;
         }
@@ -129,9 +129,20 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
     // Get the remaining prime numbers.
     BigInteger o = 2;
+    int lcv7 = -12;
     bool isWorking = true;
     while (isWorking) {
         for (int i = 1; i < 7; ++i) {
+            if (lcv7 == 11) {
+                lcv7 = 1;
+                continue;
+            }
+            if (lcv7 == 7) {
+                lcv7 = 8;
+                continue;
+            }
+            ++lcv7;
+
             BigInteger p = forward(o + i);
 
             if (p > n) {
@@ -148,6 +159,16 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         }
 
         for (int i = 8; i < 10; ++i) {
+            if (lcv7 == 11) {
+                lcv7 = 1;
+                continue;
+            }
+            if (lcv7 == 7) {
+                lcv7 = 8;
+                continue;
+            }
+            ++lcv7;
+
             BigInteger p = forward(o + i);
 
             if (p > n) {
