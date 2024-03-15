@@ -7,7 +7,7 @@
 // Sieve of Eratosthenes, with log space and log time.
 // The modular division part is a costly atomic operation.
 // It need only be carried out up the square root of the
-// number under trial. Multiples of 2, 3, and 5 can be
+// number under trial. Multiples of 2, 3, 5, and 7 can be
 // entirely skipped in loop enumeration.
 
 #include "config.h"
