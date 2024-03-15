@@ -80,11 +80,15 @@ BigInteger forward(BigInteger p) {
 
 #if 0
 bool isTimeOrSpaceMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
-    for (BigInteger i : knownPrimes) {
-        if (i > sqrt(p)) {
+    const BigInteger sqrtP = sqrt(p);
+    if ((sqrtP * sqrtP) == p) {
+        return true;
+    }
+    for (BigInteger kp : knownPrimes) {
+        if (kp > sqrtP) {
             return false;
         }
-        if ((p % i) == 0) {
+        if ((p % kp) == 0) {
             return true;
         }
     }
@@ -98,10 +102,11 @@ bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
         return true;
     }
     for (size_t i = 4U; i < knownPrimes.size(); ++i) {
-        if (i > sqrtP) {
+        const BigInteger kp = knownPrimes[i];
+        if (kp > sqrtP) {
             return false;
         }
-        if ((p % knownPrimes[i]) == 0) {
+        if ((p % kp) == 0) {
             return true;
         }
     }

@@ -26,10 +26,10 @@ def isTimeOrSpaceMultiple(p, knownPrimes):
     sqrt_p = math.isqrt(p)
     if (sqrt_p * sqrt_p) == p:
         return True
-    for i in knownPrimes:
-        if i > sqrt_p:
+    for kp in knownPrimes:
+        if kp > sqrt_p:
             return False
-        if (p % i) == 0:
+        if (p % kp) == 0:
             return True
     return False
 
@@ -37,10 +37,10 @@ def isTimeMultiple(p, knownPrimes):
     sqrt_p = math.isqrt(p)
     if (sqrt_p * sqrt_p) == p:
         return True
-    for i in knownPrimes[4:]:
-        if i > sqrt_p:
+    for kp in knownPrimes[4:]:
+        if kp > sqrt_p:
             return False
-        if (p % i) == 0:
+        if (p % kp) == 0:
             return True
     return False
  
