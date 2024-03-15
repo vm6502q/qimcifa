@@ -29,7 +29,7 @@ def isTimeMultiple(p):
             return True
     return False
  
-def SieveOfEratosthenes(n):
+def TrialDivision(n):
     if n < 2:
         return []
     if n < 3:
@@ -42,25 +42,8 @@ def SieveOfEratosthenes(n):
     # 2 and 3, this reduces complexity by 2/3.
     cardinality = int((~((~n) | 1)) / 3)
  
-    o = 2;
-    while True:
-        p = forward(o)
-        if (p * p) > n:
-            break
-
-        if isTimeMultiple(p):
-            # Skip
-            o = o + 1
-            continue
-
-        # If it's not skipped above, then "p" is a prime.
-        knownPrimes.append(p)
-
-        # Increment "while" loop.
-        o = o + 1;
- 
     # Get the remaining prime numbers.
-    for o in range(backward(knownPrimes[-1]) + 1, cardinality + 1):
+    for o in range(2, cardinality + 1):
         p = forward(o)
 
         if isTimeMultiple(p):
@@ -76,4 +59,4 @@ if __name__ == '__main__':
     n = 100
 
     print("Following are the prime numbers smaller than or equal to ", n, ":")
-    print(SieveOfEratosthenes(n))
+    print(TrialDivision(n))

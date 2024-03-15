@@ -38,6 +38,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
 
 #define BIG_INTEGER_WORD_BITS 64U
 #define BIG_INTEGER_WORD_POWER 6U
@@ -532,3 +533,6 @@ BigInteger operator/(const BigInteger& left, const BigInteger& right);
 BigInteger operator%(const BigInteger& left, const BigInteger& right);
 
 BigInteger operator/=(BigInteger left, const BigInteger& right);
+
+std::ostream& operator<<(std::ostream& os, BigInteger b);
+std::istream& operator>>(std::istream& is, BigInteger& b);

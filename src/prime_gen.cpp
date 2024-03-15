@@ -67,7 +67,7 @@ bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     return false;
 }
 
-std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
+std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
     std::vector<BigInteger> knownPrimes = { 2, 3 };
 
@@ -85,27 +85,9 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
     const BigInteger cardinality = (~((~n) | 1)) / 3;
- 
-    BigInteger o = 2;
-    while (true) {
-        const BigInteger p = forward(o);
-        if ((p * p) > n) {
-            break;
-        }
-
-        if (isTimeMultiple(p, knownPrimes)) {
-            ++o;
-            continue;
-        }
-
-        // If it's not skipped above, then "p" is a prime.
-        knownPrimes.push_back(p);
-
-        ++o;
-    }
 
     // Get the remaining prime numbers.
-    for (BigInteger o = backward(knownPrimes.back()) + 1; o <= cardinality; ++o) {
+    for (BigInteger o = 2; o <= cardinality; ++o) {
         const BigInteger p = forward(o);
 
         if (isTimeMultiple(p, knownPrimes)) {
@@ -120,5 +102,5 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
 PYBIND11_MODULE(prime_gen, m) {
     m.doc() = "pybind11 plugin to generate prime numbers";
-    m.def("prime_gen", &SieveOfEratosthenes, "A function that returns all primes up to the value of its argument");
+    m.def("prime_gen", &TrialDivision, "A function that returns all primes up to the value of its argument");
 }

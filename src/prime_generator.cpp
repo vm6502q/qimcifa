@@ -66,7 +66,7 @@ bool isTimeMultiple(BigInteger p) {
     return false;
 }
 
-std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
+std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
     if (n < 2) {
         return std::vector<BigInteger>();
@@ -82,27 +82,9 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
     const BigInteger cardinality = (~((~n) | 1)) / 3;
- 
-    BigInteger o = 2;
-    while (true) {
-        const BigInteger p = forward(o);
-        if ((p * p) > n) {
-            break;
-        }
-
-        if (isTimeMultiple(p)) {
-            ++o;
-            continue;
-        }
-
-        // If it's not skipped above, then "p" is a prime.
-        knownPrimes.push_back(p);
-
-        ++o;
-    }
 
     // Get the remaining prime numbers.
-    for (BigInteger o = backward(knownPrimes.back()) + 1; o <= cardinality; ++o) {
+    for (BigInteger o = 2; o <= cardinality; ++o) {
         const BigInteger p = forward(o);
 
         if (isTimeMultiple(p)) {
@@ -122,7 +104,7 @@ int main()
 
     std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
-    const std::vector<BigInteger> primes = SieveOfEratosthenes(n);
+    const std::vector<BigInteger> primes = TrialDivision(n);
 
     for (BigInteger p : primes) {
         std::cout << p << " ";
