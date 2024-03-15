@@ -35,6 +35,33 @@ typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG
 #endif
 #endif
 
+inline BigInteger sqrt(const BigInteger& toTest)
+{
+    // Otherwise, find b = sqrt(b^2).
+    BigInteger start = 1U, end = toTest >> 1U, ans = 0U;
+    do {
+        const BigInteger mid = (start + end) >> 1U;
+
+        // If toTest is a perfect square
+        const BigInteger sqr = mid * mid;
+        if (sqr == toTest) {
+            ans = mid;
+            break;
+        }
+
+        if (sqr < toTest) {
+            // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
+            start = mid + 1U;
+            ans = mid;
+        } else {
+            // If mid*mid is greater than p
+            end = mid - 1U;
+        }
+    } while (start <= end);
+
+    return ans;
+}
+
 BigInteger backward(BigInteger ni) {
     ni = (ni + 1) >> 1;
     ni = ((ni + 1) << 1) / 3;
@@ -50,6 +77,9 @@ BigInteger forward(BigInteger p) {
 #if 0
 bool isTimeOrSpaceMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     for (BigInteger i : knownPrimes) {
+        if (i > sqrt(p)) {
+            return false;
+        }
         if ((p % i) == 0) {
             return true;
         }
@@ -60,6 +90,9 @@ bool isTimeOrSpaceMultiple(BigInteger p, const std::vector<BigInteger>& knownPri
 
 bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     for (size_t i = 2U; i < knownPrimes.size(); ++i) {
+        if (i > sqrt(p)) {
+            return false;
+        }
         if ((p % knownPrimes[i]) == 0) {
             return true;
         }
