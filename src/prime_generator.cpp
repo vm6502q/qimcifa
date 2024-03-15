@@ -23,9 +23,9 @@
 #include "big_integer.hpp"
 #endif
 
-#if BIG_INT_BITS < 32
+#if BIG_INT_BITS < 33
 typedef uint32_t BigInteger
-#elif BIG_INT_BITS < 64
+#elif BIG_INT_BITS < 65
 typedef uint64_t BigInteger
 #else
 #if USE_GMP
