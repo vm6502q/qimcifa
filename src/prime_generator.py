@@ -5,7 +5,7 @@
 # Improvements by Dan Strano of Unitary Fund, 2024:
 # log space complexity!
 # log reduction in time complexity!
-knownPrimes = [ 2, 3 ]
+knownPrimes = [ 2, 3, 5 ]
 
 def backward(ni):
     ni = (ni + 1) >> 1
@@ -36,6 +36,8 @@ def TrialDivision(n):
         return [2]
     if n < 5:
         return [2, 3]
+    if n < 7:
+        return [2, 3, 5]
 
     # We are excluding multiples of the first few
     # small primes from outset. For multiples of
@@ -43,14 +45,36 @@ def TrialDivision(n):
     cardinality = int((~((~n) | 1)) / 3)
  
     # Get the remaining prime numbers.
-    for o in range(2, cardinality + 1):
-        p = forward(o)
+    o = 2
+    isWorking = True
+    while isWorking:
+        for i in range(1, 7):
+            p = forward(o + i)
 
-        if isTimeMultiple(p):
-            # Skip
-            continue
+            if p > n:
+                isWorking = False
+                break
 
-        knownPrimes.append(p);
+            if isTimeMultiple(p):
+                # Skip
+                continue
+
+            knownPrimes.append(p);
+
+        for i in range(8, 10):
+            p = forward(o + i)
+
+            if p > n:
+                isWorking = False
+                break
+
+            if isTimeMultiple(p):
+                # Skip
+                continue
+
+            knownPrimes.append(p);
+
+        o = o + 10
 
     return knownPrimes
 
