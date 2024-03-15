@@ -59,7 +59,7 @@ def TrialDivision(n):
                 # Skip
                 continue
 
-            knownPrimes.append(p);
+            knownPrimes.append(p)
 
         for i in range(8, 10):
             p = forward(o + i)
@@ -72,7 +72,7 @@ def TrialDivision(n):
                 # Skip
                 continue
 
-            knownPrimes.append(p);
+            knownPrimes.append(p)
 
         o = o + 10
 

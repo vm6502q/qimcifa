@@ -34,7 +34,7 @@ typedef BigInteger BigInteger;
 // Improvements by Dan Strano of Unitary Fund, 2024:
 // log overall space complexity!
 // log reduction in time complexity!
-std::vector<BigInteger> knownPrimes = { 2, 3 };
+std::vector<BigInteger> knownPrimes = { 2, 3, 5 };
 
 BigInteger backward(BigInteger ni) {
     ni = (ni + 1) >> 1;
@@ -77,21 +77,52 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     if (n < 5) {
         return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 2);
     }
+    if (n < 7) {
+        return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 3);
+    }
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
-    const BigInteger cardinality = (~((~n) | 1)) / 3;
+    // const BigInteger cardinality = (~((~n) | 1)) / 3;
 
     // Get the remaining prime numbers.
-    for (BigInteger o = 2; o <= cardinality; ++o) {
-        const BigInteger p = forward(o);
+    BigInteger o = 2;
+    bool isWorking = true;
+    while (isWorking) {
+        for (int i = 1; i < 7; ++i) {
+            BigInteger p = forward(o + i);
 
-        if (isTimeMultiple(p)) {
-            continue;
+            if (p > n) {
+                isWorking = false;
+                break;
+            }
+
+            if (isTimeMultiple(p)) {
+                // Skip
+                continue;
+            }
+
+            knownPrimes.push_back(p);
         }
 
-        knownPrimes.push_back(p);
+        for (int i = 8; i < 10; ++i) {
+            BigInteger p = forward(o + i);
+
+            if (p > n) {
+                isWorking = false;
+                break;
+            }
+
+            if (isTimeMultiple(p)) {
+                // Skip
+                continue;
+            }
+
+            knownPrimes.push_back(p);
+        }
+
+        o = o + 10;
     }
 
     return knownPrimes;
