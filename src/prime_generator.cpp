@@ -84,7 +84,7 @@ bool isTimeOrSpaceMultiple(BigInteger p, const std::vector<BigInteger>& knownPri
         return true;
     }
     for (BigInteger kp : knownPrimes) {
-        if (kp > sqrtP) {
+        if (kp >= sqrtP) {
             return false;
         }
         if ((p % kp) == 0) {
@@ -101,7 +101,7 @@ bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     }
     for (size_t i = 5U; i < knownPrimes.size(); ++i) {
         const BigInteger kp = knownPrimes[i];
-        if (kp > sqrtP) {
+        if (kp >= sqrtP) {
             return false;
         }
         if ((p % kp) == 0) {

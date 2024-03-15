@@ -27,7 +27,7 @@ def isTimeOrSpaceMultiple(p, knownPrimes):
     if (sqrt_p * sqrt_p) == p:
         return True
     for kp in knownPrimes:
-        if kp > sqrt_p:
+        if kp >= sqrt_p:
             return False
         if (p % kp) == 0:
             return True
@@ -38,7 +38,7 @@ def isTimeMultiple(p, knownPrimes):
     if (sqrt_p * sqrt_p) == p:
         return True
     for kp in knownPrimes[5:]:
-        if kp > sqrt_p:
+        if kp >= sqrt_p:
             return False
         if (p % kp) == 0:
             return True
