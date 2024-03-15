@@ -166,7 +166,10 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 // Driver Code
 int main()
 {
-    BigInteger n = 100;
+    BigInteger n;
+
+    std::cout << "Primes up to number: ";
+    std::cin >> n;
 
     std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
