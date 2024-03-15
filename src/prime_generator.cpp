@@ -76,8 +76,9 @@ BigInteger forward(BigInteger p) {
 }
 
 bool isTimeOrSpaceMultiple(BigInteger p) {
+    const BigInteger sqrtP = sqrt(p);
     for (BigInteger i : knownPrimes) {
-        if (i > sqrt(p)) {
+        if (i > sqrtP) {
             return false;
         }
         if ((p % i) == 0) {
@@ -88,8 +89,9 @@ bool isTimeOrSpaceMultiple(BigInteger p) {
 }
 
 bool isTimeMultiple(BigInteger p) {
+    const BigInteger sqrtP = sqrt(p);
     for (size_t i = 2U; i < knownPrimes.size(); ++i) {
-        if (i > sqrt(p)) {
+        if (i > sqrtP) {
             return false;
         }
         if ((p % knownPrimes[i]) == 0) {

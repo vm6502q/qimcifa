@@ -19,16 +19,18 @@ def forward(p):
     return (p << 1) - 1
 
 def isTimeOrSpaceMultiple(p, knownPrimes):
+    sqrt_p = math.isqrt(p)
     for i in knownPrimes:
-        if i > math.isqrt(p):
+        if i > sqrt_p:
             return False
         if (p % i) == 0:
             return True
     return False
 
 def isTimeMultiple(p, knownPrimes):
+    sqrt_p = math.isqrt(p)
     for i in knownPrimes[2:]:
-        if i > math.isqrt(p):
+        if i > sqrt_p:
             return False
         if (p % i) == 0:
             return True
