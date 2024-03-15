@@ -33,7 +33,7 @@ def isTimeOrSpaceMultiple(p, knownPrimes):
 
 def isTimeMultiple(p, knownPrimes):
     sqrt_p = math.isqrt(p)
-    for i in knownPrimes[2:]:
+    for i in knownPrimes[3:]:
         if i > sqrt_p:
             return False
         if (p % i) == 0:
