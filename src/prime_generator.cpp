@@ -24,9 +24,9 @@
 #endif
 
 #if BIG_INT_BITS < 33
-typedef uint32_t BigInteger
+typedef uint32_t BigInteger;
 #elif BIG_INT_BITS < 65
-typedef uint64_t BigInteger
+typedef uint64_t BigInteger;
 #else
 #if USE_GMP
 typedef boost::multiprecision::mpz_int BigInteger;
