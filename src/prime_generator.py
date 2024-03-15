@@ -5,7 +5,6 @@
 # Improvements by Dan Strano of Unitary Fund, 2024:
 # log space complexity!
 # log reduction in time complexity!
-knownPrimes = [ 2, 3, 5 ]
 
 def backward(ni):
     ni = (ni + 1) >> 1
@@ -17,32 +16,28 @@ def forward(p):
     p = p + (p >> 1)
     return (p << 1) - 1
 
-def isTimeOrSpaceMultiple(p):
+def isTimeOrSpaceMultiple(p, knownPrimes):
     for i in knownPrimes:
         if (p % i) == 0:
             return True
     return False
 
-def isTimeMultiple(p):
+def isTimeMultiple(p, knownPrimes):
     for i in knownPrimes[2:]:
         if (p % i) == 0:
             return True
     return False
  
 def TrialDivision(n):
-    if n < 2:
-        return []
-    if n < 3:
-        return [2]
-    if n < 5:
-        return [2, 3]
+    knownPrimes = [ 2, 3, 5 ]
+
     if n < 7:
-        return [2, 3, 5]
+        return [p for p in knownPrimes if p <= n]
 
     # We are excluding multiples of the first few
     # small primes from outset. For multiples of
     # 2 and 3, this reduces complexity by 2/3.
-    cardinality = int((~((~n) | 1)) / 3)
+    # cardinality = int((~((~n) | 1)) / 3)
  
     # Get the remaining prime numbers.
     o = 2
@@ -55,7 +50,7 @@ def TrialDivision(n):
                 isWorking = False
                 break
 
-            if isTimeMultiple(p):
+            if isTimeMultiple(p, knownPrimes):
                 # Skip
                 continue
 
@@ -68,7 +63,7 @@ def TrialDivision(n):
                 isWorking = False
                 break
 
-            if isTimeMultiple(p):
+            if isTimeMultiple(p, knownPrimes):
                 # Skip
                 continue
 
@@ -82,5 +77,5 @@ def TrialDivision(n):
 if __name__ == '__main__':
     n = 100
 
-    print("Following are the prime numbers smaller than or equal to ", n, ":")
+    print("Following are the prime numbers smaller than or equal to " + str(n) + ":")
     print(TrialDivision(n))
