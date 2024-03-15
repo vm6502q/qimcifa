@@ -39,6 +39,21 @@ typedef BigInteger BigInteger;
 #endif
 #endif
 
+inline BigInteger gcd(BigInteger n1, BigInteger n2)
+{
+#if USE_GMP || USE_BOOST
+    while (n2) {
+#else
+    if (bi_compare_0(n2) != 0) {
+#endif
+        const BigInteger t = n1;
+        n1 = n2;
+        n2 = t % n2;
+    }
+
+    return n1;
+}
+
 inline BigInteger sqrt(const BigInteger& toTest)
 {
     // Otherwise, find b = sqrt(b^2).
@@ -78,6 +93,7 @@ BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
+#if 0
 bool isTimeOrSpaceMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
     if ((sqrtP * sqrtP) == p) {
@@ -93,6 +109,7 @@ bool isTimeOrSpaceMultiple(BigInteger p, const std::vector<BigInteger>& knownPri
     }
     return false;
 }
+#endif
 
 bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
@@ -134,12 +151,13 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // const BigInteger cardinality = (~((~n) | 1)) / 3;
 
     // Get the remaining prime numbers.
-    BigInteger o = 2;
-    int lcv7 = -12;
-    int lcv11 = -17;
+    BigInteger o = 3;
+    // BigInteger wheel = 1;
+    int lcv7 = -11;
+    int lcv11 = -16;
     bool isWorking = true;
     while (isWorking) {
-        for (int i = 1; i < 7; ++i) {
+        for (int i = 0; i < 6; ++i) {
             if (lcv7 == 11) {
                 lcv7 = 1;
                 continue;
@@ -167,15 +185,17 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 break;
             }
 
+            // if (gcd(p, wheel) != 1) {
             if (isTimeMultiple(p, knownPrimes)) {
                 // Skip
                 continue;
             }
 
+            // wheel *= p;
             knownPrimes.push_back(p);
         }
 
-        for (int i = 8; i < 10; ++i) {
+        for (int i = 7; i < 9; ++i) {
             if (lcv7 == 11) {
                 lcv7 = 1;
                 continue;
@@ -203,11 +223,13 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 break;
             }
 
+            // if (gcd(p, wheel) != 1) {
             if (isTimeMultiple(p, knownPrimes)) {
                 // Skip
                 continue;
             }
 
+            // wheel *= p;
             knownPrimes.push_back(p);
         }
 
