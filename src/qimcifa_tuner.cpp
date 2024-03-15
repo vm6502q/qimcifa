@@ -36,10 +36,8 @@
 
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
-#elif USE_BOOST
-#include <boost/multiprecision/cpp_int.hpp>
 #else
-#include "big_integer.hpp"
+#include <boost/multiprecision/cpp_int.hpp>
 #endif
 
 namespace Qimcifa {
@@ -49,59 +47,10 @@ constexpr int MIN_RTD_LEVEL = 1;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
-#elif USE_BOOST
+#else
 typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
     boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
     bitCapIntInput;
-#else
-typedef BigInteger bitCapIntInput;
-typedef BigInteger bitCapInt;
-const bitCapInt ZERO_BCI = 0U;
-
-std::ostream& operator<<(std::ostream& os, bitCapInt b)
-{
-    if (bi_compare_0(b) == 0) {
-        os << "0";
-        return os;
-    }
-
-    // Calculate the base-10 digits, from lowest to highest.
-    std::vector<std::string> digits;
-    while (bi_compare_0(b) != 0) {
-        bitCapInt quo;
-        BIG_INTEGER_HALF_WORD rem;
-        bi_div_mod_small(b, 10U, &quo, &rem);
-        digits.push_back(std::to_string((unsigned char)rem));
-        b = quo;
-    }
-
-    // Reversing order, print the digits from highest to lowest.
-    for (size_t i = digits.size() - 1U; i > 0; --i) {
-        os << digits[i];
-    }
-    // Avoid the need for a signed comparison.
-    os << digits[0];
-
-    return os;
-}
-
-std::istream& operator>>(std::istream& is, bitCapInt& b)
-{
-    // Get the whole input string at once.
-    std::string input;
-    is >> input;
-
-    // Start the output address value at 0.
-    b = ZERO_BCI;
-    for (size_t i = 0; i < input.size(); ++i) {
-        // Left shift by 1 base-10 digit.
-        b = b * 10;
-        // Add the next lowest base-10 digit.
-        bi_increment(&b, (input[i] - 48U));
-    }
-
-    return is;
-}
 #endif
 
 template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
@@ -132,7 +81,6 @@ template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
 }
 
 template <typename bitCapInt> inline uint64_t log2(bitCapInt n) {
-#if USE_GMP || USE_BOOST
     uint64_t pow = 0U;
     bitCapInt p = n >> 1U;
     while (p) {
@@ -140,22 +88,12 @@ template <typename bitCapInt> inline uint64_t log2(bitCapInt n) {
         ++pow;
     }
     return pow;
-#else
-    return bi_log2(n);
-#endif
 }
 
 template <typename bitCapInt> inline bool isPowerOfTwo(const bitCapInt& x)
 {
     // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-#if USE_GMP || USE_BOOST
     return (x && !(x & (x - 1ULL)));
-#else
-    bitCapInt y = x;
-    bi_decrement(&y, 1U);
-    bi_and_ip(&y, x);
-    return (bi_compare_0(x) != 0) && (bi_compare_0(y) == 0);
-#endif
 }
 
 struct CsvRow {
@@ -172,11 +110,7 @@ struct CsvRow {
 
 template <typename bitCapInt> inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
-#if USE_GMP || USE_BOOST
     while (n2) {
-#else
-    while (bi_compare_0(n2) != 0) {
-#endif
         const bitCapInt t = n1;
         n1 = n2;
         n2 = t % n2;
@@ -214,18 +148,10 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     // It's a binary search for floor(sqrt(toTest)).
 
     // If a^2 = 1 mod N, then b = 1.
-#if USE_GMP || USE_BOOST
     if (remainder > 1U) {
-#else
-    if (bi_compare_1(remainder) > 0) {
-#endif
         // Otherwise, find b = sqrt(b^2).
         bitCapInt start = 1U, ans = 0U;
-#if USE_GMP || USE_BOOST
         remainder >>= 1U;
-#else
-        bi_rshift_ip(&remainder, 1U);
-#endif
         do {
             const bitCapInt mid = (start + remainder) >> 1U;
 
@@ -256,21 +182,13 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     bitCapInt f1 = gcd(toTest + remainder, toFactor);
     bitCapInt f2 = gcd(toTest - remainder, toFactor);
     bitCapInt fmul = f1 * f2;
-#if USE_GMP || USE_BOOST
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
-#else
-    while ((bi_compare_1(fmul) > 0) && (bi_compare(fmul, toFactor) != 0) && (bi_compare_0(toFactor % fmul) == 0)) {
-#endif
         fmul = f1;
         f1 = f1 * f2;
         f2 = toFactor / (fmul * f2);
         fmul = f1 * f2;
     }
-#if USE_GMP || USE_BOOST
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
-#else
-    if ((bi_compare(fmul, toFactor) == 0) && (bi_compare_1(f1) > 0) && (bi_compare_1(f2) > 0)) {
-#endif
         // Inform the other threads on this node that we've succeeded and are done:
         // isFinished = true;
         printSuccess<bitCapInt>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
@@ -284,11 +202,7 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 template <typename bitCapInt>
 inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base) {
 #if IS_RSA_SEMIPRIME
-#if USE_GMP || USE_BOOST
     if ((toFactor % base) == 0U) {
-#else
-    if (bi_compare_0(toFactor % base) == 0U) {
-#endif
         // finish();
         // printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
         // return true;
@@ -450,13 +364,8 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel)
 {
     uint32_t qubitCount = 0;
     bitCapIntInput p = toFactor;
-#if USE_GMP || USE_BOOST
     while (p) {
         p >>= 1U;
-#else
-    while (bi_compare_0(p)) {
-        bi_rshift_ip(&p, 1U);
-#endif
         ++qubitCount;
     }
     if (!isPowerOfTwo(toFactor)) {
@@ -528,10 +437,6 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel)
     //     std::cout << i << ": " << trialDivisionPrimes[i] << ", ";
     // }
 
-#if !(USE_GMP || USE_BOOST)
-    typedef BigInteger bitCapInt;
-    return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
-#else
     if (qubitCount < 64) {
         typedef uint64_t bitCapInt;
         return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
@@ -539,7 +444,7 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel)
     } else {
         return mainBody<bitCapIntInput>(toFactor, tdLevel, threadCount, trialDivisionPrimes);
     }
-#elif USE_BOOST
+#else
     } else if (qubitCount < 128) {
         typedef boost::multiprecision::uint128_t bitCapInt;
         return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
@@ -570,7 +475,6 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel)
         return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
     }
 #endif
-#endif
 }
 
 int main() {
@@ -582,13 +486,8 @@ int main() {
 
     uint32_t qubitCount = 0;
     bitCapIntInput p = toFactor >> 1U;
-#if USE_GMP || USE_BOOST
     while (p) {
         p >>= 1U;
-#else
-    while (bi_compare_0(p)) {
-        bi_rshift_ip(&p, 1U);
-#endif
         ++qubitCount;
     }
     if (!isPowerOfTwo(toFactor)) {
@@ -607,11 +506,7 @@ int main() {
     for (size_t i = MIN_RTD_LEVEL; i < 3U; ++i) {
         // Test
         CsvRow row = mainCase(toFactor, threadCount, i);
-#if USE_GMP || USE_BOOST
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (row.range.convert_to<double>() * (row.time_s / BASE_TRIALS)) << std::endl;
-#else
         oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s / BASE_TRIALS)) << std::endl;
-#endif
     }
     oSettingsFile.close();
 
@@ -643,11 +538,7 @@ int main() {
 #else
     CsvRow row = mainCase(toFactor, threadCount, 3);
 #endif
-#if USE_GMP || USE_BOOST
     const double cost = row.range.convert_to<double>() * (row.time_s / BASE_TRIALS);
-#else
-    const double cost = bi_to_double(row.range) * (row.time_s / BASE_TRIALS);
-#endif
     // std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
 #if IS_RANDOM
     std::cout << "Estimated average time to exit: " << (cost / threadCount) << " seconds" << std::endl;

@@ -79,7 +79,7 @@ typedef struct BigInteger {
         }
     }
 
-    constexpr BigInteger& operator=(const BigInteger& val) {
+    const BigInteger& operator=(const BigInteger& val) {
         for (int i = 0; i < BIG_INTEGER_WORD_SIZE; ++i) {
             bits[i] = val.bits[i];
         }

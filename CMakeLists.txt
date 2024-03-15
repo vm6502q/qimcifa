@@ -35,6 +35,8 @@ target_link_libraries(prime_gen pybind11::module)
 configure_file(src/setup.py ${CMAKE_CURRENT_BINARY_DIR}/setup.py COPYONLY)
 configure_file(src/prime_gen.cpp ${CMAKE_CURRENT_BINARY_DIR}/prime_gen.cpp COPYONLY)
 configure_file(${CMAKE_CURRENT_BINARY_DIR}/include/common/config.h ${CMAKE_CURRENT_BINARY_DIR}/config.h COPYONLY)
+configure_file(include/big_integer.hpp ${CMAKE_CURRENT_BINARY_DIR}/big_integer.hpp COPYONLY)
+configure_file(src/common/big_integer.cpp ${CMAKE_CURRENT_BINARY_DIR}/big_integer.cpp COPYONLY)
 
 if (USE_GMP OR USE_BOOST)
 add_executable (qimcifa

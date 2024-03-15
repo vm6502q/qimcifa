@@ -32,8 +32,6 @@ typedef boost::multiprecision::mpz_int BigInteger;
 typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG_INT_BITS, BIG_INT_BITS,
     boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
     BigInteger;
-#else
-typedef BigInteger BigInteger;
 #endif
 #endif
 

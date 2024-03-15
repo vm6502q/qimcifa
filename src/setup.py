@@ -5,7 +5,7 @@ cpp_args = ['-std=c++11']
 ext_modules = [
     Extension(
         'prime_gen',
-        ['prime_gen.cpp'],
+        ['prime_gen.cpp', "big_integer.cpp"],
         include_dirs=['pybind11/include'],
         language='c++',
         extra_compile_args = cpp_args,
