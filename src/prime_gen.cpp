@@ -205,7 +205,6 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         wheel *= p;
     }
     const BigInteger toSkip = knownPrimes[5 + cpuCount] * knownPrimes[5 + cpuCount] + 1;
-    const BigInteger parallelismThreshold = 1U << 16U;
     size_t nextPrimeIndex = 6 + cpuCount;
     bool isWheeling = true;
     while (isWorking) {
@@ -269,7 +268,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 }
             }
 
-            if (o < parallelismThreshold) {
+            if (isWheeling) {
                 if (gcd(p, wheel) != 1) {
                     // Skip
                     continue;
@@ -352,7 +351,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 }
             }
 
-            if (o < parallelismThreshold) {
+            if (isWheeling) {
                 if (gcd(p, wheel) != 1) {
                     // Skip
                     continue;
