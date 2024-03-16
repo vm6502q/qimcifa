@@ -131,7 +131,7 @@ bool isMultiple(const BigInteger& p, size_t nextPrimeIndex, const std::vector<Bi
         return true;
     }
     size_t highestPrimeIndex = 0U;
-    for (size_t m = knownPrimes.size() >> 1U; m > 0; m >>= 1) {
+    for (size_t m = (knownPrimes.size() + 1) >> 1U; m > 0; m = (m + 1) >> 1) {
         if (knownPrimes[highestPrimeIndex + m] >= sqrtP) {
             highestPrimeIndex += m;
         }
