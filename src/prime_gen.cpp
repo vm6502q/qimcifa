@@ -94,17 +94,62 @@ BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
-bool isMultiple(const BigInteger& p, const size_t& nextPrimeIndex, const std::vector<BigInteger>& knownPrimes) {
+const size_t BATCH_SIZE = 1 << 12;
+
+bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const std::vector<BigInteger>& knownPrimes) {
+    const size_t _BATCH_SIZE = 1 << 12;
+    const unsigned cpuCount = std::thread::hardware_concurrency();
+    const size_t batchSize = cpuCount * BATCH_SIZE;
+    const size_t maxLcv = (knownPrimes.size() - nextPrimeIndex) - batchSize;
+    std::vector<std::future<bool>> futures(cpuCount);
+    for (size_t i = 0; i < maxLcv; i+=batchSize) {
+        for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+            futures[cpu] = std::async(std::launch::async,
+                [&knownPrimes, _BATCH_SIZE, cpu, i, nextPrimeIndex](const BigInteger& p) {
+                    for (size_t j = 0; j < _BATCH_SIZE; ++j) {
+                        if ((p % knownPrimes[nextPrimeIndex + i + cpu * _BATCH_SIZE + j]) != 1) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }, p);
+        }
+        for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+            if (futures[cpu].get()) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool isMultiple(const BigInteger& p, size_t nextPrimeIndex, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
     if ((sqrtP * sqrtP) == p) {
         return true;
     }
+    size_t highestPrimeIndex = 0U;
+    for (size_t m = knownPrimes.size() >> 1U; m > 0; m >>= 1) {
+        if (knownPrimes[highestPrimeIndex + m] >= sqrtP) {
+            highestPrimeIndex += m;
+        }
+    }
+
+    const size_t diff = highestPrimeIndex - nextPrimeIndex;
+    const unsigned cpuCount = std::thread::hardware_concurrency();
+    if ((diff / cpuCount) > BATCH_SIZE) {
+        if (isMultipleParallel(p, nextPrimeIndex, knownPrimes)) {
+            return true;
+        }
+    }
+    nextPrimeIndex = diff % (BATCH_SIZE * cpuCount);
+
     for (size_t i = nextPrimeIndex; i < knownPrimes.size(); ++i) {
-        const BigInteger kp = knownPrimes[i];
-        if (kp >= sqrtP) {
+        if (i > highestPrimeIndex) {
             return false;
         }
-        if ((p % kp) == 0) {
+        if ((p % knownPrimes[i]) == 0) {
             return true;
         }
     }
@@ -276,7 +321,10 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             } else {
                 std::vector<std::future<bool>> futures(cpuCount);
                 for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-                    futures[cpu] = std::async(std::launch::async, [](BigInteger p, BigInteger w) { return gcd(p, w) != 1; }, p, wheels.get()[i]);
+                    futures[cpu] = std::async(std::launch::async,
+                        [](const BigInteger& p, const BigInteger& w) {
+                            return gcd(p, w) != 1;
+                        }, p, wheels.get()[i]);
                 }
                 bool isBreaking = false;
                 for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
@@ -359,7 +407,10 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             } else {
                 std::vector<std::future<bool>> futures(cpuCount);
                 for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-                    futures[cpu] = std::async(std::launch::async, [](BigInteger p, BigInteger w) { return gcd(p, w) != 1; }, p, wheels.get()[i]);
+                    futures[cpu] = std::async(std::launch::async,
+                        [](const BigInteger& p, const BigInteger& w) {
+                            return gcd(p, w) != 1;
+                        }, p, wheels.get()[i]);
                 }
                 bool isBreaking = false;
                 for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
