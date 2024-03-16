@@ -1,6 +1,6 @@
 from distutils.core import setup, Extension
 
-cpp_args = ['-std=c++11']
+cpp_args = ['-std=c++11', '-lpthread']
 
 ext_modules = [
     Extension(
