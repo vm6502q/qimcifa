@@ -242,9 +242,9 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
     // Get the remaining prime numbers.
     bool isWorking = true;
-    int lcv7 = -11;
-    int lcv11 = -16;
-    BigInteger o = 3;
+    int lcv7 = 7;
+    int lcv11 = 4;
+    BigInteger o = 2633;
     // WARNING: you need enough primes for every hyperthread.
     const unsigned cpuCount = std::thread::hardware_concurrency();
     if (knownPrimes.size()< (cpuCount + 6U)) {
@@ -255,11 +255,10 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         const BigInteger p = knownPrimes[6 + cpu];
         wheels.get()[cpu] = p;
     }
-    const BigInteger toSkip = knownPrimes.back() + 1;
     size_t nextPrimeIndex = 6 + cpuCount;
     bool isWheeling = true;
     while (isWorking) {
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < 2; ++i) {
             if (lcv7 == 11) {
                 lcv7 = 1;
                 continue;
@@ -298,10 +297,6 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             // way to remove 13 from here might be n % 13. For the edge
             // case, < 170 (13*13+1=169+1) is skipped, if we can know
             // that many primes (or obviously higher, hard storage).
-            if (p < toSkip) {
-                continue;
-            }
-
             if (!(p % 13)) {
                 // Skip
                 continue;
@@ -350,7 +345,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             knownPrimes.push_back(p);
         }
 
-        for (int i = 7; i < 9; ++i) {
+        for (int i = 3; i < 9; ++i) {
             if (lcv7 == 11) {
                 lcv7 = 1;
                 continue;
@@ -379,10 +374,6 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             }
 
             // **SEE LONG NOTE ABOVE**
-            if (p < toSkip) {
-                continue;
-            }
-
             if (!(p % 13)) {
                 // Skip
                 continue;
