@@ -45,9 +45,9 @@ def isTimeMultiple(p, knownPrimes):
     return False
  
 def TrialDivision(n):
-    knownPrimes = [ 2, 3, 5 ]
+    knownPrimes = [ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 77, 79, 83, 91, 97, 103, 107, 109, 119, 127, 133, 137, 139, 149, 151, 161, 163, 167 ]
 
-    if n < 7:
+    if n < 170:
         return [p for p in knownPrimes if p <= n]
 
     # We are excluding multiples of the first few
@@ -85,6 +85,21 @@ def TrialDivision(n):
                 isWorking = False
                 break
 
+            # **Hear me out**: We've "solved" up to multiples of 11.
+            # It's trivial to know much higher primes than this.
+            # At any such boundary of our knowledge, we can assume
+            # that the highest prime necessary to know, to skip the
+            # beginning work of the algorithm, would be the square
+            # of the highest "inside-out" Wheel Factorization prime.
+            #
+            # Grant me only one step further, that the least expensive
+            # way to remove 13 from here might be n % 13. For the edge
+            # case, < 170 (13*13+1=169+1) is skipped, if we can know
+            # that many primes (or obviously higher, hard storage).
+            if p < 170:
+                # Skip
+                continue
+
             if isTimeMultiple(p, knownPrimes):
                 # Skip
                 continue
@@ -113,6 +128,11 @@ def TrialDivision(n):
             if p > n:
                 isWorking = False
                 break
+
+            # **SEE LONG NOTE ABOVE**
+            if p < 170:
+                # Skip
+                continue
 
             if isTimeMultiple(p, knownPrimes):
                 # Skip

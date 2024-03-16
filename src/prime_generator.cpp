@@ -130,7 +130,8 @@ bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
 
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
-    std::vector<BigInteger> knownPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 77, 79, 83, 91, 97, 103, 107, 109, 119, 127, 133, 137, 139, 149, 151, 161, 163, 167 };
+    std::vector<BigInteger> knownPrimes =
+        { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 77, 79, 83, 91, 97, 103, 107, 109, 119, 127, 133, 137, 139, 149, 151, 161, 163, 167 };
 
 // F' this, below:
 
