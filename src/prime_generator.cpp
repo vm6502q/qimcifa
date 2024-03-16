@@ -227,7 +227,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         return std::vector<BigInteger>();
     }
 
-    if (n < 7921) {
+    if (n < (knownPrimes.back() + 2)) {
         for (size_t i = 1U; i < knownPrimes.size(); ++i) {
             if (n < knownPrimes[i]) {
                return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + (i - 1U));
@@ -440,7 +440,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 // Driver Code
 int main()
 {
-    BigInteger n;
+    BigInteger n; // = 1000000;
 
     std::cout << "Primes up to number: ";
     std::cin >> n;
