@@ -244,11 +244,9 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         throw std::runtime_error("Get more primes! (Too few for thread count)");
     }
     std::unique_ptr<BigInteger> wheels(new BigInteger[cpuCount]);
-    BigInteger wheel = 1;
     for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
         const BigInteger p = knownPrimes[6 + cpu];
         wheels.get()[cpu] = p;
-        wheel *= p;
     }
     const BigInteger toSkip = knownPrimes[5 + cpuCount] * knownPrimes[5 + cpuCount] + 1;
     size_t nextPrimeIndex = 6 + cpuCount;
@@ -304,6 +302,9 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
             for (; knownPrimes[nextPrimeIndex] > sqrt(p); ++nextPrimeIndex) {
                 const BigInteger kp = knownPrimes[nextPrimeIndex];
+                const size_t cpu = nextPrimeIndex % cpuCount;
+
+                BigInteger& wheel = wheels.get()[cpu];
                 const BigInteger oldWheel = wheel;
                 wheel *= kp;
 
@@ -311,35 +312,26 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 if (!isWheeling) {
                     wheel = oldWheel;
                     break;
-                }
-
-                wheels.get()[nextPrimeIndex % cpuCount] *= kp;    
+                }    
             }
 
-            if (isWheeling) {
-                if (gcd(p, wheel) != 1) {
-                    // Skip
-                    continue;
+            std::vector<std::future<bool>> futures(cpuCount);
+            for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+                futures[cpu] = std::async(std::launch::async,
+                    [](const BigInteger& p, const BigInteger& w) {
+                        return gcd(p, w) != 1;
+                    }, p, wheels.get()[i]);
+            }
+            bool isBreaking = false;
+            for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+                if (futures[cpu].get()) {
+                    // Will skip
+                    isBreaking = true;
                 }
-            } else {
-                std::vector<std::future<bool>> futures(cpuCount);
-                for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-                    futures[cpu] = std::async(std::launch::async,
-                        [](const BigInteger& p, const BigInteger& w) {
-                            return gcd(p, w) != 1;
-                        }, p, wheels.get()[i]);
-                }
-                bool isBreaking = false;
-                for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-                    if (futures[cpu].get()) {
-                        // Will skip
-                        isBreaking = true;
-                    }
-                }
-                if (isBreaking) {
-                    // Skip
-                    continue;
-                }
+            }
+            if (isBreaking) {
+                // Skip
+                continue;
             }
 
             if (isMultiple(p, nextPrimeIndex, knownPrimes)) {
@@ -347,7 +339,6 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 continue;
             }
 
-            wheel *= p;
             wheels.get()[((size_t)o) % cpuCount] *= p;
             knownPrimes.push_back(p);
         }
@@ -392,6 +383,9 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
             for (; knownPrimes[nextPrimeIndex] > sqrt(p); ++nextPrimeIndex) {
                 const BigInteger kp = knownPrimes[nextPrimeIndex];
+                const size_t cpu = nextPrimeIndex % cpuCount;
+
+                BigInteger& wheel = wheels.get()[cpu];
                 const BigInteger oldWheel = wheel;
                 wheel *= kp;
 
@@ -399,35 +393,26 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 if (!isWheeling) {
                     wheel = oldWheel;
                     break;
-                }
-
-                wheels.get()[nextPrimeIndex % cpuCount] *= kp;    
+                }    
             }
 
-            if (isWheeling) {
-                if (gcd(p, wheel) != 1) {
-                    // Skip
-                    continue;
+            std::vector<std::future<bool>> futures(cpuCount);
+            for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+                futures[cpu] = std::async(std::launch::async,
+                    [](const BigInteger& p, const BigInteger& w) {
+                        return gcd(p, w) != 1;
+                    }, p, wheels.get()[i]);
+            }
+            bool isBreaking = false;
+            for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+                if (futures[cpu].get()) {
+                    // Will skip
+                    isBreaking = true;
                 }
-            } else {
-                std::vector<std::future<bool>> futures(cpuCount);
-                for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-                    futures[cpu] = std::async(std::launch::async,
-                        [](const BigInteger& p, const BigInteger& w) {
-                            return gcd(p, w) != 1;
-                        }, p, wheels.get()[i]);
-                }
-                bool isBreaking = false;
-                for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-                    if (futures[cpu].get()) {
-                        // Will skip
-                        isBreaking = true;
-                    }
-                }
-                if (isBreaking) {
-                    // Skip
-                    continue;
-                }
+            }
+            if (isBreaking) {
+                // Skip
+                continue;
             }
 
             if (isMultiple(p, nextPrimeIndex, knownPrimes)) {
@@ -435,7 +420,6 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 continue;
             }
 
-            wheel *= p;
             wheels.get()[((size_t)o) % cpuCount] *= p;
             knownPrimes.push_back(p);
         }
