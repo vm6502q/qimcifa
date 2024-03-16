@@ -155,7 +155,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     int lcv7 = -11;
     int lcv11 = -16;
     BigInteger o = 3;
-    BigInteger wheel = 13;
+    BigInteger wheel = 17;
     while (isWorking) {
         for (int i = 0; i < 6; ++i) {
             if (lcv7 == 11) {
@@ -200,6 +200,11 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 continue;
             }
 
+            if (!(p % 13)) {
+                // Skip
+                continue;
+            }
+
             if (gcd(p, wheel) != 1) {
                 // Skip
                 continue;
@@ -239,6 +244,11 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
             // **SEE LONG NOTE ABOVE**
             if (p < 170) {
+                continue;
+            }
+
+            if (!(p % 13)) {
+                // Skip
                 continue;
             }
 

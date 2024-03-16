@@ -59,7 +59,7 @@ def TrialDivision(n):
     o = 3
     lcv7 = -11
     lcv11 = -16
-    wheel = 13
+    wheel = 17
     isWorking = True
     while isWorking:
         for i in range(0, 6):
@@ -100,6 +100,10 @@ def TrialDivision(n):
                 # Skip
                 continue
 
+            if (p % 13) == 0:
+                # Skip
+                continue
+
             if math.gcd(p, wheel) == 1:
                 # Skip
                 continue
@@ -132,6 +136,14 @@ def TrialDivision(n):
 
             # **SEE LONG NOTE ABOVE**
             if p < 170:
+                # Skip
+                continue
+
+            if p < 170:
+                # Skip
+                continue
+
+            if (p % 13) == 0:
                 # Skip
                 continue
 

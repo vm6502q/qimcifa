@@ -155,7 +155,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     int lcv7 = -11;
     int lcv11 = -16;
     BigInteger o = 3;
-    BigInteger wheel = 13;
+    BigInteger wheel = 17;
     while (isWorking) {
         for (int i = 0; i < 6; ++i) {
             if (lcv7 == 11) {
@@ -197,6 +197,11 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             // case, < 170 (13*13+1=169+1) is skipped, if we can know
             // that many primes (or obviously higher, hard storage).
             if (p < 170) {
+                continue;
+            }
+
+            if (!(p % 13)) {
+                // Skip
                 continue;
             }
 
@@ -242,13 +247,17 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 continue;
             }
 
-            // if (gcd(p, wheel) != 1) {
-            if (isTimeMultiple(p, knownPrimes)) {
+            if (!(p % 13)) {
                 // Skip
                 continue;
             }
 
-            // wheel *= p;
+            if (gcd(p, wheel) != 1) {
+                // Skip
+                continue;
+            }
+
+            wheel *= p;
             knownPrimes.push_back(p);
         }
 
