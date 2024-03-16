@@ -107,7 +107,7 @@ bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const
             futures[cpu] = std::async(std::launch::async,
                 [&knownPrimes, _BATCH_SIZE, cpu, i, nextPrimeIndex](const BigInteger& p) {
                     for (size_t j = 0; j < _BATCH_SIZE; ++j) {
-                        if ((p % knownPrimes[nextPrimeIndex + i + cpu * _BATCH_SIZE + j]) != 1) {
+                        if ((p % knownPrimes[nextPrimeIndex + i + (cpu * _BATCH_SIZE) + j]) != 1) {
                             return true;
                         }
                     }
@@ -136,6 +136,7 @@ bool isMultiple(const BigInteger& p, size_t nextPrimeIndex, const std::vector<Bi
         }
     }
 
+#if 0
     const size_t diff = highestPrimeIndex - nextPrimeIndex;
     const unsigned cpuCount = std::thread::hardware_concurrency();
     if ((diff / cpuCount) > BATCH_SIZE) {
@@ -144,6 +145,7 @@ bool isMultiple(const BigInteger& p, size_t nextPrimeIndex, const std::vector<Bi
         }
     }
     nextPrimeIndex = diff % (BATCH_SIZE * cpuCount);
+#endif
 
     for (size_t i = nextPrimeIndex; i < knownPrimes.size(); ++i) {
         if (i > highestPrimeIndex) {
