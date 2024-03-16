@@ -94,30 +94,12 @@ BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
-#if 0
-bool isTimeOrSpaceMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
+bool isMultiple(const BigInteger& p, const size_t& nextPrimeIndex, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
     if ((sqrtP * sqrtP) == p) {
         return true;
     }
-    for (BigInteger kp : knownPrimes) {
-        if (kp >= sqrtP) {
-            return false;
-        }
-        if ((p % kp) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
-#endif
-
-bool isTimeMultiple(BigInteger p, const std::vector<BigInteger>& knownPrimes) {
-    const BigInteger sqrtP = sqrt(p);
-    if ((sqrtP * sqrtP) == p) {
-        return true;
-    }
-    for (size_t i = 5U; i < knownPrimes.size(); ++i) {
+    for (size_t i = nextPrimeIndex; i < knownPrimes.size(); ++i) {
         const BigInteger kp = knownPrimes[i];
         if (kp >= sqrtP) {
             return false;
@@ -225,6 +207,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     const BigInteger toSkip = knownPrimes[5 + cpuCount] * knownPrimes[5 + cpuCount] + 1;
     const BigInteger parallelismThreshold = 1U << 16U;
     size_t nextPrimeIndex = 6 + cpuCount;
+    bool isWheeling = true;
     while (isWorking) {
         for (int i = 0; i < 6; ++i) {
             if (lcv7 == 11) {
@@ -273,16 +256,16 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 // Skip
                 continue;
             }
-            
-            for (; knownPrimes[nextPrimeIndex] > sqrt(p); ++nextPrimeIndex) {
+
+            for (; isWheeling && (knownPrimes[nextPrimeIndex] > sqrt(p)); ++nextPrimeIndex) {
                 const BigInteger p = knownPrimes[nextPrimeIndex];
-
-                wheels.get()[nextPrimeIndex % cpuCount] *= p;
-
                 const BigInteger oldWheel = wheel;
                 wheel *= p;
                 if (wheel < oldWheel) {
-                    throw std::domain_error("Exceeded integer type precision!");
+                    isWheeling = false;
+                    wheel = oldWheel;
+                } else {
+                    wheels.get()[nextPrimeIndex % cpuCount] *= p;
                 }
             }
 
@@ -307,6 +290,11 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                     // Skip
                     continue;
                 }
+            }
+
+            if (isMultiple(p, nextPrimeIndex, knownPrimes)) {
+                // Skip
+                continue;
             }
 
             wheel *= p;
@@ -351,16 +339,16 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 // Skip
                 continue;
             }
-            
-            for (; knownPrimes[nextPrimeIndex] > sqrt(p); ++nextPrimeIndex) {
+
+            for (; isWheeling && (knownPrimes[nextPrimeIndex] > sqrt(p)); ++nextPrimeIndex) {
                 const BigInteger p = knownPrimes[nextPrimeIndex];
-
-                wheels.get()[nextPrimeIndex % cpuCount] *= p;
-
                 const BigInteger oldWheel = wheel;
                 wheel *= p;
                 if (wheel < oldWheel) {
-                    throw std::domain_error("Exceeded integer type precision!");
+                    isWheeling = false;
+                    wheel = oldWheel;
+                } else {
+                    wheels.get()[nextPrimeIndex % cpuCount] *= p;
                 }
             }
 
@@ -385,6 +373,11 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                     // Skip
                     continue;
                 }
+            }
+
+            if (isMultiple(p, nextPrimeIndex, knownPrimes)) {
+                // Skip
+                continue;
             }
 
             wheel *= p;
