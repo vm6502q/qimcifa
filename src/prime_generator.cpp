@@ -155,7 +155,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     int lcv7 = -11;
     int lcv11 = -16;
     BigInteger o = 3;
-    BigInteger wheel = 17;
+    BigInteger wheel = 13;
     while (isWorking) {
         for (int i = 0; i < 6; ++i) {
             if (lcv7 == 11) {

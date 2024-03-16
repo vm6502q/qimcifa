@@ -59,7 +59,7 @@ def TrialDivision(n):
     o = 3
     lcv7 = -11
     lcv11 = -16
-    wheel = 17
+    wheel = 13
     isWorking = True
     while isWorking:
         for i in range(0, 6):
