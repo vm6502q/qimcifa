@@ -222,7 +222,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         wheels.get()[cpu] = p;
         wheel *= p;
     }
-    const unsigned toSkip = knownPrimes[5 + cpuCount] * knownPrimes[5 + cpuCount] + 1;
+    const BigInteger toSkip = knownPrimes[5 + cpuCount] * knownPrimes[5 + cpuCount] + 1;
     const BigInteger parallelismThreshold = 1U << 16U;
     size_t nextPrimeIndex = 6 + cpuCount;
     while (isWorking) {
@@ -310,7 +310,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             }
 
             wheel *= p;
-            wheels.get()[o % cpuCount] *= p;
+            wheels.get()[((size_t)o) % cpuCount] *= p;
             knownPrimes.push_back(p);
         }
 
@@ -388,7 +388,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             }
 
             wheel *= p;
-            wheels.get()[o % cpuCount] *= p;
+            wheels.get()[((size_t)o) % cpuCount] *= p;
             knownPrimes.push_back(p);
         }
 
