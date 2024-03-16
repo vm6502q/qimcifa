@@ -39,6 +39,21 @@ typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG
 #endif
 #endif
 
+inline BigInteger gcd(BigInteger n1, BigInteger n2)
+{
+#if USE_GMP || USE_BOOST
+    while (n2) {
+#else
+    if (bi_compare_0(n2) != 0) {
+#endif
+        const BigInteger t = n1;
+        n1 = n2;
+        n2 = t % n2;
+    }
+
+    return n1;
+}
+
 inline BigInteger sqrt(const BigInteger& toTest)
 {
     // Otherwise, find b = sqrt(b^2).
@@ -136,11 +151,11 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // const BigInteger cardinality = (~((~n) | 1)) / 3;
 
     // Get the remaining prime numbers.
-    BigInteger o = 3;
-    // BigInteger wheel = 1;
+    bool isWorking = true;
     int lcv7 = -11;
     int lcv11 = -16;
-    bool isWorking = true;
+    BigInteger o = 3;
+    BigInteger wheel = 17;
     while (isWorking) {
         for (int i = 0; i < 6; ++i) {
             if (lcv7 == 11) {
@@ -185,13 +200,12 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 continue;
             }
 
-            // if (gcd(p, wheel) != 1) {
-            if (isTimeMultiple(p, knownPrimes)) {
+            if (gcd(p, wheel) != 1) {
                 // Skip
                 continue;
             }
 
-            // wheel *= p;
+            wheel *= p;
             knownPrimes.push_back(p);
         }
 

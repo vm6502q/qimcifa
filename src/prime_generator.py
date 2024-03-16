@@ -59,7 +59,7 @@ def TrialDivision(n):
     o = 3
     lcv7 = -11
     lcv11 = -16
-    # wheel = 1
+    wheel = 17
     isWorking = True
     while isWorking:
         for i in range(0, 6):
@@ -146,7 +146,7 @@ def TrialDivision(n):
 
 # Driver Code
 if __name__ == '__main__':
-    n = 100
+    n = 289
 
     print("Following are the prime numbers smaller than or equal to " + str(n) + ":")
     print(TrialDivision(n))
