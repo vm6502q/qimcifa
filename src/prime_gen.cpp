@@ -94,15 +94,16 @@ BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
-const size_t BATCH_SIZE = 1 << 12;
+const size_t BATCH_SIZE = 1 << 16;
 
-bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const std::vector<BigInteger>& knownPrimes) {
-    const size_t _BATCH_SIZE = 1 << 12;
+bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestPrimeIndex,
+    const std::vector<BigInteger>& knownPrimes) {
+    const size_t _BATCH_SIZE = BATCH_SIZE;
     const unsigned cpuCount = std::thread::hardware_concurrency();
-    const size_t batchSize = cpuCount * BATCH_SIZE;
-    const size_t maxLcv = (knownPrimes.size() - nextPrimeIndex) - batchSize;
+    const size_t batchSize = cpuCount * _BATCH_SIZE;
+    const size_t maxLcv = (highestPrimeIndex - nextPrimeIndex) - batchSize;
     std::vector<std::future<bool>> futures(cpuCount);
-    for (size_t i = 0; i < maxLcv; i+=batchSize) {
+    for (size_t i = 0; i <= maxLcv; i+=batchSize) {
         for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
             futures[cpu] = std::async(std::launch::async,
                 [&knownPrimes, _BATCH_SIZE, cpu, i, nextPrimeIndex](const BigInteger& p) {
@@ -136,16 +137,14 @@ bool isMultiple(const BigInteger& p, size_t nextPrimeIndex, const std::vector<Bi
         }
     }
 
-#if 0
     const size_t diff = highestPrimeIndex - nextPrimeIndex;
     const unsigned cpuCount = std::thread::hardware_concurrency();
     if ((diff / cpuCount) > BATCH_SIZE) {
-        if (isMultipleParallel(p, nextPrimeIndex, knownPrimes)) {
+        if (isMultipleParallel(p, nextPrimeIndex, highestPrimeIndex, knownPrimes)) {
             return true;
         }
     }
     nextPrimeIndex = diff % (BATCH_SIZE * cpuCount);
-#endif
 
     for (size_t i = nextPrimeIndex; i < knownPrimes.size(); ++i) {
         if (i > highestPrimeIndex) {
