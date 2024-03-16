@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#include <future>
 #include <iostream>
 #include <vector>
 
@@ -155,7 +156,20 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     int lcv7 = -11;
     int lcv11 = -16;
     BigInteger o = 3;
-    BigInteger wheel = 17;
+    // WARNING: you need enough primes for every hyperthread.
+    const unsigned cpuCount = std::thread::hardware_concurrency();
+    if (knownPrimes.size()< (cpuCount + 6U)) {
+        throw std::runtime_error("Get more primes! (Too few for thread count)");
+    }
+    std::unique_ptr<BigInteger> wheels(new BigInteger[cpuCount]);
+    BigInteger wheel = 1;
+    for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+        const BigInteger p = knownPrimes[6 + cpu];
+        wheels.get()[cpu] = p;
+        wheel *= p;
+    }
+    const unsigned toSkip = knownPrimes[5 + cpuCount];
+    const BigInteger parallelismThreshold = 1U << 16U;
     while (isWorking) {
         for (int i = 0; i < 6; ++i) {
             if (lcv7 == 11) {
@@ -196,7 +210,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             // way to remove 13 from here might be n % 13. For the edge
             // case, < 170 (13*13+1=169+1) is skipped, if we can know
             // that many primes (or obviously higher, hard storage).
-            if (p < 291) {
+            if (p <= toSkip) {
                 continue;
             }
 
@@ -205,12 +219,31 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 continue;
             }
 
-            if (gcd(p, wheel) != 1) {
-                // Skip
-                continue;
+            if (o < parallelismThreshold) {
+                if (gcd(p, wheel) != 1) {
+                    // Skip
+                    continue;
+                }
+            } else {
+                std::vector<std::future<bool>> futures(cpuCount);
+                for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+                    futures[cpu] = std::async(std::launch::async, [](BigInteger p, BigInteger w) { return gcd(p, w) != 1; }, p, wheels.get()[i]);
+                }
+                bool isBreaking = false;
+                for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+                    if (futures[cpu].get()) {
+                        // Will skip
+                        isBreaking = true;
+                    }
+                }
+                if (isBreaking) {
+                    // Skip
+                    continue;
+                }
             }
 
             wheel *= p;
+            wheels.get()[o % cpuCount] *= p;
             knownPrimes.push_back(p);
         }
 
@@ -243,7 +276,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             }
 
             // **SEE LONG NOTE ABOVE**
-            if (p < 291) {
+            if (p <= toSkip) {
                 continue;
             }
 
@@ -252,12 +285,31 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 continue;
             }
 
-            if (gcd(p, wheel) != 1) {
-                // Skip
-                continue;
+            if (o < parallelismThreshold) {
+                if (gcd(p, wheel) != 1) {
+                    // Skip
+                    continue;
+                }
+            } else {
+                std::vector<std::future<bool>> futures(cpuCount);
+                for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+                    futures[cpu] = std::async(std::launch::async, [](BigInteger p, BigInteger w) { return gcd(p, w) != 1; }, p, wheels.get()[i]);
+                }
+                bool isBreaking = false;
+                for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+                    if (futures[cpu].get()) {
+                        // Will skip
+                        isBreaking = true;
+                    }
+                }
+                if (isBreaking) {
+                    // Skip
+                    continue;
+                }
             }
 
             wheel *= p;
+            wheels.get()[o % cpuCount] *= p;
             knownPrimes.push_back(p);
         }
 
