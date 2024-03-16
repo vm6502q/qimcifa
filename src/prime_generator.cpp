@@ -133,22 +133,17 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     std::vector<BigInteger> knownPrimes =
         { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 77, 79, 83, 91, 97, 103, 107, 109, 119, 127, 133, 137, 139, 149, 151, 161, 163, 167 };
 
-// F' this, below:
-
-#if 0
     if (n < 2) {
         return std::vector<BigInteger>();
     }
-    if (n < 3) {
-        return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 1);
+
+    if (n < 170) {
+        for (size_t i = 1U; i < knownPrimes.size(); ++i) {
+            if (n < knownPrimes[i]) {
+               return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + (i - 1U));
+            }
+        }
     }
-    if (n < 5) {
-        return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 2);
-    }
-    if (n < 7) {
-        return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + 3);
-    }
-#endif
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
