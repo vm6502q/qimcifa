@@ -302,14 +302,14 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             }
 
             for (; isWheeling && (knownPrimes[nextPrimeIndex] > sqrt(p)); ++nextPrimeIndex) {
-                const BigInteger p = knownPrimes[nextPrimeIndex];
+                const BigInteger kp = knownPrimes[nextPrimeIndex];
                 const BigInteger oldWheel = wheel;
-                wheel *= p;
-                if (wheel < oldWheel) {
+                wheel *= kp;
+                if (wheel > p) {
                     isWheeling = false;
                     wheel = oldWheel;
                 } else {
-                    wheels.get()[nextPrimeIndex % cpuCount] *= p;
+                    wheels.get()[nextPrimeIndex % cpuCount] *= kp;
                 }
             }
 
@@ -388,14 +388,14 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             }
 
             for (; isWheeling && (knownPrimes[nextPrimeIndex] > sqrt(p)); ++nextPrimeIndex) {
-                const BigInteger p = knownPrimes[nextPrimeIndex];
+                const BigInteger kp = knownPrimes[nextPrimeIndex];
                 const BigInteger oldWheel = wheel;
-                wheel *= p;
-                if (wheel < oldWheel) {
+                wheel *= kp;
+                if (wheel > p) {
                     isWheeling = false;
                     wheel = oldWheel;
                 } else {
-                    wheels.get()[nextPrimeIndex % cpuCount] *= p;
+                    wheels.get()[nextPrimeIndex % cpuCount] *= kp;
                 }
             }
 
