@@ -192,7 +192,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         return std::vector<BigInteger>();
     }
 
-    if (n < 170) {
+    if (n < 7921) {
         for (size_t i = 1U; i < knownPrimes.size(); ++i) {
             if (n < knownPrimes[i]) {
                return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + (i - 1U));
@@ -222,8 +222,9 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         wheels.get()[cpu] = p;
         wheel *= p;
     }
-    const unsigned toSkip = knownPrimes[5 + cpuCount];
+    const unsigned toSkip = knownPrimes[5 + cpuCount] * knownPrimes[5 + cpuCount] + 1;
     const BigInteger parallelismThreshold = 1U << 16U;
+    size_t nextPrimeIndex = 6 + cpuCount;
     while (isWorking) {
         for (int i = 0; i < 6; ++i) {
             if (lcv7 == 11) {
@@ -264,13 +265,25 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             // way to remove 13 from here might be n % 13. For the edge
             // case, < 170 (13*13+1=169+1) is skipped, if we can know
             // that many primes (or obviously higher, hard storage).
-            if (p <= toSkip) {
+            if (p < toSkip) {
                 continue;
             }
 
             if (!(p % 13)) {
                 // Skip
                 continue;
+            }
+
+            for (; knownPrimes[nextPrimeIndex] > sqrt(p); ++nextPrimeIndex) {
+                const BigInteger p = knownPrimes[nextPrimeIndex];
+
+                wheels.get()[nextPrimeIndex % cpuCount] *= p;
+
+                const BigInteger oldWheel = wheel;
+                wheel *= p;
+                if (wheel < oldWheel) {
+                    throw std::domain_error("Exceeded integer type precision!");
+                }
             }
 
             if (o < parallelismThreshold) {
@@ -330,13 +343,25 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             }
 
             // **SEE LONG NOTE ABOVE**
-            if (p <= toSkip) {
+            if (p < toSkip) {
                 continue;
             }
 
             if (!(p % 13)) {
                 // Skip
                 continue;
+            }
+
+            for (; knownPrimes[nextPrimeIndex] > sqrt(p); ++nextPrimeIndex) {
+                const BigInteger p = knownPrimes[nextPrimeIndex];
+
+                wheels.get()[nextPrimeIndex % cpuCount] *= p;
+
+                const BigInteger oldWheel = wheel;
+                wheel *= p;
+                if (wheel < oldWheel) {
+                    throw std::domain_error("Exceeded integer type precision!");
+                }
             }
 
             if (o < parallelismThreshold) {

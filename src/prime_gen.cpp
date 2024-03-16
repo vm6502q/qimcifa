@@ -276,8 +276,14 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             
             for (; knownPrimes[nextPrimeIndex] > sqrt(p); ++nextPrimeIndex) {
                 const BigInteger p = knownPrimes[nextPrimeIndex];
+
                 wheels.get()[nextPrimeIndex % cpuCount] *= p;
+
+                const BigInteger oldWheel = wheel;
                 wheel *= p;
+                if (wheel < oldWheel) {
+                    throw std::domain_error("Exceeded integer type precision!");
+                }
             }
 
             if (o < parallelismThreshold) {
@@ -348,8 +354,14 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             
             for (; knownPrimes[nextPrimeIndex] > sqrt(p); ++nextPrimeIndex) {
                 const BigInteger p = knownPrimes[nextPrimeIndex];
+
                 wheels.get()[nextPrimeIndex % cpuCount] *= p;
+
+                const BigInteger oldWheel = wheel;
                 wheel *= p;
+                if (wheel < oldWheel) {
+                    throw std::domain_error("Exceeded integer type precision!");
+                }
             }
 
             if (o < parallelismThreshold) {
