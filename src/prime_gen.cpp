@@ -255,7 +255,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         const BigInteger p = knownPrimes[6 + cpu];
         wheels.get()[cpu] = p;
     }
-    const BigInteger toSkip = knownPrimes[5 + cpuCount] * knownPrimes[5 + cpuCount] + 1;
+    const BigInteger toSkip = knownPrimes.back() + 1;
     size_t nextPrimeIndex = 6 + cpuCount;
     bool isWheeling = true;
     while (isWorking) {
