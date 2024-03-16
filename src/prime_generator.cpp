@@ -185,6 +185,10 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 break;
             }
 
+            if ((p > 13) && ((p % 13) == 0)) {
+                continue;
+            }
+
             // if (gcd(p, wheel) != 1) {
             if (isTimeMultiple(p, knownPrimes)) {
                 // Skip
@@ -221,6 +225,10 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             if (p > n) {
                 isWorking = false;
                 break;
+            }
+
+            if ((p > 13) && ((p % 13) == 0)) {
+                continue;
             }
 
             // if (gcd(p, wheel) != 1) {
