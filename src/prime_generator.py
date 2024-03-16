@@ -100,10 +100,11 @@ def TrialDivision(n):
                 # Skip
                 continue
 
-            if isTimeMultiple(p, knownPrimes):
+            if math.gcd(p, wheel) == 1:
                 # Skip
                 continue
 
+            wheel = wheel * p
             knownPrimes.append(p)
 
         for i in range(7, 9):
@@ -134,10 +135,11 @@ def TrialDivision(n):
                 # Skip
                 continue
 
-            if isTimeMultiple(p, knownPrimes):
+            if math.gcd(p, wheel) == 1:
                 # Skip
                 continue
 
+            wheel = wheel * p
             knownPrimes.append(p)
 
         o = o + 10
