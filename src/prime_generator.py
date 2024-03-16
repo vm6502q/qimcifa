@@ -22,26 +22,24 @@ def forward(p):
     p = p + (p >> 1)
     return (p << 1) - 1
 
-def isTimeOrSpaceMultiple(p, knownPrimes):
-    sqrt_p = math.isqrt(p)
-    if (sqrt_p * sqrt_p) == p:
+def isMultiple(p, nextPrimeIndex, knownPrimes):
+    sqrtP = math.isqrt(p);
+    if (sqrtP * sqrtP) == p:
         return True
-    for kp in knownPrimes:
-        if kp >= sqrt_p:
-            return False
-        if (p % kp) == 0:
-            return True
-    return False
 
-def isTimeMultiple(p, knownPrimes):
-    sqrt_p = math.isqrt(p)
-    if (sqrt_p * sqrt_p) == p:
-        return True
-    for kp in knownPrimes[5:]:
-        if kp >= sqrt_p:
-            return False
-        if (p % kp) == 0:
+    highestPrimeIndex = 0
+    m = (knownPrimes.size() + 1) >> 1
+    while m > 1:
+        if knownPrimes[highestPrimeIndex + m] >= sqrtP:
+            highestPrimeIndex += m
+        m = (m + 1) >> 1
+
+    for i in range(nextPrimeIndex, len(knownPrimes)):
+        if i > highestPrimeIndex:
+            return false
+        if (p % knownPrimes[i]) == 0:
             return True
+
     return False
  
 def TrialDivision(n):
@@ -61,6 +59,7 @@ def TrialDivision(n):
     lcv11 = -16
     wheel = 17
     isWorking = True
+    isWheeling = True
     while isWorking:
         for i in range(0, 6):
             if lcv7 == 11:
@@ -104,11 +103,24 @@ def TrialDivision(n):
                 # Skip
                 continue
 
+            while knownPrimes[nextPrimeIndex] > sqrt(p):
+                kp = knownPrimes[nextPrimeIndex]
+                oldWheel = wheel
+                wheel *= kp
+                isWheeling = (wheel <= p)
+                if not isWheeling:
+                    wheel = oldWheel
+                    break
+                nextPrimeIndex = nextPrimeIndex + 1
+
             if math.gcd(p, wheel) == 1:
                 # Skip
                 continue
 
-            wheel = wheel * p
+            if isMultiple(p, nextPrimeIndex, knownPrimes):
+                # Skip
+                continue
+
             knownPrimes.append(p)
 
         for i in range(7, 9):
@@ -147,11 +159,24 @@ def TrialDivision(n):
                 # Skip
                 continue
 
+            while knownPrimes[nextPrimeIndex] > sqrt(p):
+                kp = knownPrimes[nextPrimeIndex]
+                oldWheel = wheel
+                wheel *= kp
+                isWheeling = (wheel <= p)
+                if not isWheeling:
+                    wheel = oldWheel
+                    break
+                nextPrimeIndex = nextPrimeIndex + 1
+
             if math.gcd(p, wheel) == 1:
                 # Skip
                 continue
 
-            wheel = wheel * p
+            if isMultiple(p, nextPrimeIndex, knownPrimes):
+                # Skip
+                continue
+
             knownPrimes.append(p)
 
         o = o + 10
