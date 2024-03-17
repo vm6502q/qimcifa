@@ -208,7 +208,7 @@ def wheel_gen(primes):
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
     // First 2 primes
-    std::vector<BigInteger> knownPrimes= { 2, 3 };
+    std::vector<BigInteger> knownPrimes= { 2, 3, 5 };
 
     if (n < 2) {
         return std::vector<BigInteger>();
