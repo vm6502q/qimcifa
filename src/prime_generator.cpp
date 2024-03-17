@@ -1193,18 +1193,6 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     int lcv7 = 4;
     int lcv11 = 2;
     BigInteger o = 34913;
-    // WARNING: you need enough primes for every hyperthread.
-    const unsigned cpuCount = std::thread::hardware_concurrency();
-    if (knownPrimes.size()< (cpuCount + 6U)) {
-        throw std::runtime_error("Get more primes! (Too few for thread count)");
-    }
-    std::unique_ptr<BigInteger> wheels(new BigInteger[cpuCount]);
-    for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-        const BigInteger p = knownPrimes[6 + cpu];
-        wheels.get()[cpu] = p;
-    }
-    size_t nextPrimeIndex = 6 + cpuCount;
-    bool isWheeling = true;
     while (isWorking) {
         for (int i = 0; i < 2; ++i) {
             if (lcv7 == 11) {
@@ -1234,62 +1222,11 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 break;
             }
 
-            // **Hear me out**: We've "solved" up to multiples of 11.
-            // It's trivial to know much higher primes than this.
-            // At any such boundary of our knowledge, we can assume
-            // that the highest prime necessary to know, to skip the
-            // beginning work of the algorithm, would be the square
-            // of the highest "inside-out" Wheel Factorization prime.
-            //
-            // Grant me only one step further, that the least expensive
-            // way to remove 13 from here might be n % 13. For the edge
-            // case, < 170 (13*13+1=169+1) is skipped, if we can know
-            // that many primes (or obviously higher, hard storage).
-            if (!(p % 13)) {
+            if (isMultiple(p, 6, knownPrimes)) {
                 // Skip
                 continue;
             }
 
-            for (; knownPrimes[nextPrimeIndex] > sqrt(p); ++nextPrimeIndex) {
-                const BigInteger kp = knownPrimes[nextPrimeIndex];
-                const size_t cpu = nextPrimeIndex % cpuCount;
-
-                BigInteger& wheel = wheels.get()[cpu];
-                const BigInteger oldWheel = wheel;
-                wheel *= kp;
-
-                isWheeling = (wheel <= p);
-                if (!isWheeling) {
-                    wheel = oldWheel;
-                    break;
-                }    
-            }
-
-            std::vector<std::future<bool>> futures(cpuCount);
-            for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-                futures[cpu] = std::async(std::launch::async,
-                    [](const BigInteger& p, const BigInteger& w) {
-                        return gcd(p, w) != 1;
-                    }, p, wheels.get()[i]);
-            }
-            bool isBreaking = false;
-            for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-                if (futures[cpu].get()) {
-                    // Will skip
-                    isBreaking = true;
-                }
-            }
-            if (isBreaking) {
-                // Skip
-                continue;
-            }
-
-            if (isMultiple(p, nextPrimeIndex, knownPrimes)) {
-                // Skip
-                continue;
-            }
-
-            wheels.get()[((size_t)o) % cpuCount] *= p;
             knownPrimes.push_back(p);
         }
 
@@ -1321,52 +1258,11 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 break;
             }
 
-            // **SEE LONG NOTE ABOVE**
-            if (!(p % 13)) {
+            if (isMultiple(p, 6, knownPrimes)) {
                 // Skip
                 continue;
             }
 
-            for (; knownPrimes[nextPrimeIndex] > sqrt(p); ++nextPrimeIndex) {
-                const BigInteger kp = knownPrimes[nextPrimeIndex];
-                const size_t cpu = nextPrimeIndex % cpuCount;
-
-                BigInteger& wheel = wheels.get()[cpu];
-                const BigInteger oldWheel = wheel;
-                wheel *= kp;
-
-                isWheeling = (wheel <= p);
-                if (!isWheeling) {
-                    wheel = oldWheel;
-                    break;
-                }    
-            }
-
-            std::vector<std::future<bool>> futures(cpuCount);
-            for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-                futures[cpu] = std::async(std::launch::async,
-                    [](const BigInteger& p, const BigInteger& w) {
-                        return gcd(p, w) != 1;
-                    }, p, wheels.get()[i]);
-            }
-            bool isBreaking = false;
-            for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-                if (futures[cpu].get()) {
-                    // Will skip
-                    isBreaking = true;
-                }
-            }
-            if (isBreaking) {
-                // Skip
-                continue;
-            }
-
-            if (isMultiple(p, nextPrimeIndex, knownPrimes)) {
-                // Skip
-                continue;
-            }
-
-            wheels.get()[((size_t)o) % cpuCount] *= p;
             knownPrimes.push_back(p);
         }
 
