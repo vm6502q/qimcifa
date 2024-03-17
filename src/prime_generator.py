@@ -63,7 +63,7 @@ def wheel_inc(primes):
 
 def wheel_gen(primes):
     output = []
-    for i in range(3, len(primes)):
+    for i in range(3, len(primes) + 1):
         output.append(wheel_inc(primes[:i]))
         output[-1] = output[-1][1:] + output[-1][:1]
     return output
