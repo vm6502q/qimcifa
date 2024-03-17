@@ -69,7 +69,7 @@ def wheel_gen(primes):
     return output
  
 def TrialDivision(n):
-    knownPrimes = [ 2, 3, 5, 7, 11, 13 ]
+    knownPrimes = [ 2, 3 ]
 
     if n < (knownPrimes[-1] + 2):
         return [p for p in knownPrimes if p <= n]
@@ -81,7 +81,8 @@ def TrialDivision(n):
  
     # Get the remaining prime numbers.
     td_start = len(knownPrimes) - 1
-    inc_seqs = wheel_gen(knownPrimes)
+    inc_seqs = []
+    wheel_limit = 11
     o = 1
     while True:
         o = o + 1
@@ -100,7 +101,10 @@ def TrialDivision(n):
         if isTrialDivisionMultiple(p, td_start, knownPrimes):
             # Skip
             continue
+
         knownPrimes.append(p)
+        if p <= wheel_limit:
+            inc_seqs.append(wheel_inc(knownPrimes))
 
     return knownPrimes
 
