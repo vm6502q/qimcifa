@@ -26,11 +26,11 @@ def wheel_inc(primes):
 
 def wheel_gen(primes):
     output = []
-    for i in range(len(primes) - 1):
-        output.append(wheel_inc(primes[:i+1]))
+    for i in range(1, len(primes)):
+        output.append(wheel_inc(primes[:i]))
         print()
     return output
 
 # Driver Code
 if __name__ == '__main__':
-    print(wheel_gen([2, 3, 5, 7, 11]))
+    print(wheel_gen([2, 3, 5, 7]))
