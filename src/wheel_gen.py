@@ -8,16 +8,20 @@ def isTimeOrSpaceMultiple(p, knownPrimes):
             return True
     return False
  
-def rtd(n):
-    knownPrimes = [ 2, 3, 5, 7, 11 ]
+def wheel_gen():
+    qimcifaPrimes = [ 2, 3, 5, 7, 11 ]
+    wheelPrimes = [ 2, 3, 5, 7, 11, 13 ]
+    radius = 1
+    for i in wheelPrimes:
+        radius *= i
     output = []
     counter = 1
-    for i in range(1, n):
-        if not isTimeOrSpaceMultiple(i, knownPrimes):
-            output.append((counter, i))
+    for i in range(1, radius):
+        if not isTimeOrSpaceMultiple(i, qimcifaPrimes):
+            output.append((counter, i, not isTimeOrSpaceMultiple(i, wheelPrimes)))
             counter = counter + 1
     print(output)
 
 # Driver Code
 if __name__ == '__main__':
-    print(rtd(1000))
+    print(wheel_gen())
