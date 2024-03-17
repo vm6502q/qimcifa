@@ -94,7 +94,6 @@ def TrialDivision(n):
         p = forward(o)
 
         if is_wheel_multiple:
-            knownPrimes.append(p)
             continue
 
         if p > n:
