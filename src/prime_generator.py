@@ -48,6 +48,7 @@ def isMultiple(p, knownPrimes):
  
 def wheel_inc(primes):
     wheelPrimes = primes[:-1]
+    prime = primes[-1]
     radius = 1
     for i in primes:
         radius *= i
@@ -55,7 +56,7 @@ def wheel_inc(primes):
     counter = 1
     for i in range(1, radius):
         if not isMultiple(i, wheelPrimes):
-            output.append(isMultiple(i, primes))
+            output.append((i % prime) == 0)
             counter = counter + 1
 
     return output
