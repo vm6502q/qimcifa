@@ -2,26 +2,31 @@
 # enumerated by "reverse trial division" in the prime
 # genertor script.
 
-def isTimeOrSpaceMultiple(p, knownPrimes):
+def isMultiple(p, knownPrimes):
     for kp in knownPrimes:
         if (p % kp) == 0:
             return True
     return False
  
-def wheel_gen():
-    qimcifaPrimes = [ 2, 3, 5, 7, 11 ]
-    wheelPrimes = [ 2, 3, 5, 7, 11, 13 ]
+def wheel_inc(primes):
+    wheelPrimes = primes[:-1]
     radius = 1
-    for i in wheelPrimes:
+    for i in primes:
         radius *= i
     output = []
     counter = 1
     for i in range(1, radius):
-        if not isTimeOrSpaceMultiple(i, qimcifaPrimes):
-            output.append((counter, i, not isTimeOrSpaceMultiple(i, wheelPrimes)))
+        if not isMultiple(i, wheelPrimes):
+            output.append(isMultiple(i, primes))
             counter = counter + 1
-    print(output)
+    return output
+
+def wheel_gen(primes):
+    output = []
+    for i in range(2, len(primes)):
+        output.append(wheel_inc(primes[:i+1]))
+    return output
 
 # Driver Code
 if __name__ == '__main__':
-    print(wheel_gen())
+    print(wheel_gen([2, 3, 5, 7, 11]))
