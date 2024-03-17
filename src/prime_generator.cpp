@@ -234,8 +234,8 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
     // Get the remaining prime numbers.
     std::vector<std::list<bool>> inc_seqs;
-    const size_t wheel_limit = 11U;
     BigInteger o = 1U;
+    size_t wheel_limit = 2;
     while (true) {
         ++o;
         bool is_wheel_multiple = false;
@@ -247,11 +247,14 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
                 break;
             }
         }
+
+        BigInteger p = forward(o);
+
         if (is_wheel_multiple) {
+            knownPrimes.push_back(p);
             continue;
         }
 
-        BigInteger p = forward(o);
         if (p > n) {
             break;
         }

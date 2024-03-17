@@ -90,10 +90,13 @@ def TrialDivision(n):
             inc_seqs[i] = inc_seqs[i][1:] + inc_seqs[i][:1]
             if is_wheel_multiple:
                 break
-        if is_wheel_multiple:
-            continue
 
         p = forward(o)
+
+        if is_wheel_multiple:
+            knownPrimes.append(p)
+            continue
+
         if p > n:
             break
         if isTrialDivisionMultiple(p, len(wheelPrimes) - 1, knownPrimes):
@@ -110,7 +113,7 @@ def TrialDivision(n):
 
 # Driver Code
 if __name__ == '__main__':
-    n = 100
+    n = 1000000
 
     print("Following are the prime numbers smaller than or equal to " + str(n) + ":")
     print(TrialDivision(n))
