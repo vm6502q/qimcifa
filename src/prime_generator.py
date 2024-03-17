@@ -78,11 +78,14 @@ def TrialDivision(n):
     # small primes from outset. For multiples of
     # 2 and 3, this reduces complexity by 2/3.
     # cardinality = int((~((~n) | 1)) / 3)
- 
-    # Get the remaining prime numbers.
-    td_start = len(knownPrimes) - 1
+
+    # From here, for each new prime we find, if it is
+    # less than or equal to wheel_limit, we build a
+    # new "inside-out" wheel.
     inc_seqs = []
     wheel_limit = 11
+
+    # Get the remaining prime numbers.
     o = 1
     while True:
         o = o + 1
@@ -98,13 +101,14 @@ def TrialDivision(n):
         p = forward(o)
         if p > n:
             break
-        if isTrialDivisionMultiple(p, td_start, knownPrimes):
+        if isTrialDivisionMultiple(p, len(knownPrimes) - 1, knownPrimes):
             # Skip
             continue
 
         knownPrimes.append(p)
         if p <= wheel_limit:
             inc_seqs.append(wheel_inc(knownPrimes))
+            inc_seqs[-1] = inc_seqs[-1][1:] + inc_seqs[-1][:1]
 
     return knownPrimes
 
