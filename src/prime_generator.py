@@ -39,12 +39,6 @@ def isTrialDivisionMultiple(p, nextIndex, knownPrimes):
             return True
 
     return False
-
-def isMultiple(p, knownPrimes):
-    for kp in knownPrimes:
-        if (p % kp) == 0:
-            return True
-    return False
  
 def wheel_inc(primes):
     wheelPrimes = primes[:-1]
@@ -55,7 +49,7 @@ def wheel_inc(primes):
     output = []
     counter = 1
     for i in range(1, radius):
-        if not isMultiple(i, wheelPrimes):
+        if not isTrialDivisionMultiple(i, 2, wheelPrimes):
             output.append((i % prime) == 0)
             counter = counter + 1
 

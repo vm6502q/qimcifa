@@ -94,7 +94,7 @@ BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
-const size_t BATCH_SIZE = 1 << 16;
+const size_t BATCH_SIZE = 1 << 12;
 
 bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestPrimeIndex,
     const std::vector<BigInteger>& knownPrimes) {
@@ -103,8 +103,9 @@ bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const
     const size_t batchSize = cpuCount * _BATCH_SIZE;
     const size_t maxLcv = (highestPrimeIndex - nextPrimeIndex) - batchSize;
     std::vector<std::future<bool>> futures(cpuCount);
-    for (size_t i = 0; i <= maxLcv; i+=batchSize) {
+    for (size_t i = 0;;) {
         for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
+            i += BATCH_SIZE;
             futures[cpu] = std::async(std::launch::async,
                 [&knownPrimes, _BATCH_SIZE, cpu, i, nextPrimeIndex](const BigInteger& p) {
                     for (size_t j = 0; j < _BATCH_SIZE; ++j) {
@@ -119,37 +120,46 @@ bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const
             if (futures[cpu].get()) {
                 return true;
             }
+            if (i <= maxLcv) {
+                i += BATCH_SIZE;
+                futures[cpu] = std::async(std::launch::async,
+                    [&knownPrimes, _BATCH_SIZE, cpu, i, nextPrimeIndex](const BigInteger& p) {
+                        for (size_t j = 0; j < _BATCH_SIZE; ++j) {
+                            if ((p % knownPrimes[nextPrimeIndex + i + (cpu * _BATCH_SIZE) + j]) != 1) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }, p);
+            }
         }
     }
 
     return false;
 }
 
-bool isMultiple(const BigInteger& p, size_t nextPrimeIndex, const std::vector<BigInteger>& knownPrimes) {
+bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
     if ((sqrtP * sqrtP) == p) {
         return true;
     }
-    size_t highestPrimeIndex = 0U;
+    size_t highestIndex = 0U;
     for (size_t m = (knownPrimes.size() + 1) >> 1U; m > 1; m = (m + 1) >> 1) {
-        if (knownPrimes[highestPrimeIndex + m] >= sqrtP) {
-            highestPrimeIndex += m;
+        if (knownPrimes[highestIndex + m] <= sqrtP) {
+            highestIndex += m;
         }
     }
 
-    const size_t diff = highestPrimeIndex - nextPrimeIndex;
+    const size_t diff = highestIndex - nextIndex;
     const unsigned cpuCount = std::thread::hardware_concurrency();
     if ((diff / cpuCount) > BATCH_SIZE) {
-        if (isMultipleParallel(p, nextPrimeIndex, highestPrimeIndex, knownPrimes)) {
+        if (isMultipleParallel(p, nextIndex, highestIndex, knownPrimes)) {
             return true;
         }
     }
-    nextPrimeIndex = diff % (BATCH_SIZE * cpuCount);
+    nextIndex = diff % (BATCH_SIZE * cpuCount);
 
-    for (size_t i = nextPrimeIndex; i < knownPrimes.size(); ++i) {
-        if (i > highestPrimeIndex) {
-            return false;
-        }
+    for (size_t i = nextIndex; i <= highestIndex; ++i) {
         if ((p % knownPrimes[i]) == 0) {
             return true;
         }
