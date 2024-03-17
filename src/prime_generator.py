@@ -22,14 +22,19 @@ def forward(p):
     p = p + (p >> 1)
     return (p << 1) - 1
 
-def isTrialDivisionMultiple(p, nextPrimeIndex, knownPrimes):
+def isTrialDivisionMultiple(p, nextIndex, knownPrimes):
     sqrtP = math.isqrt(p);
     if (sqrtP * sqrtP) == p:
         return True
 
-    for i in knownPrimes[nextPrimeIndex:]:
-        if (i >= sqrtP):
-            return False
+    highestIndex = 0
+    m = (len(knownPrimes) + 1) >> 1
+    while m > 1:
+        if knownPrimes[highestIndex + m] <= sqrtP:
+            highestIndex = highestIndex + m
+        m = (m + 1) >> 1
+
+    for i in knownPrimes[nextIndex:(highestIndex + 1)]:
         if (p % i) == 0:
             return True
 
@@ -64,8 +69,7 @@ def wheel_gen(primes):
     return output
  
 def TrialDivision(n):
-    wheelPrimes = [ 2, 3, 5, 7, 11 ]
-    knownPrimes = [ 2, 3, 5, 7, 11, 13, 17, 19 ]
+    knownPrimes = [ 2, 3, 5, 7 ]
 
     if n < (knownPrimes[-1] + 2):
         return [p for p in knownPrimes if p <= n]
@@ -76,24 +80,28 @@ def TrialDivision(n):
     # cardinality = int((~((~n) | 1)) / 3)
  
     # Get the remaining prime numbers.
-    o = 2
-    inc_seqs = wheel_gen(wheelPrimes)
-    isWorking = True
-    while isWorking:
+    td_start = len(knownPrimes) - 1
+    inc_seqs = wheel_gen(knownPrimes)
+    print(inc_seqs)
+    o = 1
+    while True:
+        o = o + 1
+        is_wheel_multiple = False
         for i in range(len(inc_seqs)):
-            o = o + (2 if inc_seqs[i][0] else 1)
+            is_wheel_multiple = inc_seqs[i][0]
             inc_seqs[i] = inc_seqs[i][1:] + inc_seqs[i][:1]
-    
-        p = forward(o)
+            if is_wheel_multiple:
+                break
 
-        if p > n:
-            isWorking = False
-            break
-
-        if isTrialDivisionMultiple(p, 2, knownPrimes):
-            # Skip
+        if is_wheel_multiple:
             continue
 
+        p = forward(o)
+        if p > n:
+            break
+        if isTrialDivisionMultiple(p, td_start, knownPrimes):
+            # Skip
+            continue
         knownPrimes.append(p)
 
     return knownPrimes

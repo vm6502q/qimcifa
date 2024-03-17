@@ -17,16 +17,22 @@ def wheel_inc(primes):
     counter = 1
     for i in range(1, radius):
         if not isMultiple(i, wheelPrimes):
-            output.append(isMultiple(i, primes))
+            isMult = isMultiple(i, primes)
+            output.append(isMult)
+            print((counter, i, isMult))
             counter = counter + 1
+
+    output = output[1:] + output[:1]
+
     return output
 
 def wheel_gen(primes):
     output = []
     for i in range(2, len(primes)):
         output.append(wheel_inc(primes[:i+1]))
+        print()
     return output
 
 # Driver Code
 if __name__ == '__main__':
-    print(wheel_gen([2, 3, 5, 7, 11]))
+    print(wheel_gen([2, 3, 5, 7]))
