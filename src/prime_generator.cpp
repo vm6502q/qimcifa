@@ -1190,9 +1190,9 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
     // Get the remaining prime numbers.
     bool isWorking = true;
-    int lcv7 = 4;
-    int lcv11 = 2;
-    BigInteger o = 34913;
+    int lcv7 = 7;
+    int lcv11 = 4;
+    BigInteger o = 2633;
     while (isWorking) {
         for (int i = 0; i < 2; ++i) {
             if (lcv7 == 11) {
