@@ -58,14 +58,13 @@ def wheel_inc(primes):
             output.append(isMultiple(i, primes))
             counter = counter + 1
 
-    output = output[1:] + output[:1]
-
     return output
 
 def wheel_gen(primes):
     output = []
     for i in range(2, len(primes)):
         output.append(wheel_inc(primes[:i+1]))
+        output[-1] = output[-1][1:] + output[-1][:1]
     return output
  
 def TrialDivision(n):
@@ -110,7 +109,7 @@ def TrialDivision(n):
         if p <= wheel_limit:
             wheelPrimes.append(p)
             inc_seqs.append(wheel_inc(knownPrimes))
-            inc_seqs[-1] = inc_seqs[-1][1:] + inc_seqs[-1][:1]
+            inc_seqs[-1] = inc_seqs[-1][2:] + inc_seqs[-1][:2]
 
     return knownPrimes
 
