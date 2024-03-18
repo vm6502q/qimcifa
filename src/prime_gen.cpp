@@ -157,12 +157,6 @@ bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInte
     if ((sqrtP * sqrtP) == p) {
         return true;
     }
-    size_t highestIndex = 0U;
-    for (size_t m = (knownPrimes.size() + 1) >> 1U; m > 1; m = (m + 1) >> 1) {
-        if (knownPrimes[highestIndex + m] <= sqrtP) {
-            highestIndex += m;
-        }
-    }
 
     /*const size_t diff = highestIndex - nextIndex;
     const unsigned cpuCount = std::thread::hardware_concurrency();
@@ -173,8 +167,12 @@ bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInte
     }
     nextIndex = diff % (BATCH_SIZE * cpuCount);*/
 
-    for (size_t i = nextIndex; i <= highestIndex; ++i) {
-        if ((p % knownPrimes[i]) == 0) {
+    for (size_t i = nextIndex; i < knownPrimes.size(); ++i) {
+        const BigInteger& prime = knownPrimes[i];
+        if (prime >= sqrtP) {
+            return false;
+        }
+        if ((p % prime) == 0) {
             return true;
         }
     }

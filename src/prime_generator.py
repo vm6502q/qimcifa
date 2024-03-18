@@ -27,14 +27,9 @@ def isTrialDivisionMultiple(p, nextIndex, knownPrimes):
     if (sqrtP * sqrtP) == p:
         return True
 
-    highestIndex = 0
-    m = (len(knownPrimes) + 1) >> 1
-    while m > 1:
-        if knownPrimes[highestIndex + m] <= sqrtP:
-            highestIndex = highestIndex + m
-        m = (m + 1) >> 1
-
-    for i in knownPrimes[nextIndex:(highestIndex + 1)]:
+    for i in knownPrimes[nextIndex:]:
+        if i >= sqrtP:
+            return False
         if (p % i) == 0:
             return True
 
