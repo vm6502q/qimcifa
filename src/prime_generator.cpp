@@ -16,6 +16,7 @@
 #include <iostream>
 #include <vector>
 
+#include <boost/dynamic_bitset.hpp>
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
 #elif USE_BOOST
@@ -163,27 +164,31 @@ bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes)
     return false;
 }
 
-std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
+boost::dynamic_bitset<uint32_t> wheel_inc(std::vector<BigInteger> primes) {
     BigInteger radius = 1U;
     for (const BigInteger& i : primes) {
         radius *= i;
     }
     const BigInteger prime = primes.back();
     primes.pop_back();
-    std::list<bool> output;
+    std::vector<bool> o;
     for (size_t i = 1U; i < radius; ++i) {
         if (!isMultiple(i, primes)) {
-            output.push_back((i % prime) == 0);
+            o.push_back((i % prime) == 0);
         }
     }
 
-    std::rotate(output.begin(), next(output.begin()), output.end());
+    boost::dynamic_bitset<uint32_t> output(o.size());
+    for (size_t i = 0U; i < o.size(); ++i) {
+        output[i] = o[i];
+    }
+    output >>= 1U;
 
     return output;
 }
 
-std::vector<std::list<bool>> wheel_gen(const std::vector<BigInteger>& primes) {
-    std::vector<std::list<bool>> output;
+std::vector<boost::dynamic_bitset<uint32_t>> wheel_gen(const std::vector<BigInteger>& primes) {
+    std::vector<boost::dynamic_bitset<uint32_t>> output;
     std::vector<BigInteger> wheelPrimes;
     for (const BigInteger p : primes) {
         wheelPrimes.push_back(p);
@@ -193,6 +198,7 @@ std::vector<std::list<bool>> wheel_gen(const std::vector<BigInteger>& primes) {
     }
     return output;
 }
+
 
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
@@ -222,17 +228,18 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // const BigInteger cardinality = (~((~n) | 1)) / 3;
 
     // Get the remaining prime numbers.
-    std::vector<std::list<bool>> inc_seqs;
+    std::vector<boost::dynamic_bitset<uint32_t>> inc_seqs;
     BigInteger o = 1U;
     size_t wheel_limit = 11U;
     while (true) {
         ++o;
         bool is_wheel_multiple = false;
         for (size_t i = 0; i < inc_seqs.size(); ++i) {
-            std::list<bool>& wheel = inc_seqs[i];
-            is_wheel_multiple = wheel.front();
-            std::rotate(wheel.begin(), next(wheel.begin()), wheel.end());
+            boost::dynamic_bitset<uint32_t>& wheel = inc_seqs[i];
+            is_wheel_multiple = wheel[0U];
+            wheel >>= 1U;
             if (is_wheel_multiple) {
+                wheel[wheel.size() - 1U] = true;
                 break;
             }
         }
@@ -254,8 +261,9 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         if (p <= wheel_limit) {
             wheelPrimes.push_back(p);
             inc_seqs.push_back(wheel_inc(knownPrimes));
-            std::list<bool>& wheel = inc_seqs.back();
-            std::rotate(wheel.begin(), next(wheel.begin()), wheel.end());
+            boost::dynamic_bitset<uint32_t>& wheel = inc_seqs.back();
+            wheel >>= 2U;
+            wheel[wheel.size() - 1U] = true;
         }
     }
 
