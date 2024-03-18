@@ -204,13 +204,17 @@ std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
     return output;
 }
 
-#if 0
-def wheel_gen(primes):
-    output = []
-    for i in range(2, len(primes)):
-        output.append(wheel_inc(primes[:i+1]))
-    return output
-#endif
+std::vector<std::list<bool>> wheel_gen(const std::vector<BigInteger>& primes) {
+    std::vector<std::list<bool>> output;
+    std::vector<BigInteger> wheelPrimes;
+    for (const BigInteger p : primes) {
+        wheelPrimes.push_back(p);
+        if (wheelPrimes.back() > 3) {
+            output.push_back(wheel_inc(wheelPrimes));
+        }
+    }
+    return output;
+}
 
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
