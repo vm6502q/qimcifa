@@ -134,7 +134,7 @@ bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes)
     return false;
 }
 
-boost::dynamic_bitset<uint32_t> wheel_inc(std::vector<BigInteger> primes) {
+boost::dynamic_bitset<uint64_t> wheel_inc(std::vector<BigInteger> primes) {
     BigInteger radius = 1U;
     for (const BigInteger& i : primes) {
         radius *= i;
@@ -150,7 +150,7 @@ boost::dynamic_bitset<uint32_t> wheel_inc(std::vector<BigInteger> primes) {
         }
     }
 
-    boost::dynamic_bitset<uint32_t> output(count);
+    boost::dynamic_bitset<uint64_t> output(count);
     for (size_t i = 0U; i < count; ++i) {
         output[i] = o[i];
     }
@@ -159,8 +159,8 @@ boost::dynamic_bitset<uint32_t> wheel_inc(std::vector<BigInteger> primes) {
     return output;
 }
 
-std::vector<boost::dynamic_bitset<uint32_t>> wheel_gen(const std::vector<BigInteger>& primes) {
-    std::vector<boost::dynamic_bitset<uint32_t>> output;
+std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<BigInteger>& primes) {
+    std::vector<boost::dynamic_bitset<uint64_t>> output;
     std::vector<BigInteger> wheelPrimes;
     for (const BigInteger p : primes) {
         wheelPrimes.push_back(p);
@@ -200,14 +200,14 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // const BigInteger cardinality = (~((~n) | 1)) / 3;
 
     // Get the remaining prime numbers.
-    std::vector<boost::dynamic_bitset<uint32_t>> inc_seqs;
+    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs;
     BigInteger o = 1U;
     size_t wheel_limit = 17U;
     while (true) {
         ++o;
         bool is_wheel_multiple = false;
         for (size_t i = 0; i < inc_seqs.size(); ++i) {
-            boost::dynamic_bitset<uint32_t>& wheel = inc_seqs[i];
+            boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
             is_wheel_multiple = wheel[0U];
             wheel >>= 1U;
             if (is_wheel_multiple) {
@@ -233,7 +233,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         if (p <= wheel_limit) {
             wheelPrimes.push_back(p);
             inc_seqs.push_back(wheel_inc(knownPrimes));
-            boost::dynamic_bitset<uint32_t>& wheel = inc_seqs.back();
+            boost::dynamic_bitset<uint64_t>& wheel = inc_seqs.back();
             wheel >>= 1U;
             wheel[wheel.size() - 1U] = true;
         }
@@ -245,7 +245,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 // Driver Code
 int main()
 {
-    BigInteger n; // = 1000000;
+    BigInteger n = 10000000;
 
     std::cout << "Primes up to number: ";
     std::cin >> n;
