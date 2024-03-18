@@ -31,8 +31,12 @@
 #include <string>
 #include <time.h>
 
+#include <boost/dynamic_bitset.hpp>
+
+#if IS_RANDOM
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
+#endif
 
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
@@ -140,27 +144,31 @@ template <typename BigInteger> bool isMultiple(const BigInteger& p, const std::v
     return false;
 }
 
-template <typename BigInteger> std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
+template <typename BigInteger> boost::dynamic_bitset<uint32_t> wheel_inc(std::vector<BigInteger> primes) {
     BigInteger radius = 1U;
     for (const BigInteger& i : primes) {
         radius *= i;
     }
     const BigInteger prime = primes.back();
     primes.pop_back();
-    std::list<bool> output;
+    std::vector<bool> o;
     for (size_t i = 1U; i < radius; ++i) {
         if (!isMultiple((BigInteger)i, primes)) {
-            output.push_back((i % prime) == 0);
+            o.push_back((i % prime) == 0);
         }
     }
 
-    std::rotate(output.begin(), next(output.begin()), output.end());
+    boost::dynamic_bitset<uint32_t> output(o.size());
+    for (size_t i = 0U; i < o.size(); ++i) {
+        output[i] = o[i];
+    }
+    output >>= 1U;
 
     return output;
 }
 
-template <typename BigInteger> std::vector<std::list<bool>> wheel_gen(const std::vector<BigInteger>& primes) {
-    std::vector<std::list<bool>> output;
+template <typename BigInteger> std::vector<boost::dynamic_bitset<uint32_t>> wheel_gen(const std::vector<BigInteger>& primes) {
+    std::vector<boost::dynamic_bitset<uint32_t>> output;
     std::vector<BigInteger> wheelPrimes;
     for (const BigInteger p : primes) {
         wheelPrimes.push_back(p);
@@ -292,7 +300,7 @@ double singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 }
 #else
 template <typename bitCapInt>
-double singleWordLoop(const bitCapInt& toFactor, std::vector<std::list<bool>> inc_seqs)
+double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint32_t>> inc_seqs)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
     // for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
@@ -302,10 +310,11 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<std::list<bool>> in
 
             bool is_wheel_multiple = false;
             for (size_t i = 0; i < inc_seqs.size(); ++i) {
-                std::list<bool>& wheel = inc_seqs[i];
-                is_wheel_multiple = wheel.front();
-                std::rotate(wheel.begin(), next(wheel.begin()), wheel.end());
+                boost::dynamic_bitset<uint32_t>& wheel = inc_seqs[i];
+                is_wheel_multiple = wheel[0U];
+                wheel >>= 1U;
                 if (is_wheel_multiple) {
+                    wheel[wheel.size() - 1U] = true;
                     break;
                 }
             }
@@ -335,7 +344,7 @@ double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::ve
 
     return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, rng);
 #else
-    std::vector<std::list<bool>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel));
+    std::vector<boost::dynamic_bitset<uint32_t>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel));
 
     return singleWordLoop<bitCapInt>(toFactor, inc_seqs);
 #endif
