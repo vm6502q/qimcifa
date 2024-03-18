@@ -58,7 +58,7 @@ def wheel_gen(primes):
     return output
  
 def TrialDivision(n):
-    knownPrimes = [ 2, 3, 5 ]
+    knownPrimes = [ 2, 3 ]
     wheelPrimes = [ 2, 3 ]
 
     if n < (knownPrimes[-1] + 2):

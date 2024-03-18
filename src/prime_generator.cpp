@@ -206,7 +206,7 @@ def wheel_gen(primes):
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
     // First 2 primes
-    std::vector<BigInteger> knownPrimes= { 2, 3, 5 };
+    std::vector<BigInteger> knownPrimes= { 2, 3 };
 
     if (n < 2) {
         return std::vector<BigInteger>();
@@ -233,7 +233,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // Get the remaining prime numbers.
     std::vector<std::list<bool>> inc_seqs;
     BigInteger o = 1U;
-    size_t wheel_limit = 11;
+    size_t wheel_limit = 11U;
     while (true) {
         ++o;
         bool is_wheel_multiple = false;
