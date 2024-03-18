@@ -184,7 +184,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
     if (n < (knownPrimes.back() + 2)) {
         const BigInteger sqrtN = sqrt(n);
-        const auto highestPrimeIt = std::lower_bound(knownPrimes.begin(), knownPrimes.end(), sqrtN);
+        const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrtN);
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
