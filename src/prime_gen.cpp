@@ -25,7 +25,9 @@
 #include "big_integer.hpp"
 #endif
 
+#if 0
 #include "dispatchqueue.hpp"
+#endif
 
 #include <pybind11/pybind11.h>
 
@@ -45,33 +47,8 @@ typedef BigInteger BigInteger;
 #endif
 #endif
 
-DispatchQueue dispatch(std::thread::hardware_concurrency());
-
 #if 0
-inline size_t log2(BigInteger n) {
-    size_t log2n = 0;
-    BigInteger _n = n;
-    while (_n >>= 1) {
-        ++log2n;
-    }
-
-    return log2n;
-}
-
-inline BigInteger gcd(BigInteger n1, BigInteger n2)
-{
-#if USE_GMP || USE_BOOST
-    while (n2) {
-#else
-    if (bi_compare_0(n2) != 0) {
-#endif
-        const BigInteger t = n1;
-        n1 = n2;
-        n2 = t % n2;
-    }
-
-    return n1;
-}
+DispatchQueue dispatch(std::thread::hardware_concurrency());
 #endif
 
 inline BigInteger sqrt(const BigInteger& toTest)
@@ -113,8 +90,8 @@ inline BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
+#if 0
 const size_t BATCH_SIZE = 256;
-
 bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,
     const std::vector<BigInteger>& knownPrimes) {
     const size_t _BATCH_SIZE = BATCH_SIZE;
@@ -134,6 +111,7 @@ bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const
 
     return dispatch.finish();
 }
+#endif
 
 bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
@@ -174,14 +152,16 @@ boost::dynamic_bitset<uint32_t> wheel_inc(std::vector<BigInteger> primes) {
     const BigInteger prime = primes.back();
     primes.pop_back();
     std::vector<bool> o;
+    size_t count = 0;
     for (size_t i = 1U; i < radius; ++i) {
         if (!isMultiple(i, primes)) {
             o.push_back((i % prime) == 0);
+            ++count;
         }
     }
 
-    boost::dynamic_bitset<uint32_t> output(o.size());
-    for (size_t i = 0U; i < o.size(); ++i) {
+    boost::dynamic_bitset<uint32_t> output(count);
+    for (size_t i = 0U; i < count; ++i) {
         output[i] = o[i];
     }
     output >>= 1U;
@@ -263,7 +243,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             wheelPrimes.push_back(p);
             inc_seqs.push_back(wheel_inc(knownPrimes));
             boost::dynamic_bitset<uint32_t>& wheel = inc_seqs.back();
-            wheel >>= 2U;
+            wheel >>= 1U;
             wheel[wheel.size() - 1U] = true;
         }
     }
