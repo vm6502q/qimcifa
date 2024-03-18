@@ -24,6 +24,8 @@
 #include "big_integer.hpp"
 #endif
 
+#include "dispatchqueue.hpp"
+
 #if BIG_INT_BITS < 33
 typedef uint32_t BigInteger;
 #elif BIG_INT_BITS < 65
@@ -39,6 +41,8 @@ typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG
 typedef BigInteger BigInteger;
 #endif
 #endif
+
+DispatchQueue dispatch(std::thread::hardware_concurrency());
 
 #if 0
 inline size_t log2(BigInteger n) {
@@ -106,68 +110,44 @@ inline BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
-const size_t BATCH_SIZE = 1 << 12;
+const size_t BATCH_SIZE = 256;
 
-bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestPrimeIndex,
+bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,
     const std::vector<BigInteger>& knownPrimes) {
     const size_t _BATCH_SIZE = BATCH_SIZE;
-    const unsigned cpuCount = std::thread::hardware_concurrency();
-    const size_t batchSize = cpuCount * _BATCH_SIZE;
-    const size_t maxLcv = (highestPrimeIndex - nextPrimeIndex) - batchSize;
-    std::vector<std::future<bool>> futures(cpuCount);
-    for (size_t i = 0;;) {
-        for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-            i += BATCH_SIZE;
-            futures[cpu] = std::async(std::launch::async,
-                [&knownPrimes, _BATCH_SIZE, cpu, i, nextPrimeIndex](const BigInteger& p) {
-                    for (size_t j = 0; j < _BATCH_SIZE; ++j) {
-                        if ((p % knownPrimes[nextPrimeIndex + i + (cpu * _BATCH_SIZE) + j]) != 1) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }, p);
-        }
-        for (unsigned cpu = 0; cpu < cpuCount; ++cpu) {
-            if (futures[cpu].get()) {
-                return true;
+    const size_t maxLcv = (highestIndex - nextPrimeIndex) / BATCH_SIZE;
+    dispatch.resetResult();
+    for (size_t i = 0; i < maxLcv; ++i) {
+        size_t j = i * BATCH_SIZE + nextPrimeIndex;
+        dispatch.dispatch([&knownPrimes, &p, _BATCH_SIZE, j]() {
+            for (size_t k = 0; k < _BATCH_SIZE; ++k) {
+                if ((p % knownPrimes[j + k]) == 0) {
+                    return true;
+                }
             }
-            if (i <= maxLcv) {
-                i += BATCH_SIZE;
-                futures[cpu] = std::async(std::launch::async,
-                    [&knownPrimes, _BATCH_SIZE, cpu, i, nextPrimeIndex](const BigInteger& p) {
-                        for (size_t j = 0; j < _BATCH_SIZE; ++j) {
-                            if ((p % knownPrimes[nextPrimeIndex + i + (cpu * _BATCH_SIZE) + j]) != 1) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    }, p);
-            }
-        }
+            return false;
+        });
     }
 
-    return false;
+    return dispatch.finish();
 }
 
 bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
+    const size_t highestIndex = std::distance(knownPrimes.begin(), std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrtP));
 
-    /*const size_t diff = highestIndex - nextIndex;
-    const unsigned cpuCount = std::thread::hardware_concurrency();
-    if ((diff / cpuCount) > BATCH_SIZE) {
+#if 0
+    const size_t diff = highestIndex - nextIndex;
+    if (diff > BATCH_SIZE) {
         if (isMultipleParallel(p, nextIndex, highestIndex, knownPrimes)) {
             return true;
         }
     }
-    nextIndex = diff % (BATCH_SIZE * cpuCount);*/
+    nextIndex = diff % BATCH_SIZE;
+#endif
 
-    for (size_t i = nextIndex; i < knownPrimes.size(); ++i) {
-        const BigInteger& prime = knownPrimes[i];
-        if (sqrtP < prime) {
-            return false;
-        }
-        if ((p % prime) == 0) {
+    for (size_t i = nextIndex; i < highestIndex; ++i) {
+        if ((p % knownPrimes[i]) == 0) {
             return true;
         }
     }
