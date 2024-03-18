@@ -233,7 +233,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             continue;
         }
 
-        BigInteger p = forward(o);
+        const BigInteger p = forward(o);
         if (p > n) {
             break;
         }
