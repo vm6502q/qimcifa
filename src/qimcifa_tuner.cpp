@@ -47,7 +47,7 @@
 namespace Qimcifa {
 
 constexpr int BASE_TRIALS = 1U << 16U;
-constexpr int MIN_RTD_LEVEL = 2;
+constexpr int MIN_RTD_LEVEL = 3;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -307,8 +307,19 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
     auto iterClock = std::chrono::high_resolution_clock::now();
     // for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = 2U;
+        int lcv5 = 3;
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             bitCapInt o = batchStart + batchItem;
+
+            if (lcv5 == 3) {
+                lcv5 = 4;
+                continue;
+            }
+            if (lcv5 == 10) {
+                lcv5 = 1;
+                continue;
+            }
+            ++lcv5;
 
             bool is_wheel_multiple = false;
             for (size_t i = 0; i < inc_seqs.size(); ++i) {

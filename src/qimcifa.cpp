@@ -94,7 +94,7 @@ constexpr int BASE_TRIALS = 1U << 20U;
 // Make this a multiple of 2, 3, 5, 7, 11, 13, and 17.
 constexpr int BASE_TRIALS = 510510;
 #endif
-constexpr int MIN_RTD_LEVEL = 2;
+constexpr int MIN_RTD_LEVEL = 3;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -315,7 +315,7 @@ template <typename BigInteger> std::vector<boost::dynamic_bitset<uint32_t>> whee
     std::vector<BigInteger> wheelPrimes;
     for (const BigInteger p : primes) {
         wheelPrimes.push_back(p);
-        if (wheelPrimes.back() > 3) {
+        if (wheelPrimes.back() > 5) {
             output.push_back(wheel_inc(wheelPrimes));
         }
     }
@@ -465,8 +465,19 @@ bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 2U);
+        int lcv5 = 3;
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             bitCapInt o = batchStart + batchItem;
+
+            if (lcv5 == 3) {
+                lcv5 = 4;
+                continue;
+            }
+            if (lcv5 == 10) {
+                lcv5 = 1;
+                continue;
+            }
+            ++lcv5;
 
             bool is_wheel_multiple = false;
             for (size_t i = 0; i < inc_seqs.size(); ++i) {

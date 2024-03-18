@@ -55,13 +55,13 @@ def wheel_inc(primes):
 
 def wheel_gen(primes):
     output = []
-    for i in range(2, len(primes)):
+    for i in range(3, len(primes)):
         output.append(wheel_inc(primes[:i+1]))
     return output
  
 def TrialDivision(n):
-    knownPrimes = [ 2, 3 ]
-    wheelPrimes = [ 2, 3 ]
+    knownPrimes = [ 2, 3, 5 ]
+    wheelPrimes = [ 2, 3, 5 ]
 
     if n < (knownPrimes[-1] + 2):
         return [p for p in knownPrimes if p <= n]
@@ -74,13 +74,23 @@ def TrialDivision(n):
     # From here, for each new prime we find, if it is
     # less than or equal to wheel_limit, we build a
     # new "inside-out" wheel.
-    inc_seqs = wheel_gen(wheelPrimes) if len(wheelPrimes) > 2 else []
+    inc_seqs = wheel_gen(wheelPrimes) if len(wheelPrimes) > 3 else []
     wheel_limit = 17
 
     # Get the remaining prime numbers.
     o = 1
+    lcv5 = 2
     while True:
         o = o + 1
+
+        lcv5 = lcv5 + 1
+        if lcv5 == 3:
+            lcv5 = 4
+            o = o + 1
+        if lcv5 == 10:
+            lcv5 = 1
+            o = o + 1
+
         is_wheel_multiple = False
         for i in range(len(inc_seqs)):
             is_wheel_multiple = inc_seqs[i][0]

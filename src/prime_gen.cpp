@@ -166,7 +166,7 @@ std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<BigInte
     std::vector<BigInteger> wheelPrimes;
     for (const BigInteger p : primes) {
         wheelPrimes.push_back(p);
-        if (wheelPrimes.back() > 3) {
+        if (wheelPrimes.back() > 5) {
             output.push_back(wheel_inc(wheelPrimes));
         }
     }
@@ -176,7 +176,7 @@ std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<BigInte
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
     // First 2 primes
-    std::vector<BigInteger> knownPrimes= { 2, 3 };
+    std::vector<BigInteger> knownPrimes= { 2, 3, 5 };
 
     if (n < 2) {
         return std::vector<BigInteger>();
@@ -193,7 +193,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + highestIndex);
     }
 
-    std::vector<BigInteger> wheelPrimes= { 2, 3 };
+    std::vector<BigInteger> wheelPrimes= { 2, 3, 5 };
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
@@ -203,9 +203,21 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs;
     BigInteger o = 1U;
+    int lcv5 = 2;
     size_t wheel_limit = 17U;
     while (true) {
         ++o;
+
+        ++lcv5;
+        if (lcv5 == 3) {
+            ++o;
+            lcv5 = 4;
+        }
+        if (lcv5 == 10) {
+            ++o;
+            lcv5 = 1;
+        }
+
         bool is_wheel_multiple = false;
         for (size_t i = 0; i < inc_seqs.size(); ++i) {
             boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
