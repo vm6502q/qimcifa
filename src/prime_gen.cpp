@@ -184,13 +184,8 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
     if (n < (knownPrimes.back() + 2)) {
         const BigInteger sqrtN = sqrt(n);
-        size_t highestIndex = 0U;
-        for (size_t m = (knownPrimes.size() + 1) >> 1U; m > 1; m = (m + 1) >> 1) {
-            if (knownPrimes[highestIndex + m] <= sqrtN) {
-                highestIndex += m;
-            }
-        }
-        return std::vector<BigInteger>(knownPrimes.begin(), knownPrimes.begin() + highestIndex);
+        const auto highestPrimeIt = std::lower_bound(knownPrimes.begin(), knownPrimes.end(), sqrtN);
+        return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
     std::vector<BigInteger> wheelPrimes= { 2, 3, 5 };
