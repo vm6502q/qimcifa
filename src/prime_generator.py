@@ -75,7 +75,7 @@ def TrialDivision(n):
     # less than or equal to wheel_limit, we build a
     # new "inside-out" wheel.
     inc_seqs = wheel_gen(wheelPrimes) if len(wheelPrimes) > 2 else []
-    wheel_limit = 17
+    wheel_limit = 11
 
     # Get the remaining prime numbers.
     o = 1
