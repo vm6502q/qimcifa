@@ -44,7 +44,7 @@ typedef BigInteger BigInteger;
 #endif
 #endif
 
-const size_t BATCH_SIZE = 1 << 10;
+const size_t BATCH_SIZE = 1 << 8;
 const size_t cpuCount = std::thread::hardware_concurrency();
 DispatchQueue dispatch(cpuCount);
 
