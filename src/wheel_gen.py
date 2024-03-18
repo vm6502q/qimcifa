@@ -9,15 +9,16 @@ def isMultiple(p, knownPrimes):
     return False
 
 def wheel_inc(primes):
-    wheelPrimes = primes[:-1]
     radius = 1
     for i in primes:
         radius *= i
+    prime = primes[-1]
+    wheelPrimes = primes[:-1]
     output = []
     counter = 1
     for i in range(1, radius):
         if not isMultiple(i, wheelPrimes):
-            isMult = isMultiple(i, primes)
+            isMult = (i % prime) == 0
             output.append(isMult)
             print((counter, i, isMult))
             counter = counter + 1

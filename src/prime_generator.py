@@ -47,12 +47,10 @@ def wheel_inc(primes):
     for i in primes:
         radius *= i
     output = []
-    counter = 1
     for i in range(1, radius):
         if not isMultiple(i, wheelPrimes):
             isMult = isMultiple(i, primes)
             output.append(isMult)
-            counter = counter + 1
 
     output = output[1:] + output[:1]
 

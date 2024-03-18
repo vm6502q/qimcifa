@@ -177,19 +177,30 @@ bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInte
     return false;
 }
 
-std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
-    BigInteger prime = primes.back();
-    primes.pop_back();
+inline bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
+    for (const BigInteger& kp : knownPrimes) {
+        if ((p % kp) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
     BigInteger radius = 1U;
-    for (BigInteger i : primes) {
+    for (const BigInteger& i : primes) {
         radius *= i;
     }
+    const BigInteger prime = primes.back();
+    primes.pop_back();
     std::list<bool> output;
-    for (BigInteger i = 1; i < radius; ++i) {
-        if (!isMultiple(i, 2, primes)) {
+    for (size_t i = 1U; i < radius; ++i) {
+        if (!isMultiple(i, primes)) {
             output.push_back((i % prime) == 0);
         }
     }
+
+    std::rotate(output.begin(), next(output.begin()), output.end());
 
     return output;
 }
@@ -197,9 +208,8 @@ std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
 #if 0
 def wheel_gen(primes):
     output = []
-    for i in range(3, len(primes) + 1):
-        output.append(wheel_inc(primes[:i]))
-        output[-1] = output[-1][1:] + output[-1][:1]
+    for i in range(2, len(primes)):
+        output.append(wheel_inc(primes[:i+1]))
     return output
 #endif
 
@@ -265,7 +275,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             wheelPrimes.push_back(p);
             inc_seqs.push_back(wheel_inc(knownPrimes));
             std::list<bool>& wheel = inc_seqs.back();
-            std::rotate(wheel.begin(), next(next(wheel.begin())), wheel.end());
+            std::rotate(wheel.begin(), next(wheel.begin()), wheel.end());
         }
     }
 
