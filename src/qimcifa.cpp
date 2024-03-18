@@ -451,9 +451,8 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 }
 #else
 template <typename bitCapInt>
-bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+bool singleWordLoop(const bitCapInt& toFactor, std::vector<std::list<bool>> inc_seqs, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
-    std::vector<std::list<bool>> inc_seqs = wheel_gen(std::vector<bitCapInt>({ 2, 3, 5 }));
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 2U);
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -484,15 +483,15 @@ bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std
 
 #if IS_PARALLEL
 template <typename bitCapInt>
-int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& nodeCount, const size_t& nodeId, const int64_t& tdLevel,
+int mainBody(const bitCapInt& toFactor, const size_t& qubitCount, const size_t& nodeCount, const size_t& nodeId, const uint64_t& tdLevel,
     const std::vector<unsigned>& trialDivisionPrimes)
 #elif IS_DISTRIBUTED
 template <typename bitCapInt>
-int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t& nodeCount, const size_t& nodeId,
+int mainBody(const bitCapInt& toFactor, const uint64_t& tdLevel, const size_t& nodeCount, const size_t& nodeId,
     const std::vector<unsigned>& trialDivisionPrimes)
 #else
 template <typename bitCapInt>
-int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
+int mainBody(const bitCapInt& toFactor, const uint64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
 #endif
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
@@ -502,7 +501,7 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         return 0;
     }
 
-    for (uint64_t primeIndex = 0; primeIndex < trialDivisionPrimes.size(); ++primeIndex) {
+    for (uint64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
 #if USE_GMP || USE_BOOST
         if ((toFactor % currentPrime) == 0) {
@@ -516,15 +515,11 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
         ++primeIndex;
     }
 
-    bitCapInt fullRange = fullMaxBase;
-    for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
-        // The truncation here is a conservative bound, but it's exact if we
-        // happen to be aligned to a perfect factor of all trial division.
-        const unsigned p = trialDivisionPrimes[primeIndex];
-        fullRange = (fullRange * (p - 1U)) / p;
-    }
+    const bitCapInt fullRange = backward(fullMaxBase);
 #if IS_RANDOM
     std::random_device seeder;
+#else
+    std::vector<std::list<bool>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel));
 #endif
 
 #if IS_PARALLEL
@@ -551,8 +546,8 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     batchNumber = ((nodeId * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchBound = (((nodeId + 1) * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchCount = ((nodeCount * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
-    const auto workerFn = [toFactor, iterClock, qubitCount]() {
-        singleWordLoop<bitCapInt>(toFactor, iterClock);
+    const auto workerFn = [toFactor, iterClock, qubitCount, &inc_seqs]() {
+        singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
     };
 
     std::vector<std::future<void>> futures(cpuCount);
@@ -570,14 +565,14 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin + 2, iterClock, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, iterClock);
+    singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
 #endif
 #else
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, iterClock, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, iterClock);
+    singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
 #endif
 #endif
 
@@ -596,8 +591,7 @@ int main()
     // First 1000 primes
     // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
-    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5 }; //, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
-#if 0
+    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
         311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439,
@@ -651,7 +645,6 @@ int main()
         7481, 7487, 7489, 7499, 7507, 7517, 7523, 7529, 7537, 7541, 7547, 7549, 7559, 7561, 7573, 7577, 7583, 7589,
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
         7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
-#endif
 
     // Print primes table by index:
     // for (size_t i = 0; i < trialDivisionPrimes.size(); ++i) {
