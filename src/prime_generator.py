@@ -35,26 +35,33 @@ def isTrialDivisionMultiple(p, nextIndex, knownPrimes):
 
     return False
  
+def isMultiple(p, knownPrimes):
+    for kp in knownPrimes:
+        if (p % kp) == 0:
+            return True
+    return False
+
 def wheel_inc(primes):
     wheelPrimes = primes[:-1]
-    prime = primes[-1]
     radius = 1
     for i in primes:
         radius *= i
     output = []
     counter = 1
     for i in range(1, radius):
-        if not isTrialDivisionMultiple(i, 2, wheelPrimes):
-            output.append((i % prime) == 0)
+        if not isMultiple(i, wheelPrimes):
+            isMult = isMultiple(i, primes)
+            output.append(isMult)
             counter = counter + 1
+
+    output = output[1:] + output[:1]
 
     return output
 
 def wheel_gen(primes):
     output = []
-    for i in range(3, len(primes) + 1):
-        output.append(wheel_inc(primes[:i]))
-        output[-1] = output[-1][1:] + output[-1][:1]
+    for i in range(2, len(primes)):
+        output.append(wheel_inc(primes[:i+1]))
     return output
  
 def TrialDivision(n):
@@ -101,13 +108,13 @@ def TrialDivision(n):
         if p <= wheel_limit:
             wheelPrimes.append(p)
             inc_seqs.append(wheel_inc(knownPrimes))
-            inc_seqs[-1] = inc_seqs[-1][2:] + inc_seqs[-1][:2]
+            inc_seqs[-1] = inc_seqs[-1][1:] + inc_seqs[-1][:1]
 
     return knownPrimes
 
 # Driver Code
 if __name__ == '__main__':
-    n = 1000000
+    n = 100
 
     print("Following are the prime numbers smaller than or equal to " + str(n) + ":")
     print(TrialDivision(n))
