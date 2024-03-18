@@ -43,7 +43,7 @@
 namespace Qimcifa {
 
 constexpr int BASE_TRIALS = 1U << 16U;
-constexpr int MIN_RTD_LEVEL = 1;
+constexpr int MIN_RTD_LEVEL = 2;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -96,18 +96,6 @@ template <typename bitCapInt> inline bool isPowerOfTwo(const bitCapInt& x)
     return (x && !(x & (x - 1ULL)));
 }
 
-struct CsvRow {
-    bitCapIntInput range;
-    double time_s;
-
-    CsvRow(bitCapIntInput r, double t)
-        : range(r)
-        , time_s(t)
-    {
-        // Intentionally left blank.
-    }
-};
-
 template <typename bitCapInt> inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
     while (n2) {
@@ -129,6 +117,58 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
     // Report in seconds
     std::cout << "(Time elapsed: " << (tClock.count() * 1e-9) << " seconds)" << std::endl;
     std::cout << "(Waiting to join other threads...)" << std::endl;
+}
+
+template <typename BigInteger> inline BigInteger backward(BigInteger ni) {
+    ni = (ni + 1) >> 1;
+    ni = ((ni + 1) << 1) / 3;
+    return ni;
+}
+
+template <typename BigInteger> inline BigInteger forward(BigInteger p) {
+    // Make this NOT a multiple of 2 or 3.
+    p += (p >> 1U);
+    return (p << 1U) - 1U;
+}
+
+template <typename BigInteger> bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
+    for (const BigInteger& prime : knownPrimes) {
+        if ((p % prime) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+template <typename BigInteger> std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
+    BigInteger radius = 1U;
+    for (const BigInteger& i : primes) {
+        radius *= i;
+    }
+    const BigInteger prime = primes.back();
+    primes.pop_back();
+    std::list<bool> output;
+    for (size_t i = 1U; i < radius; ++i) {
+        if (!isMultiple((BigInteger)i, primes)) {
+            output.push_back((i % prime) == 0);
+        }
+    }
+
+    std::rotate(output.begin(), next(output.begin()), output.end());
+
+    return output;
+}
+
+template <typename BigInteger> std::vector<std::list<bool>> wheel_gen(const std::vector<BigInteger>& primes) {
+    std::vector<std::list<bool>> output;
+    std::vector<BigInteger> wheelPrimes;
+    for (const BigInteger p : primes) {
+        wheelPrimes.push_back(p);
+        if (wheelPrimes.back() > 3) {
+            output.push_back(wheel_inc(wheelPrimes));
+        }
+    }
+    return output;
 }
 
 #if IS_SQUARES_CONGRUENCE_CHECK
@@ -226,9 +266,9 @@ inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base)
     return false;
 }
 
-// #if IS_RANDOM
+#if IS_RANDOM
 template <typename bitCapInt>
-CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, boost::random::mt19937_64& rng)
+double singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, boost::random::mt19937_64& rng)
 {
     boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
     auto iterClock = std::chrono::high_resolution_clock::now();
@@ -236,131 +276,75 @@ CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
     // for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = rngDist(rng);
-
-            // Make this NOT a multiple of 2 or 3.
-            base += (base >> 1U);
-            base = (base << 1U) - 1U;
+            bitCapInt base = forward(rngDist(rng));
 
             if (singleWordLoopBody(toFactor, base)) {
-                // return true;
+                return true;
             }
         }
         // Check if finished, between batches.
         // if (isFinished) {
-        //    return false;
+        //     return false;
         // }
     // }
 
-    return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9);
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9;
 }
-#if 0
-// #else
+#else
 template <typename bitCapInt>
-CsvRow singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range)
+double singleWordLoop(const bitCapInt& toFactor, std::vector<std::list<bool>> inc_seqs)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
-
     // for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
-        const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 17U);
-        int counter7 = 11;
-        for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup += 10) {
-            // By (sub-)batching 10 at a time, we can also skip all multiples of 5.
+        const bitCapInt batchStart = 2U;
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+            bitCapInt o = batchStart + batchItem;
 
-            // Before removing multiples of 2 and 3, the 5th and 10th elements of
-            // every set of 10 (starting from 1) is a multiple of 5.
-
-            // It turns out that this well-known property of multiples of 5
-            // continues to hold when we remove all multiples of 2 and 3,
-            // but the multiples of 5 in every set of 10 (starting from 1)
-            // are the 2nd and the 9th. (One can check this, on one's own.)
-
-            // Once all multiples of 5 are removed, renumerating from 1,
-            // we can carry this further: in base 11, every 7th and 11th
-            // element is a multiple of 7 (after 49 occurs in the list).
-            // 8 elements out of every 10 are retained after removing
-            // multiples of 5, then we skip every 7th and 11th.
-
-            for (int batchItem = 1; batchItem < 7; ++batchItem) {
-                if (counter7 == 11) {
-                    counter7 = 1;
-                    continue;
-                }
-                if (counter7 == 7) {
-                    counter7 = 8;
-                    continue;
-                }
-                ++counter7;
-
-                bitCapInt base = batchStart + batchGroup + batchItem;
-
-                // Make this NOT a multiple of 2 or 3.
-                base += (base >> 1U);
-                base = (base << 1U) - 1U;
-
-                if (singleWordLoopBody(toFactor, base, iterClock)) {
-                    return true;
+            bool is_wheel_multiple = false;
+            for (size_t i = 0; i < inc_seqs.size(); ++i) {
+                std::list<bool>& wheel = inc_seqs[i];
+                is_wheel_multiple = wheel.front();
+                std::rotate(wheel.begin(), next(wheel.begin()), wheel.end());
+                if (is_wheel_multiple) {
+                    break;
                 }
             }
+            if (is_wheel_multiple) {
+                continue;
+            }
 
-            for (int batchItem = 8; batchItem < 10; ++batchItem) {
-                if (counter7 == 11) {
-                    counter7 = 1;
-                    continue;
-                }
-                if (counter7 == 7) {
-                    counter7 = 8;
-                    continue;
-                }
-                ++counter7;
-
-                bitCapInt base = batchStart + batchGroup + batchItem;
-
-                // Make this NOT a multiple of 2 or 3.
-                base += (base >> 1U);
-                base = (base << 1U) - 1U;
-
-                if (singleWordLoopBody(toFactor, base, iterClock)) {
-                    return true;
-                }
+            if (singleWordLoopBody(toFactor, forward(o))) {
+                return true;
             }
         }
     // }
 
-    return CsvRow(range, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9);
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9;
 }
 #endif
 
 template <typename bitCapInt>
-CsvRow mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const size_t& threadCount, const std::vector<unsigned>& trialDivisionPrimes)
+double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
 {
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the squatdLevel + 1Ure root, or in a pair where one is higher and one lower than the square root.
-    const bitCapInt fullMaxBase = sqrt<bitCapInt>(toFactor);
-
-    bitCapInt fullRange = fullMaxBase;
-    for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
-        // The truncation here is a conservative bound, but it's exact if we
-        // happen to be aligned to a perfect factor of all trial division.
-        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        fullRange = (fullRange * (currentPrime - 1U)) / currentPrime;
-    }
-    fullRange = (fullRange / threadCount) * threadCount;
-
-// #if IS_RANDOM
+#if IS_RANDOM
     std::random_device seeder;
     boost::random::mt19937_64 rng(seeder());
+    const bitCapInt fullRange = backward(sqrt<bitCapInt>(toFactor));
 
     return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, rng);
-// #else
-//     return singleWordLoop<bitCapInt>(toFactor, fullRange);
-// #endif
+#else
+    std::vector<std::list<bool>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel));
+
+    return singleWordLoop<bitCapInt>(toFactor, inc_seqs);
+#endif
 }
 } // namespace Qimcifa
 
 using namespace Qimcifa;
 
-CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel)
+double mainCase(bitCapIntInput toFactor, int tdLevel)
 {
     uint32_t qubitCount = 0;
     bitCapIntInput p = toFactor;
@@ -375,8 +359,7 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel)
     // First 1000 primes
     // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
-    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7 }; //, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
-#if 0
+    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
         311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439,
@@ -430,7 +413,6 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel)
         7481, 7487, 7489, 7499, 7507, 7517, 7523, 7529, 7537, 7541, 7547, 7549, 7559, 7561, 7573, 7577, 7583, 7589,
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
         7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
-#endif
 
     // Print primes table by index:
     // for (size_t i = 0; i < trialDivisionPrimes.size(); ++i) {
@@ -439,40 +421,40 @@ CsvRow mainCase(bitCapIntInput toFactor, size_t threadCount, int tdLevel)
 
     if (qubitCount < 64) {
         typedef uint64_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
 #if USE_GMP
     } else {
-        return mainBody<bitCapIntInput>(toFactor, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapIntInput>(toFactor, tdLevel, trialDivisionPrimes);
     }
 #else
     } else if (qubitCount < 128) {
         typedef boost::multiprecision::uint128_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     } else {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, threadCount, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     }
 #endif
 }
@@ -499,14 +481,18 @@ int main() {
     std::cout << "Total thread count (across all nodes): ";
     std::cin >> threadCount;
 
-#if 0
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
-    for (size_t i = MIN_RTD_LEVEL; i < 3U; ++i) {
+    for (size_t i = MIN_RTD_LEVEL; i < 8U; ++i) {
         // Test
-        CsvRow row = mainCase(toFactor, threadCount, i);
-        oSettingsFile << i << " " << row.range << " " << row.time_s << " " << (bi_to_double(row.range) * (row.time_s / BASE_TRIALS)) << std::endl;
+        const double time = mainCase(toFactor, i);
+        const bitCapIntInput range = backward(sqrt(toFactor));
+#if USE_BOOST || USE_GMP
+        oSettingsFile << i << " " << range << " " << time << " " << (range.convert_to<double>() * (time / BASE_TRIALS)) << std::endl;
+#else
+        oSettingsFile << i << " " << range << " " << time << " " << (bi_to_double(range) * (time / BASE_TRIALS)) << std::endl;
+#endif
     }
     oSettingsFile.close();
 
@@ -531,19 +517,12 @@ int main() {
         }
     }
     iSettingsFile.close();
-#endif
 
+    std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
 #if IS_RANDOM
-    CsvRow row = mainCase(toFactor, threadCount, 2);
+    std::cout << "Estimated average time to exit: " << (bestCost / threadCount) << " seconds" << std::endl;
 #else
-    CsvRow row = mainCase(toFactor, threadCount, 3);
-#endif
-    const double cost = row.range.convert_to<double>() * (row.time_s / BASE_TRIALS);
-    // std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-#if IS_RANDOM
-    std::cout << "Estimated average time to exit: " << (cost / threadCount) << " seconds" << std::endl;
-#else
-    std::cout << "Estimated average time to exit: " << (cost / (2 * threadCount)) << " seconds" << std::endl;
+    std::cout << "Estimated average time to exit: " << (bestCost / (2 * threadCount)) << " seconds" << std::endl;
 #endif
 
     return 0;

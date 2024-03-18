@@ -84,13 +84,13 @@
 
 namespace Qimcifa {
 
-// Make this a power of 10, to help skip multiples of 5.
 #if IS_RANDOM
 constexpr int BASE_TRIALS = 1U << 20U;
 #else
-constexpr int BASE_TRIALS = 107520;
+// Make this a multiple of 2, 3, 5, 7, 11, 13, and 17.
+constexpr int BASE_TRIALS = 510510;
 #endif
-constexpr int MIN_RTD_LEVEL = 1;
+constexpr int MIN_RTD_LEVEL = 2;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -696,15 +696,14 @@ int main()
     }
 #endif
 
-// #if IS_RANDOM
+#if IS_RANDOM
     // Because removing multiples of 5 is based on skipping 1/5 of elements in sequence,
     // we need to use the same range value as multiples of 2 and 3, but the tuner should
     // estimate 4/5 the cardinality.
     const int64_t tdLevel = 3;
-// #else
-//     const int64_t tdLevel = 3;
-// #endif
-    /*std::cout << "Reverse trial division level (minimum of " << MIN_RTD_LEVEL << ", or -1 for calibration file): ";
+#else
+    int64_t tdLevel = 3;
+    std::cout << "Reverse trial division level (minimum of " << MIN_RTD_LEVEL << ", or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
         tdLevel = MIN_RTD_LEVEL;
@@ -712,7 +711,8 @@ int main()
     if (tdLevel >= (int64_t)trialDivisionPrimes.size()) {
         tdLevel = trialDivisionPrimes.size() - 1U;
     }
-    tdLevel = pickTrialDivisionLevel<bitCapIntInput>(tdLevel, nodeCount);*/
+    tdLevel = pickTrialDivisionLevel<bitCapIntInput>(tdLevel, nodeCount);
+#endif
 
 #if IS_PARALLEL
 #if !(USE_GMP || USE_BOOST)
