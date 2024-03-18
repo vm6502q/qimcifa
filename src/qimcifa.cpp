@@ -703,13 +703,13 @@ int main()
     const int64_t tdLevel = 3;
 #else
     int64_t tdLevel = 3;
-    std::cout << "Reverse trial division level (minimum of " << MIN_RTD_LEVEL << ", or -1 for calibration file): ";
+    std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of 7, or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
         tdLevel = MIN_RTD_LEVEL;
     }
-    if (tdLevel >= (int64_t)trialDivisionPrimes.size()) {
-        tdLevel = trialDivisionPrimes.size() - 1U;
+    if (tdLevel > 7) {
+        tdLevel = 7;
     }
     tdLevel = pickTrialDivisionLevel<bitCapIntInput>(tdLevel, nodeCount);
 #endif
