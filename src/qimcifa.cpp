@@ -453,7 +453,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
-    std::vector<std::list<bool>> inc_seqs = wheel_gen(std::vector<bitCapInt>({ 2, 3, 5, 7 }));
+    std::vector<std::list<bool>> inc_seqs = wheel_gen(std::vector<bitCapInt>({ 2, 3, 5 }));
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 2U);
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -504,21 +504,6 @@ int mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vecto
 
     for (uint64_t primeIndex = 0; primeIndex < trialDivisionPrimes.size(); ++primeIndex) {
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-#if USE_GMP || USE_BOOST
-        if ((toFactor % currentPrime) == 0) {
-#else
-        if (bi_compare_0(toFactor % currentPrime) == 0) {
-#endif
-            std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
-                      << std::endl;
-            return 0;
-        }
-        ++primeIndex;
-    }
-    // One-off for 7:
-    const std::vector<unsigned>& td7Test = { 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47 };
-    for (uint64_t primeIndex = 0; primeIndex < td7Test.size(); ++primeIndex) {
-        const unsigned currentPrime = td7Test[primeIndex];
 #if USE_GMP || USE_BOOST
         if ((toFactor % currentPrime) == 0) {
 #else
@@ -611,7 +596,7 @@ int main()
     // First 1000 primes
     // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
-    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7 }; //, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5 }; //, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
 #if 0
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
@@ -722,7 +707,7 @@ int main()
     // Because removing multiples of 5 is based on skipping 1/5 of elements in sequence,
     // we need to use the same range value as multiples of 2 and 3, but the tuner should
     // estimate 4/5 the cardinality.
-    const int64_t tdLevel = 4;
+    const int64_t tdLevel = 3;
 // #else
 //     const int64_t tdLevel = 3;
 // #endif
