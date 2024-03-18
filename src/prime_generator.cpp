@@ -94,13 +94,13 @@ inline BigInteger sqrt(const BigInteger& toTest)
     return ans;
 }
 
-BigInteger backward(BigInteger ni) {
+inline BigInteger backward(BigInteger ni) {
     ni = (ni + 1) >> 1;
     ni = ((ni + 1) << 1) / 3;
     return ni;
 }
 
-BigInteger forward(BigInteger p) {
+inline BigInteger forward(BigInteger p) {
     // Make this NOT a multiple of 2 or 3.
     p += (p >> 1U);
     return (p << 1U) - 1U;
@@ -183,7 +183,7 @@ bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes)
     return false;
 }
 
-inline std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
+std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
     BigInteger radius = 1U;
     for (const BigInteger& i : primes) {
         radius *= i;
@@ -253,16 +253,15 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             }
         }
 
-        BigInteger p = forward(o);
-
         if (is_wheel_multiple) {
             continue;
         }
 
+        BigInteger p = forward(o);
         if (p > n) {
             break;
         }
-        if (isMultiple(p, wheelPrimes.size() - 1, knownPrimes)) {
+        if (isMultiple(p, wheelPrimes.size(), knownPrimes)) {
             // Skip
             continue;
         }

@@ -88,14 +88,13 @@ def TrialDivision(n):
             if is_wheel_multiple:
                 break
 
-        p = forward(o)
-
         if is_wheel_multiple:
             continue
 
+        p = forward(o)
         if p > n:
             break
-        if isTrialDivisionMultiple(p, len(wheelPrimes) - 1, knownPrimes):
+        if isTrialDivisionMultiple(p, len(wheelPrimes), knownPrimes):
             # Skip
             continue
 

@@ -88,8 +88,7 @@ namespace Qimcifa {
 #if IS_RANDOM
 constexpr int BASE_TRIALS = 1U << 20U;
 #else
-// constexpr int BASE_TRIALS = 100000;
-constexpr int BASE_TRIALS = 1000010;
+constexpr int BASE_TRIALS = 107520;
 #endif
 constexpr int MIN_RTD_LEVEL = 1;
 
@@ -261,6 +260,58 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
+template <typename BigInteger> inline BigInteger backward(BigInteger ni) {
+    ni = (ni + 1) >> 1;
+    ni = ((ni + 1) << 1) / 3;
+    return ni;
+}
+
+template <typename BigInteger> inline BigInteger forward(BigInteger p) {
+    // Make this NOT a multiple of 2 or 3.
+    p += (p >> 1U);
+    return (p << 1U) - 1U;
+}
+
+template <typename BigInteger> bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
+    for (const BigInteger& prime : knownPrimes) {
+        if ((p % prime) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+template <typename BigInteger> std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
+    BigInteger radius = 1U;
+    for (const BigInteger& i : primes) {
+        radius *= i;
+    }
+    const BigInteger prime = primes.back();
+    primes.pop_back();
+    std::list<bool> output;
+    for (size_t i = 1U; i < radius; ++i) {
+        if (!isMultiple((BigInteger)i, primes)) {
+            output.push_back((i % prime) == 0);
+        }
+    }
+
+    std::rotate(output.begin(), next(output.begin()), output.end());
+
+    return output;
+}
+
+template <typename BigInteger> std::vector<std::list<bool>> wheel_gen(const std::vector<BigInteger>& primes) {
+    std::vector<std::list<bool>> output;
+    std::vector<BigInteger> wheelPrimes;
+    for (const BigInteger p : primes) {
+        wheelPrimes.push_back(p);
+        if (wheelPrimes.back() > 3) {
+            output.push_back(wheel_inc(wheelPrimes));
+        }
+    }
+    return output;
+}
+
 #if IS_SQUARES_CONGRUENCE_CHECK
 template <typename bitCapInt>
 inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest,
@@ -386,11 +437,7 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
     for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = rngDist(rng);
-
-            // Make this NOT a multiple of 2 or 3.
-            base += (base >> 1U);
-            base = (base << 1U) - 1U;
+            bitCapInt base = forward(rngDist(rng));
 
             if (singleWordLoopBody(toFactor, base, iterClock)) {
                 return true;
@@ -406,68 +453,27 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 template <typename bitCapInt>
 bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
+    std::vector<std::list<bool>> inc_seqs = wheel_gen(std::vector<bitCapInt>({ 2, 3, 5, 7 }));
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
-        const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 17U);
-        int counter7 = 11;
-        for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup += 10) {
-            // By (sub-)batching 10 at a time, we can also skip all multiples of 5.
+        const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 2U);
+        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
+            bitCapInt o = batchStart + batchItem;
 
-            // Before removing multiples of 2 and 3, the 5th and 10th elements of
-            // every set of 10 (starting from 1) is a multiple of 5.
-
-            // It turns out that this well-known property of multiples of 5
-            // continues to hold when we remove all multiples of 2 and 3,
-            // but the multiples of 5 in every set of 10 (starting from 1)
-            // are the 2nd and the 9th. (One can check this, on one's own.)
-
-            // Once all multiples of 5 are removed, renumerating from 1,
-            // we can carry this further: in base 11, every 7th and 11th
-            // element is a multiple of 7 (after 49 occurs in the list).
-            // 8 elements out of every 10 are retained after removing
-            // multiples of 5, then we skip every 7th and 11th.
-
-            for (int batchItem = 1; batchItem < 7; ++batchItem) {
-                if (counter7 == 11) {
-                    counter7 = 1;
-                    continue;
-                }
-                if (counter7 == 7) {
-                    counter7 = 8;
-                    continue;
-                }
-                ++counter7;
-
-                bitCapInt base = batchStart + batchGroup + batchItem;
-
-                // Make this NOT a multiple of 2 or 3.
-                base += (base >> 1U);
-                base = (base << 1U) - 1U;
-
-                if (singleWordLoopBody(toFactor, base, iterClock)) {
-                    return true;
+            bool is_wheel_multiple = false;
+            for (size_t i = 0; i < inc_seqs.size(); ++i) {
+                std::list<bool>& wheel = inc_seqs[i];
+                is_wheel_multiple = wheel.front();
+                std::rotate(wheel.begin(), next(wheel.begin()), wheel.end());
+                if (is_wheel_multiple) {
+                    break;
                 }
             }
+            if (is_wheel_multiple) {
+                continue;
+            }
 
-            for (int batchItem = 8; batchItem < 10; ++batchItem) {
-                if (counter7 == 11) {
-                    counter7 = 1;
-                    continue;
-                }
-                if (counter7 == 7) {
-                    counter7 = 8;
-                    continue;
-                }
-                ++counter7;
-
-                bitCapInt base = batchStart + batchGroup + batchItem;
-
-                // Make this NOT a multiple of 2 or 3.
-                base += (base >> 1U);
-                base = (base << 1U) - 1U;
-
-                if (singleWordLoopBody(toFactor, base, iterClock)) {
-                    return true;
-                }
+            if (singleWordLoopBody(toFactor, forward(o), iterClock)) {
+                return true;
             }
         }
     }
@@ -716,7 +722,7 @@ int main()
     // Because removing multiples of 5 is based on skipping 1/5 of elements in sequence,
     // we need to use the same range value as multiples of 2 and 3, but the tuner should
     // estimate 4/5 the cardinality.
-    const int64_t tdLevel = 2;
+    const int64_t tdLevel = 4;
 // #else
 //     const int64_t tdLevel = 3;
 // #endif
