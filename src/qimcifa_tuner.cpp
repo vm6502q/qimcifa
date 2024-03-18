@@ -152,14 +152,16 @@ template <typename BigInteger> boost::dynamic_bitset<uint32_t> wheel_inc(std::ve
     const BigInteger prime = primes.back();
     primes.pop_back();
     std::vector<bool> o;
+    size_t count = 0;
     for (size_t i = 1U; i < radius; ++i) {
         if (!isMultiple((BigInteger)i, primes)) {
             o.push_back((i % prime) == 0);
+            ++count;
         }
     }
 
-    boost::dynamic_bitset<uint32_t> output(o.size());
-    for (size_t i = 0U; i < o.size(); ++i) {
+    boost::dynamic_bitset<uint32_t> output(count);
+    for (size_t i = 0U; i < count; ++i) {
         output[i] = o[i];
     }
     output >>= 1U;
