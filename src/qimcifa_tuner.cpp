@@ -307,36 +307,48 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
     auto iterClock = std::chrono::high_resolution_clock::now();
     // for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = 2U;
-        int lcv5 = 3;
-        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-            bitCapInt o = batchStart + batchItem;
+        for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup+=10) {
+            for (int lcv5 = 1; lcv5 < 7; ++lcv5) {
+                bitCapInt o = batchStart + batchGroup + lcv5;
 
-            if (lcv5 == 3) {
-                lcv5 = 4;
-                continue;
-            }
-            if (lcv5 == 10) {
-                lcv5 = 1;
-                continue;
-            }
-            ++lcv5;
-
-            bool is_wheel_multiple = false;
-            for (size_t i = 0; i < inc_seqs.size(); ++i) {
-                boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
-                is_wheel_multiple = wheel[0U];
-                wheel >>= 1U;
+                bool is_wheel_multiple = false;
+                for (size_t i = 0; i < inc_seqs.size(); ++i) {
+                    boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
+                    is_wheel_multiple = wheel[0U];
+                    wheel >>= 1U;
+                    if (is_wheel_multiple) {
+                        wheel[wheel.size() - 1U] = true;
+                        break;
+                    }
+                }
                 if (is_wheel_multiple) {
-                    wheel[wheel.size() - 1U] = true;
-                    break;
+                    continue;
+                }
+
+                if (singleWordLoopBody(toFactor, forward(o))) {
+                    return true;
                 }
             }
-            if (is_wheel_multiple) {
-                continue;
-            }
+            for (int lcv5 = 8; lcv5 < 10; ++lcv5) {
+                bitCapInt o = batchStart + batchGroup + lcv5;
 
-            if (singleWordLoopBody(toFactor, forward(o))) {
-                return true;
+                bool is_wheel_multiple = false;
+                for (size_t i = 0; i < inc_seqs.size(); ++i) {
+                    boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
+                    is_wheel_multiple = wheel[0U];
+                    wheel >>= 1U;
+                    if (is_wheel_multiple) {
+                        wheel[wheel.size() - 1U] = true;
+                        break;
+                    }
+                }
+                if (is_wheel_multiple) {
+                    continue;
+                }
+
+                if (singleWordLoopBody(toFactor, forward(o))) {
+                    return true;
+                }
             }
         }
     // }

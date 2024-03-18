@@ -200,16 +200,15 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     int lcv5 = 2;
     size_t wheel_limit = 17U;
     while (true) {
-        ++o;
-
         ++lcv5;
         if (lcv5 == 3) {
-            ++o;
+            o += 2;
             lcv5 = 4;
-        }
-        if (lcv5 == 10) {
-            ++o;
+        } else if (lcv5 == 10) {
+            o += 2;
             lcv5 = 1;
+        } else {
+           ++o;
         }
 
         bool is_wheel_multiple = false;
