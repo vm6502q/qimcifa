@@ -79,7 +79,7 @@ void DispatchQueue::dispatch(const DispatchFn& op)
     if (!isStarted_) {
         isStarted_ = true;
         for (size_t i = 0U; i < threads_.size(); ++i) {
-            threads_.push_back(std::async(std::launch::async, [this] { dispatch_thread_handler(); }));
+            threads_[i] = std::async(std::launch::async, [this] { dispatch_thread_handler(); });
         }
     }
 

@@ -12,7 +12,6 @@
 
 #include "config.h"
 
-#include <future>
 #include <iostream>
 #include <vector>
 
@@ -27,7 +26,9 @@
 
 #include "dispatchqueue.hpp"
 
-DispatchQueue dispatch(std::thread::hardware_concurrency());
+const size_t BATCH_SIZE = 1 << 10;
+const size_t cpuCount = std::thread::hardware_concurrency();
+DispatchQueue dispatch(cpuCount);
 
 #if BIG_INT_BITS < 33
 typedef uint32_t BigInteger;
@@ -84,7 +85,6 @@ inline BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
-const size_t BATCH_SIZE = 1 << 12;
 bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,
     const std::vector<BigInteger>& knownPrimes) {
     const size_t _BATCH_SIZE = BATCH_SIZE;
@@ -110,7 +110,7 @@ bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInte
     const size_t highestIndex = std::distance(knownPrimes.begin(), std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrtP));
 
     const size_t diff = highestIndex - nextIndex;
-    if ((highestIndex > nextIndex) && ((diff / std::thread::hardware_concurrency()) > BATCH_SIZE)) {
+    if ((highestIndex > nextIndex) && ((diff >> 1U) > BATCH_SIZE)) {
         if (isMultipleParallel(p, nextIndex, highestIndex, knownPrimes)) {
             return true;
         }
