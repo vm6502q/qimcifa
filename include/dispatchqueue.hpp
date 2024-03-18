@@ -25,7 +25,7 @@ typedef std::function<bool(void)> DispatchFn;
 class DispatchQueue {
 public:
     DispatchQueue(size_t n)
-        : threadCount(n)
+        : threads_(n)
         , quit_(false)
         , isFinished_(true)
         , isStarted_(false)
@@ -53,7 +53,6 @@ public:
     DispatchQueue& operator=(DispatchQueue&& rhs) = delete;
 
 private:
-    size_t threadCount;
     std::mutex lock_;
     std::vector<std::future<void>> threads_;
     std::queue<DispatchFn> q_;

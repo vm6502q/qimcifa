@@ -25,9 +25,7 @@
 #include "big_integer.hpp"
 #endif
 
-#if 0
 #include "dispatchqueue.hpp"
-#endif
 
 #include <pybind11/pybind11.h>
 
@@ -47,9 +45,7 @@ typedef BigInteger BigInteger;
 #endif
 #endif
 
-#if 0
 DispatchQueue dispatch(std::thread::hardware_concurrency());
-#endif
 
 inline BigInteger sqrt(const BigInteger& toTest)
 {
@@ -90,8 +86,7 @@ inline BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
-#if 0
-const size_t BATCH_SIZE = 256;
+const size_t BATCH_SIZE = 1 << 12;
 bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,
     const std::vector<BigInteger>& knownPrimes) {
     const size_t _BATCH_SIZE = BATCH_SIZE;
@@ -111,21 +106,18 @@ bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const
 
     return dispatch.finish();
 }
-#endif
 
 bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
     const size_t highestIndex = std::distance(knownPrimes.begin(), std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrtP));
 
-#if 0
     const size_t diff = highestIndex - nextIndex;
-    if (diff > BATCH_SIZE) {
+    if ((highestIndex > nextIndex) && ((diff / std::thread::hardware_concurrency()) > BATCH_SIZE)) {
         if (isMultipleParallel(p, nextIndex, highestIndex, knownPrimes)) {
             return true;
         }
     }
     nextIndex = diff % BATCH_SIZE;
-#endif
 
     for (size_t i = nextIndex; i < highestIndex; ++i) {
         if ((p % knownPrimes[i]) == 0) {

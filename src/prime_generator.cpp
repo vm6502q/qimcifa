@@ -25,9 +25,9 @@
 #include "big_integer.hpp"
 #endif
 
-#if 0
 #include "dispatchqueue.hpp"
-#endif
+
+DispatchQueue dispatch(std::thread::hardware_concurrency());
 
 #if BIG_INT_BITS < 33
 typedef uint32_t BigInteger;
@@ -43,10 +43,6 @@ typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG
 #else
 typedef BigInteger BigInteger;
 #endif
-#endif
-
-#if 0
-DispatchQueue dispatch(std::thread::hardware_concurrency());
 #endif
 
 inline BigInteger sqrt(const BigInteger& toTest)
@@ -88,7 +84,6 @@ inline BigInteger forward(BigInteger p) {
     return (p << 1U) - 1U;
 }
 
-#if 0
 const size_t BATCH_SIZE = 1 << 12;
 bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,
     const std::vector<BigInteger>& knownPrimes) {
@@ -109,21 +104,18 @@ bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const
 
     return dispatch.finish();
 }
-#endif
 
 bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
     const size_t highestIndex = std::distance(knownPrimes.begin(), std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrtP));
 
-#if 0
     const size_t diff = highestIndex - nextIndex;
-    if ((diff / std::thread::hardware_concurrency()) > BATCH_SIZE) {
+    if ((highestIndex > nextIndex) && ((diff / std::thread::hardware_concurrency()) > BATCH_SIZE)) {
         if (isMultipleParallel(p, nextIndex, highestIndex, knownPrimes)) {
             return true;
         }
     }
     nextIndex = diff % BATCH_SIZE;
-#endif
 
     for (size_t i = nextIndex; i < highestIndex; ++i) {
         if ((p % knownPrimes[i]) == 0) {
