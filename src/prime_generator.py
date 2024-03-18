@@ -24,11 +24,8 @@ def forward(p):
 
 def isTrialDivisionMultiple(p, nextIndex, knownPrimes):
     sqrtP = math.isqrt(p);
-    if (sqrtP * sqrtP) == p:
-        return True
-
     for i in knownPrimes[nextIndex:]:
-        if i >= sqrtP:
+        if sqrtP < i:
             return False
         if (p % i) == 0:
             return True
@@ -42,6 +39,7 @@ def isMultiple(p, knownPrimes):
     return False
 
 def wheel_inc(primes):
+    prime = primes[-1]
     wheelPrimes = primes[:-1]
     radius = 1
     for i in primes:
@@ -49,8 +47,7 @@ def wheel_inc(primes):
     output = []
     for i in range(1, radius):
         if not isMultiple(i, wheelPrimes):
-            isMult = isMultiple(i, primes)
-            output.append(isMult)
+            output.append((i % prime) == 0)
 
     output = output[1:] + output[:1]
 
@@ -78,7 +75,7 @@ def TrialDivision(n):
     # less than or equal to wheel_limit, we build a
     # new "inside-out" wheel.
     inc_seqs = wheel_gen(wheelPrimes) if len(wheelPrimes) > 2 else []
-    wheel_limit = 11
+    wheel_limit = 17
 
     # Get the remaining prime numbers.
     o = 1

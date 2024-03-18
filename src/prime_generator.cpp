@@ -152,9 +152,6 @@ bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const
 
 bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
-    if ((sqrtP * sqrtP) == p) {
-        return true;
-    }
 
     /*const size_t diff = highestIndex - nextIndex;
     const unsigned cpuCount = std::thread::hardware_concurrency();
@@ -167,7 +164,7 @@ bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInte
 
     for (size_t i = nextIndex; i < knownPrimes.size(); ++i) {
         const BigInteger& prime = knownPrimes[i];
-        if (prime >= sqrtP) {
+        if (sqrtP < prime) {
             return false;
         }
         if ((p % prime) == 0) {
@@ -177,9 +174,9 @@ bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInte
     return false;
 }
 
-inline bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
-    for (const BigInteger& kp : knownPrimes) {
-        if ((p % kp) == 0) {
+bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
+    for (const BigInteger& prime : knownPrimes) {
+        if ((p % prime) == 0) {
             return true;
         }
     }
@@ -243,7 +240,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // Get the remaining prime numbers.
     std::vector<std::list<bool>> inc_seqs;
     BigInteger o = 1U;
-    size_t wheel_limit = 11U;
+    size_t wheel_limit = 17U;
     while (true) {
         ++o;
         bool is_wheel_multiple = false;

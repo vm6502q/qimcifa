@@ -154,9 +154,6 @@ bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const
 
 bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
-    if ((sqrtP * sqrtP) == p) {
-        return true;
-    }
 
     /*const size_t diff = highestIndex - nextIndex;
     const unsigned cpuCount = std::thread::hardware_concurrency();
@@ -169,7 +166,7 @@ bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInte
 
     for (size_t i = nextIndex; i < knownPrimes.size(); ++i) {
         const BigInteger& prime = knownPrimes[i];
-        if (prime >= sqrtP) {
+        if (sqrtP < prime) {
             return false;
         }
         if ((p % prime) == 0) {
@@ -179,19 +176,30 @@ bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInte
     return false;
 }
 
-std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
-    BigInteger prime = primes.back();
-    primes.pop_back();
+bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
+    for (const BigInteger& prime : knownPrimes) {
+        if ((p % prime) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
     BigInteger radius = 1U;
-    for (BigInteger i : primes) {
+    for (const BigInteger& i : primes) {
         radius *= i;
     }
+    const BigInteger prime = primes.back();
+    primes.pop_back();
     std::list<bool> output;
-    for (BigInteger i = 1; i < radius; ++i) {
-        if (!isMultiple(i, 2, primes)) {
+    for (size_t i = 1U; i < radius; ++i) {
+        if (!isMultiple(i, primes)) {
             output.push_back((i % prime) == 0);
         }
     }
+
+    std::rotate(output.begin(), next(output.begin()), output.end());
 
     return output;
 }
@@ -199,9 +207,8 @@ std::list<bool> wheel_inc(std::vector<BigInteger> primes) {
 #if 0
 def wheel_gen(primes):
     output = []
-    for i in range(3, len(primes) + 1):
-        output.append(wheel_inc(primes[:i]))
-        output[-1] = output[-1][1:] + output[-1][:1]
+    for i in range(2, len(primes)):
+        output.append(wheel_inc(primes[:i+1]))
     return output
 #endif
 
@@ -234,7 +241,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
     // Get the remaining prime numbers.
     std::vector<std::list<bool>> inc_seqs;
-    const size_t wheel_limit = 11U;
+    const size_t wheel_limit = 17U;
     BigInteger o = 1U;
     while (true) {
         ++o;
