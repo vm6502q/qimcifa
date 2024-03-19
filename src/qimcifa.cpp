@@ -92,7 +92,8 @@ namespace Qimcifa {
 constexpr int BASE_TRIALS = 1U << 20U;
 #else
 // Make this a multiple of 2, 3, 5, 7, 11, 13, and 17.
-constexpr int BASE_TRIALS = 510510;
+// constexpr int BASE_TRIALS = 510510;
+constexpr int BASE_TRIALS = 1021020;
 #endif
 constexpr int MIN_RTD_LEVEL = 3;
 
