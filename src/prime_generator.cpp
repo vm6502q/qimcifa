@@ -273,7 +273,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
-    std::vector<size_t> wheelPrimes= { 2, 3, 5, 7, 11, 13, 17 };
+    std::vector<size_t> wheelPrimes= { 2, 3, 5, 7, 11 };
     if (n < 2) {
         return std::vector<size_t>();
     }
@@ -365,7 +365,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 // Driver Code
 int main()
 {
-    BigInteger n = 10000000;
+    BigInteger n = 100000000;
 
     std::cout << "Primes up to number: ";
     std::cin >> n;
