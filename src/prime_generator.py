@@ -70,6 +70,10 @@ def TrialDivision(n):
     # small primes from outset. For multiples of
     # 2 and 3, this reduces complexity by 2/3.
     # cardinality = int((~((~n) | 1)) / 3)
+    
+    # Also, please pardon the redundant loop body code,
+    # but it makes a marked improvement in how fast
+    # multiples of 5 are skipped.
 
     # From here, for each new prime we find, if it is
     # less than or equal to wheel_limit, we build a
@@ -78,41 +82,63 @@ def TrialDivision(n):
     wheel_limit = 17
 
     # Get the remaining prime numbers.
-    o = 1
-    lcv5 = 2
+    o = 2
     while True:
-        o = o + 1
+        for lcv5 in range(1, 7):
+            is_wheel_multiple = False
+            for i in range(len(inc_seqs)):
+                is_wheel_multiple = inc_seqs[i][0]
+                inc_seqs[i] = inc_seqs[i][1:] + inc_seqs[i][:1]
+                if is_wheel_multiple:
+                    break
 
-        lcv5 = lcv5 + 1
-        if lcv5 == 3:
-            lcv5 = 4
-            o = o + 1
-        if lcv5 == 10:
-            lcv5 = 1
-            o = o + 1
-
-        is_wheel_multiple = False
-        for i in range(len(inc_seqs)):
-            is_wheel_multiple = inc_seqs[i][0]
-            inc_seqs[i] = inc_seqs[i][1:] + inc_seqs[i][:1]
             if is_wheel_multiple:
+                continue
+
+            p = forward(o + lcv5)
+            if p > n:
                 break
+            if isTrialDivisionMultiple(p, len(wheelPrimes), knownPrimes):
+                # Skip
+                continue
 
-        if is_wheel_multiple:
-            continue
+            knownPrimes.append(p)
+            if p <= wheel_limit:
+                wheelPrimes.append(p)
+                inc_seqs.append(wheel_inc(knownPrimes))
+                inc_seqs[-1] = inc_seqs[-1][1:] + inc_seqs[-1][:1]
 
-        p = forward(o)
-        if p > n:
+        if forward(o + 7) > n:
             break
-        if isTrialDivisionMultiple(p, len(wheelPrimes), knownPrimes):
-            # Skip
-            continue
 
-        knownPrimes.append(p)
-        if p <= wheel_limit:
-            wheelPrimes.append(p)
-            inc_seqs.append(wheel_inc(knownPrimes))
-            inc_seqs[-1] = inc_seqs[-1][1:] + inc_seqs[-1][:1]
+        for lcv5 in range(8, 10):
+            is_wheel_multiple = False
+            for i in range(len(inc_seqs)):
+                is_wheel_multiple = inc_seqs[i][0]
+                inc_seqs[i] = inc_seqs[i][1:] + inc_seqs[i][:1]
+                if is_wheel_multiple:
+                    break
+
+            if is_wheel_multiple:
+                continue
+
+            p = forward(o + lcv5)
+            if p > n:
+                break
+            if isTrialDivisionMultiple(p, len(wheelPrimes), knownPrimes):
+                # Skip
+                continue
+
+            knownPrimes.append(p)
+            if p <= wheel_limit:
+                wheelPrimes.append(p)
+                inc_seqs.append(wheel_inc(knownPrimes))
+                inc_seqs[-1] = inc_seqs[-1][1:] + inc_seqs[-1][:1]
+
+        o = o + 10
+
+        if forward(o) > n:
+            break
 
     return knownPrimes
 

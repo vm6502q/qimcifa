@@ -200,7 +200,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs;
-    BigInteger o = 1U;
+    BigInteger o = 2U;
     size_t wheel_limit = 17U;
     while (true) {
         for (int lcv5 = 1; lcv5 < 7; ++lcv5) {
