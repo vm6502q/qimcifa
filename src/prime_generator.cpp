@@ -317,7 +317,10 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             break;
         }
 
-        for (BigInteger i = p * p; i <= n; i += p) {
+        // TODO: Fix this so we can start at p * p,
+        // or prove that we can start there.
+        // (Empirical test might be fine.)
+        for (BigInteger i = p; i <= n; i += p) {
             bool is_wheel_multiple = false;
             for (const size_t& w : knownPrimes) {
                 if ((p % w) == 0) {
@@ -362,7 +365,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 // Driver Code
 int main()
 {
-    BigInteger n = 100000000;
+    BigInteger n = 10000000;
 
     std::cout << "Primes up to number: ";
     std::cin >> n;
