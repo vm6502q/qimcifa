@@ -313,7 +313,7 @@ template <typename BigInteger> boost::dynamic_bitset<uint64_t> wheel_inc(std::ve
 template <typename BigInteger> std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<BigInteger>& primes) {
     std::vector<boost::dynamic_bitset<uint64_t>> output;
     std::vector<BigInteger> wheelPrimes;
-    for (const BigInteger p : primes) {
+    for (const BigInteger& p : primes) {
         wheelPrimes.push_back(p);
         if (wheelPrimes.back() > 5) {
             output.push_back(wheel_inc(wheelPrimes));
