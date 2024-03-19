@@ -335,7 +335,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             for (const size_t& w : wheelPrimes) {
                 j = ((w - 1) * j) / w;
             }
-            notPrime[backward(j)] = true;
+            notPrime[j] = true;
         }
     }
 
