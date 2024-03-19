@@ -162,7 +162,7 @@ boost::dynamic_bitset<uint64_t> wheel_inc(std::vector<BigInteger> primes) {
 std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<BigInteger>& primes) {
     std::vector<boost::dynamic_bitset<uint64_t>> output;
     std::vector<BigInteger> wheelPrimes;
-    for (const BigInteger p : primes) {
+    for (const BigInteger& p : primes) {
         wheelPrimes.push_back(p);
         if (wheelPrimes.back() > 5) {
             output.push_back(wheel_inc(wheelPrimes));
@@ -283,17 +283,17 @@ int main()
 {
     BigInteger n = 10000000;
 
-    std::cout << "Primes up to number: ";
-    std::cin >> n;
+    // std::cout << "Primes up to number: ";
+    // std::cin >> n;
 
-    std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
+    // std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
     const std::vector<BigInteger> primes = TrialDivision(n);
 
-    for (BigInteger p : primes) {
-        std::cout << p << " ";
-    }
-    std::cout << std::endl;
+    // for (BigInteger p : primes) {
+    //     std::cout << p << " ";
+    // }
+    // std::cout << std::endl;
 
     return 0;
 }
