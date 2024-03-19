@@ -307,14 +307,15 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         if (isWheelMultiple(inc_seqs)) {
             continue;
         }
-        ++q;
-        if (notPrime[q] == true) {
-            continue;
-        }
 
         const BigInteger p = forward(o);
         if ((p * p) > n) {
             break;
+        }
+
+        ++q;
+        if (notPrime[q] == true) {
+            continue;
         }
 
         for (BigInteger i = p * p; i <= n; i += p) {
@@ -342,13 +343,13 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         if (isWheelMultiple(inc_seqs)) {
             continue;
         }
-        ++q;
 
         const BigInteger p = forward(o);
         if (p > n) {
             break;
         }
 
+        ++q;
         if (notPrime[q] == true) {
             continue;
         }
