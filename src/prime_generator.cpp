@@ -299,10 +299,6 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // will finally be false only if i is a prime.
     std::vector<bool> notPrime(cardinality + 1);
 
-    // Also, please pardon the redundant loop body code,
-    // but it makes a marked improvement in how fast
-    // multiples of 5 are skipped.
-
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(wheelPrimes);
     BigInteger q = 1U;
@@ -361,7 +357,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
     return wheelPrimes;
 }
- 
+
 // Driver Code
 int main()
 {
