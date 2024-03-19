@@ -273,22 +273,23 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
-    std::vector<size_t> wheelPrimes= { 2, 3, 5, 7, 11 };
+    std::vector<size_t> knownPrimes= { 2, 3, 5, 7, 11 };
     if (n < 2) {
         return std::vector<size_t>();
     }
 
-    if (n < (wheelPrimes.back() + 2)) {
+    if (n < (knownPrimes.back() + 2)) {
         const size_t sqrtN = (size_t)sqrt(n);
-        const auto highestPrimeIt = std::upper_bound(wheelPrimes.begin(), wheelPrimes.end(), sqrtN);
-        return std::vector<size_t>(wheelPrimes.begin(), highestPrimeIt);
+        const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrtN);
+        return std::vector<size_t>(knownPrimes.begin(), highestPrimeIt);
     }
+    const std::vector<size_t> wheelPrimes = { 5, 7, 11 };
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
     // const BigInteger cardinality = (~((~n) | 1)) / 3;
-    size_t cardinality = n;
+    size_t cardinality = backward(n);
     for (const size_t& p : wheelPrimes) {
         cardinality = ((p - 1) * cardinality) / p;
     }
@@ -300,7 +301,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     std::vector<bool> notPrime(cardinality + 1);
 
     // Get the remaining prime numbers.
-    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(wheelPrimes);
+    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(knownPrimes);
     BigInteger q = 1U;
     for (BigInteger o = 2U; ; ++o) {
         if (isWheelMultiple(inc_seqs)) {
@@ -327,7 +328,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             if (is_wheel_multiple) {
                 continue;
             }
-            BigInteger j = p;
+            BigInteger j = backward(p);
             for (const size_t& w : wheelPrimes) {
                 j = ((w - 1) * j) / w;
             }
@@ -335,7 +336,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         }
     }
 
-    inc_seqs = wheel_gen(wheelPrimes);
+    inc_seqs = wheel_gen(knownPrimes);
     q = 1U;
     for (BigInteger o = 2U; ; ++o) {
         if (isWheelMultiple(inc_seqs)) {
@@ -352,10 +353,10 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             continue;
         }
 
-        wheelPrimes.push_back(p);
+        knownPrimes.push_back(p);
     }
 
-    return wheelPrimes;
+    return knownPrimes;
 }
 
 // Driver Code
