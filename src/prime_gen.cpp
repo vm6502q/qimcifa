@@ -195,54 +195,91 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // 2 and 3, this reduces complexity by 2/3.
     // const BigInteger cardinality = (~((~n) | 1)) / 3;
 
+    // Also, please pardon the redundant loop body code,
+    // but it makes a marked improvement in how fast
+    // multiples of 5 are skipped.
+
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs;
     BigInteger o = 1U;
-    int lcv5 = 2;
     size_t wheel_limit = 17U;
     while (true) {
-        ++lcv5;
-        if (lcv5 == 3) {
-            o += 2;
-            lcv5 = 4;
-        } else if (lcv5 == 10) {
-            o += 2;
-            lcv5 = 1;
-        } else {
-           ++o;
-        }
-
-        bool is_wheel_multiple = false;
-        for (size_t i = 0; i < inc_seqs.size(); ++i) {
-            boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
-            is_wheel_multiple = wheel[0U];
-            wheel >>= 1U;
+        for (int lcv5 = 1; lcv5 < 7; ++lcv5) {
+            bool is_wheel_multiple = false;
+            for (size_t i = 0; i < inc_seqs.size(); ++i) {
+                boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
+                is_wheel_multiple = wheel[0U];
+                wheel >>= 1U;
+                if (is_wheel_multiple) {
+                    wheel[wheel.size() - 1U] = true;
+                    break;
+                }
+            }
             if (is_wheel_multiple) {
-                wheel[wheel.size() - 1U] = true;
+                continue;
+            }
+
+            const BigInteger p = forward(o + lcv5);
+            if (p > n) {
                 break;
+            }
+            if (isMultiple(p, wheelPrimes.size(), knownPrimes)) {
+                // Skip
+                continue;
+            }
+
+            knownPrimes.push_back(p);
+            if (p <= wheel_limit) {
+                wheelPrimes.push_back(p);
+                inc_seqs.push_back(wheel_inc(knownPrimes));
+                boost::dynamic_bitset<uint64_t>& wheel = inc_seqs.back();
+                wheel >>= 1U;
+                wheel[wheel.size() - 1U] = true;
             }
         }
 
-        if (is_wheel_multiple) {
-            continue;
-        }
-
-        const BigInteger p = forward(o);
-        if (p > n) {
+        if (forward(o + 7U) > n) {
             break;
         }
-        if (isMultiple(p, wheelPrimes.size(), knownPrimes)) {
-            // Skip
-            continue;
+
+        for (int lcv5 = 8; lcv5 < 10; ++lcv5) {
+            bool is_wheel_multiple = false;
+            for (size_t i = 0; i < inc_seqs.size(); ++i) {
+                boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
+                is_wheel_multiple = wheel[0U];
+                wheel >>= 1U;
+                if (is_wheel_multiple) {
+                    wheel[wheel.size() - 1U] = true;
+                    break;
+                }
+            }
+            if (is_wheel_multiple) {
+                continue;
+            }
+
+            const BigInteger p = forward(o + lcv5);
+            if (p > n) {
+                break;
+            }
+            if (isMultiple(p, wheelPrimes.size(), knownPrimes)) {
+                // Skip
+                continue;
+            }
+
+            knownPrimes.push_back(p);
+            if (p <= wheel_limit) {
+                wheelPrimes.push_back(p);
+                inc_seqs.push_back(wheel_inc(knownPrimes));
+                boost::dynamic_bitset<uint64_t>& wheel = inc_seqs.back();
+                wheel >>= 1U;
+                wheel[wheel.size() - 1U] = true;
+            }
         }
 
-        knownPrimes.push_back(p);
-        if (p <= wheel_limit) {
-            wheelPrimes.push_back(p);
-            inc_seqs.push_back(wheel_inc(knownPrimes));
-            boost::dynamic_bitset<uint64_t>& wheel = inc_seqs.back();
-            wheel >>= 1U;
-            wheel[wheel.size() - 1U] = true;
+        o += 10U;
+
+        if (forward(o) > n) {
+            break;
         }
     }
 
