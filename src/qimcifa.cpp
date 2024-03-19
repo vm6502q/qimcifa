@@ -462,7 +462,8 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 }
 #else
 template <typename bitCapInt>
-bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+// bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+bool singleWordLoop(const bitCapInt& toFactor, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 2U);
@@ -470,6 +471,7 @@ bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset
             for (int lcv5 = 1; lcv5 < 7; ++lcv5) {
                 bitCapInt o = batchStart + batchGroup + lcv5;
 
+#if 0
                 bool is_wheel_multiple = false;
                 for (size_t i = 0; i < inc_seqs.size(); ++i) {
                     boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
@@ -483,6 +485,7 @@ bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset
                 if (is_wheel_multiple) {
                     continue;
                 }
+#endif
 
                 if (singleWordLoopBody(toFactor, forward(o), iterClock)) {
                     return true;
@@ -491,6 +494,7 @@ bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset
             for (int lcv5 = 8; lcv5 < 10; ++lcv5) {
                 bitCapInt o = batchStart + batchGroup + lcv5;
 
+#if 0
                 bool is_wheel_multiple = false;
                 for (size_t i = 0; i < inc_seqs.size(); ++i) {
                     boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
@@ -504,6 +508,7 @@ bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset
                 if (is_wheel_multiple) {
                     continue;
                 }
+#endif
 
                 if (singleWordLoopBody(toFactor, forward(o), iterClock)) {
                     return true;
@@ -553,8 +558,8 @@ int mainBody(const bitCapInt& toFactor, const uint64_t& tdLevel, const std::vect
     const bitCapInt fullRange = backward(fullMaxBase);
 #if IS_RANDOM
     std::random_device seeder;
-#else
-    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel));
+// #else
+//     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel));
 #endif
 
 #if IS_PARALLEL
@@ -581,8 +586,11 @@ int mainBody(const bitCapInt& toFactor, const uint64_t& tdLevel, const std::vect
     batchNumber = ((nodeId * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchBound = (((nodeId + 1) * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchCount = ((nodeCount * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
-    const auto workerFn = [toFactor, iterClock, qubitCount, &inc_seqs]() {
-        singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
+    // const auto workerFn = [toFactor, iterClock, qubitCount, &inc_seqs]() {
+    //     singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
+    // };
+    const auto workerFn = [toFactor, iterClock, qubitCount]() {
+        singleWordLoop<bitCapInt>(toFactor, iterClock);
     };
 
     std::vector<std::future<void>> futures(cpuCount);
@@ -600,14 +608,16 @@ int mainBody(const bitCapInt& toFactor, const uint64_t& tdLevel, const std::vect
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin + 2, iterClock, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
+    // singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
+    singleWordLoop<bitCapInt>(toFactor, iterClock);
 #endif
 #else
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
     singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, iterClock, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
+    // singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
+    singleWordLoop<bitCapInt>(toFactor, iterClock);
 #endif
 #endif
 
@@ -731,12 +741,13 @@ int main()
     }
 #endif
 
-#if IS_RANDOM
+// #if IS_RANDOM
     // Because removing multiples of 5 is based on skipping 1/5 of elements in sequence,
     // we need to use the same range value as multiples of 2 and 3, but the tuner should
     // estimate 4/5 the cardinality.
     const int64_t tdLevel = 3;
-#else
+#if 0
+// #else
     int64_t tdLevel = 3;
     std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of 7, or -1 for calibration file): ";
     std::cin >> tdLevel;

@@ -308,7 +308,8 @@ double singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 }
 #else
 template <typename bitCapInt>
-double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs)
+// double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs)
+double singleWordLoop(const bitCapInt& toFactor)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
     // for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
@@ -317,6 +318,7 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
             for (int lcv5 = 1; lcv5 < 7; ++lcv5) {
                 bitCapInt o = batchStart + batchGroup + lcv5;
 
+#if 0
                 bool is_wheel_multiple = false;
                 for (size_t i = 0; i < inc_seqs.size(); ++i) {
                     boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
@@ -330,6 +332,7 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
                 if (is_wheel_multiple) {
                     continue;
                 }
+#endif
 
                 if (singleWordLoopBody(toFactor, forward(o))) {
                     // return true;
@@ -338,6 +341,7 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
             for (int lcv5 = 8; lcv5 < 10; ++lcv5) {
                 bitCapInt o = batchStart + batchGroup + lcv5;
 
+#if 0
                 bool is_wheel_multiple = false;
                 for (size_t i = 0; i < inc_seqs.size(); ++i) {
                     boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
@@ -351,6 +355,7 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
                 if (is_wheel_multiple) {
                     continue;
                 }
+#endif
 
                 if (singleWordLoopBody(toFactor, forward(o))) {
                     // return true;
@@ -364,7 +369,8 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
 #endif
 
 template <typename bitCapInt>
-double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
+// double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
+double mainBody(const bitCapInt& toFactor)
 {
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the squatdLevel + 1Ure root, or in a pair where one is higher and one lower than the square root.
@@ -375,16 +381,18 @@ double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::ve
 
     return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, rng);
 #else
-    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel));
+    // std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel));
 
-    return singleWordLoop<bitCapInt>(toFactor, inc_seqs);
+    // return singleWordLoop<bitCapInt>(toFactor, inc_seqs);
+    return singleWordLoop<bitCapInt>(toFactor);
 #endif
 }
 } // namespace Qimcifa
 
 using namespace Qimcifa;
 
-double mainCase(bitCapIntInput toFactor, int tdLevel)
+// double mainCase(bitCapIntInput toFactor, int tdLevel)
+double mainCase(bitCapIntInput toFactor)
 {
     uint32_t qubitCount = 0;
     bitCapIntInput p = toFactor;
@@ -399,6 +407,7 @@ double mainCase(bitCapIntInput toFactor, int tdLevel)
     // First 1000 primes
     // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
+#if 0
     const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
@@ -453,6 +462,7 @@ double mainCase(bitCapIntInput toFactor, int tdLevel)
         7481, 7487, 7489, 7499, 7507, 7517, 7523, 7529, 7537, 7541, 7547, 7549, 7559, 7561, 7573, 7577, 7583, 7589,
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
         7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
+#endif
 
     // Print primes table by index:
     // for (size_t i = 0; i < trialDivisionPrimes.size(); ++i) {
@@ -461,40 +471,40 @@ double mainCase(bitCapIntInput toFactor, int tdLevel)
 
     if (qubitCount < 64) {
         typedef uint64_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor);
 #if USE_GMP
     } else {
-        return mainBody<bitCapIntInput>(toFactor, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapIntInput>(toFactor);
     }
 #else
     } else if (qubitCount < 128) {
         typedef boost::multiprecision::uint128_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor);
     } else if (qubitCount < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor);
     } else if (qubitCount < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor);
     } else if (qubitCount < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor);
     } else if (qubitCount < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor);
     } else {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+        return mainBody<bitCapInt>((bitCapInt)toFactor);
     }
 #endif
 }
@@ -521,6 +531,7 @@ int main() {
     std::cout << "Total thread count (across all nodes): ";
     std::cin >> threadCount;
 
+#if 0
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
@@ -557,8 +568,16 @@ int main() {
         }
     }
     iSettingsFile.close();
+#endif
+    const double time = mainCase(toFactor);
+    const bitCapIntInput range = backward(sqrt(toFactor));
+#if USE_BOOST || USE_GMP
+    const double bestCost =  range.convert_to<double>() * (time / BASE_TRIALS);
+#else
+    const double bestCost = bi_to_double(range) * (time / BASE_TRIALS);
+#endif
 
-    std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
+    // std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
 #if IS_RANDOM
     std::cout << "Estimated average time to exit: " << (bestCost / threadCount) << " seconds" << std::endl;
 #else
