@@ -173,6 +173,20 @@ std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<BigInte
     return output;
 }
 
+bool isWheelMultiple(std::vector<boost::dynamic_bitset<uint64_t>>& inc_seqs) {
+    for (size_t i = 0; i < inc_seqs.size(); ++i) {
+        boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
+        const bool is_wheel_multiple = wheel[0U];
+        wheel >>= 1U;
+        if (is_wheel_multiple) {
+            wheel[wheel.size() - 1U] = true;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
     // First 2 primes
@@ -204,17 +218,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     const size_t wheel_limit = 17U;
     for (BigInteger o = 2U; forward(o) < n; o += 10U) {
         for (int lcv5 = 1; lcv5 < 7; ++lcv5) {
-            bool is_wheel_multiple = false;
-            for (size_t i = 0; i < inc_seqs.size(); ++i) {
-                boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
-                is_wheel_multiple = wheel[0U];
-                wheel >>= 1U;
-                if (is_wheel_multiple) {
-                    wheel[wheel.size() - 1U] = true;
-                    break;
-                }
-            }
-            if (is_wheel_multiple) {
+            if (isWheelMultiple(inc_seqs)) {
                 continue;
             }
 
@@ -242,17 +246,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         }
 
         for (int lcv5 = 8; lcv5 < 10; ++lcv5) {
-            bool is_wheel_multiple = false;
-            for (size_t i = 0; i < inc_seqs.size(); ++i) {
-                boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
-                is_wheel_multiple = wheel[0U];
-                wheel >>= 1U;
-                if (is_wheel_multiple) {
-                    wheel[wheel.size() - 1U] = true;
-                    break;
-                }
-            }
-            if (is_wheel_multiple) {
+            if (isWheelMultiple(inc_seqs)) {
                 continue;
             }
 
