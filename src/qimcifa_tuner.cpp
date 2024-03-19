@@ -295,7 +295,7 @@ double singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
             bitCapInt base = forward(rngDist(rng));
 
             if (singleWordLoopBody(toFactor, base)) {
-                return true;
+                // return true;
             }
         }
         // Check if finished, between batches.
@@ -332,7 +332,7 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
                 }
 
                 if (singleWordLoopBody(toFactor, forward(o))) {
-                    return true;
+                    // return true;
                 }
             }
             for (int lcv5 = 8; lcv5 < 10; ++lcv5) {
@@ -353,7 +353,7 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
                 }
 
                 if (singleWordLoopBody(toFactor, forward(o))) {
-                    return true;
+                    // return true;
                 }
             }
         }

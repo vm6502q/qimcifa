@@ -512,7 +512,7 @@ bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset
         }
     }
 
-    return true;
+    return false;
 }
 #endif
 
