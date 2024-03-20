@@ -133,10 +133,13 @@ bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes)
 }
 
 template <typename BigInteger>
-boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes) {
+boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes, BigInteger limit) {
     BigInteger radius = 1U;
     for (const BigInteger& i : primes) {
         radius *= i;
+    }
+    if (limit < radius) {
+        radius = limit;
     }
     const BigInteger prime = primes.back();
     primes.pop_back();
@@ -157,14 +160,12 @@ boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes) {
 }
 
 template <typename BigInteger>
-std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigInteger>& primes) {
+std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigInteger>& primes, BigInteger limit) {
     std::vector<boost::dynamic_bitset<size_t>> output;
     std::vector<size_t> wheelPrimes;
     for (const BigInteger& p : primes) {
         wheelPrimes.push_back((size_t)p);
-        if (wheelPrimes.back() > 3) {
-            output.push_back(wheel_inc(wheelPrimes));
-        }
+        output.push_back(wheel_inc(wheelPrimes, limit));
     }
     return output;
 }
@@ -229,7 +230,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             knownPrimes.push_back(p);
             if (p <= wheel_limit) {
                 wheelPrimes.push_back((size_t)p);
-                inc_seqs.push_back(wheel_inc(knownPrimes));
+                inc_seqs.push_back(wheel_inc(knownPrimes, n));
                 boost::dynamic_bitset<size_t>& wheel = inc_seqs.back();
                 wheel >>= 1U;
                 wheel[wheel.size() - 1U] = true;
@@ -257,7 +258,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             knownPrimes.push_back(p);
             if (p <= wheel_limit) {
                 wheelPrimes.push_back((size_t)p);
-                inc_seqs.push_back(wheel_inc(knownPrimes));
+                inc_seqs.push_back(wheel_inc(knownPrimes, n));
                 boost::dynamic_bitset<size_t>& wheel = inc_seqs.back();
                 wheel >>= 1U;
                 wheel[wheel.size() - 1U] = true;
@@ -276,71 +277,61 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     }
 
     if (n < (knownPrimes.back() + 2)) {
-        const size_t sqrtN = (size_t)sqrt(n);
-        const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrtN);
+        const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), n);
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
-    const std::vector<size_t> wheelPrimes = { 5, 7, 11 };
+    const std::vector<size_t> wheelPrimes = { 2, 3, 5, 7, 11 };
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
     // const BigInteger cardinality = (~((~n) | 1)) / 3;
-    BigInteger _c = backward(n);
+    /* BigInteger _c = n;
     for (const size_t& w : wheelPrimes) {
         _c = ((w - 1) * _c) / w;
     }
-    const size_t cardinality = (size_t)_c;
+    const size_t cardinality = (size_t)_c; */
 
     // Create a boolean array "prime[0..cardinality]"
     // and initialize all entries it as true. Rather,
     // reverse the true/false meaning, so we can use
     // default initialization. A value in notPrime[i]
     // will finally be false only if i is a prime.
-    std::vector<bool> notPrime(cardinality + 1);
+    std::vector<bool> notPrime(n + 1);
 
     // Get the remaining prime numbers.
-    std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes);
-    size_t q = 1U;
-    size_t pOffset = 0U;
-    for (BigInteger o = 2U; ; ++o) {
+    std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes, n);
+    // size_t q = 1U;
+    for (BigInteger p = 2U; (p * p) <= n; ++p) {
         if (isWheelMultiple(inc_seqs)) {
             continue;
         }
 
-        const BigInteger p = forward(o);
-        if ((p * p) > n) {
-            break;
-        }
-
-        ++q;
-        if (notPrime[q] == true) {
+        // ++q;
+        if (notPrime[p] == true) {
             continue;
         }
-        ++pOffset;
 
         const size_t _p = (size_t)p;
-        for (size_t i = q + _p * pOffset; i <= cardinality; i += _p) {
+        // for (size_t i = q + _p * pOffset; i <= cardinality; i += _p) {
+        for (size_t i = _p * _p; i <= n; i += _p) {
             notPrime[i] = true;
         }
     }
 
-    inc_seqs = wheel_gen(knownPrimes);
-    q = 1U;
-    for (BigInteger o = 2U; ; ++o) {
+    inc_seqs = wheel_gen(knownPrimes, n);
+    // q = 1U;
+    for (BigInteger p = 2U; p <= n; ++p) {
         if (isWheelMultiple(inc_seqs)) {
             continue;
         }
 
-        ++q;
-        if (q > cardinality) {
-            break;
-        }
-        if (notPrime[q] == true) {
+        // ++q;
+        if (notPrime[p] == true) {
             continue;
         }
 
-        knownPrimes.push_back(forward(o));
+        knownPrimes.push_back(p);
     }
 
     return knownPrimes;
@@ -356,8 +347,8 @@ int main()
 
     std:: cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
-    const std::vector<BigInteger> primes = TrialDivision(n);
-    // const std::vector<size_t> primes = SieveOfEratosthenes(n);
+    // const std::vector<BigInteger> primes = TrialDivision(n);
+    const std::vector<size_t> primes = SieveOfEratosthenes(n);
 
     for (BigInteger p : primes) {
         std::cout << p << " ";
