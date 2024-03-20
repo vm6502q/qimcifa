@@ -28,6 +28,10 @@
 
 #include <pybind11/pybind11.h>
 
+const size_t BATCH_SIZE = 1 << 10;
+const size_t cpuCount = std::thread::hardware_concurrency();
+DispatchQueue dispatch(cpuCount);
+
 #if BIG_INT_BITS < 33
 typedef uint32_t BigInteger;
 #elif BIG_INT_BITS < 65
@@ -43,10 +47,6 @@ typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG
 typedef BigInteger BigInteger;
 #endif
 #endif
-
-const size_t BATCH_SIZE = 1 << 10;
-const size_t cpuCount = std::thread::hardware_concurrency();
-DispatchQueue dispatch(cpuCount);
 
 inline BigInteger sqrt(const BigInteger& toTest)
 {
@@ -124,6 +124,7 @@ bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInte
     return false;
 }
 
+template <typename BigInteger>
 bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
     for (const BigInteger& prime : knownPrimes) {
         if ((p % prime) == 0) {
@@ -133,24 +134,26 @@ bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes)
     return false;
 }
 
-boost::dynamic_bitset<uint64_t> wheel_inc(std::vector<BigInteger> primes) {
+template <typename BigInteger>
+boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes, BigInteger limit) {
     BigInteger radius = 1U;
     for (const BigInteger& i : primes) {
         radius *= i;
     }
+    if (limit < radius) {
+        radius = limit;
+    }
     const BigInteger prime = primes.back();
     primes.pop_back();
     std::vector<bool> o;
-    size_t count = 0;
-    for (size_t i = 1U; i < radius; ++i) {
+    for (BigInteger i = 1U; i <= radius; ++i) {
         if (!isMultiple(i, primes)) {
             o.push_back((i % prime) == 0);
-            ++count;
         }
     }
 
-    boost::dynamic_bitset<uint64_t> output(count);
-    for (size_t i = 0U; i < count; ++i) {
+    boost::dynamic_bitset<size_t> output(o.size());
+    for (size_t i = 0U; i < o.size(); ++i) {
         output[i] = o[i];
     }
     output >>= 1U;
@@ -158,22 +161,21 @@ boost::dynamic_bitset<uint64_t> wheel_inc(std::vector<BigInteger> primes) {
     return output;
 }
 
-std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<BigInteger>& primes) {
-    std::vector<boost::dynamic_bitset<uint64_t>> output;
-    std::vector<BigInteger> wheelPrimes;
+template <typename BigInteger>
+std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigInteger>& primes, BigInteger limit) {
+    std::vector<boost::dynamic_bitset<size_t>> output;
+    std::vector<size_t> wheelPrimes;
     for (const BigInteger& p : primes) {
-        wheelPrimes.push_back(p);
-        if (wheelPrimes.back() > 5) {
-            output.push_back(wheel_inc(wheelPrimes));
-        }
+        wheelPrimes.push_back((size_t)p);
+        output.push_back(wheel_inc(wheelPrimes, limit));
     }
     return output;
 }
 
-bool isWheelMultiple(std::vector<boost::dynamic_bitset<uint64_t>>& inc_seqs) {
+bool isWheelMultiple(std::vector<boost::dynamic_bitset<size_t>>& inc_seqs) {
     for (size_t i = 0; i < inc_seqs.size(); ++i) {
-        boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
-        const bool is_wheel_multiple = wheel[0U];
+        boost::dynamic_bitset<size_t>& wheel = inc_seqs[i];
+        const bool is_wheel_multiple = wheel.test(0U);
         wheel >>= 1U;
         if (is_wheel_multiple) {
             wheel[wheel.size() - 1U] = true;
@@ -194,8 +196,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     }
 
     if (n < (knownPrimes.back() + 2)) {
-        const BigInteger sqrtN = sqrt(n);
-        const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrtN);
+        const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), n);
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
@@ -231,7 +232,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             knownPrimes.push_back(p);
             if (p <= wheel_limit) {
                 wheelPrimes.push_back((size_t)p);
-                inc_seqs.push_back(wheel_inc(knownPrimes));
+                inc_seqs.push_back(wheel_inc(knownPrimes, n));
                 boost::dynamic_bitset<size_t>& wheel = inc_seqs.back();
                 wheel >>= 1U;
                 wheel[wheel.size() - 1U] = true;
@@ -259,12 +260,80 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
             knownPrimes.push_back(p);
             if (p <= wheel_limit) {
                 wheelPrimes.push_back((size_t)p);
-                inc_seqs.push_back(wheel_inc(knownPrimes));
+                inc_seqs.push_back(wheel_inc(knownPrimes, n));
                 boost::dynamic_bitset<size_t>& wheel = inc_seqs.back();
                 wheel >>= 1U;
                 wheel[wheel.size() - 1U] = true;
             }
         }
+    }
+
+    return knownPrimes;
+}
+
+std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
+{
+    std::vector<BigInteger> knownPrimes= { 2, 3, 5, 7, 11 };
+    if (n < 2) {
+        return std::vector<BigInteger>();
+    }
+
+    if (n < (knownPrimes.back() + 2)) {
+        const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), n);
+        return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
+    }
+    const std::vector<size_t> wheelPrimes = { 2, 3, 5, 7, 11 };
+
+    // We are excluding multiples of the first few
+    // small primes from outset. For multiples of
+    // 2 and 3, this reduces complexity by 2/3.
+    // const BigInteger cardinality = (~((~n) | 1)) / 3;
+    /* BigInteger _c = n;
+    for (const size_t& w : wheelPrimes) {
+        _c = ((w - 1) * _c) / w;
+    }
+    const size_t cardinality = (size_t)_c; */
+
+    // Create a boolean array "prime[0..cardinality]"
+    // and initialize all entries it as true. Rather,
+    // reverse the true/false meaning, so we can use
+    // default initialization. A value in notPrime[i]
+    // will finally be false only if i is a prime.
+    std::vector<bool> notPrime(n + 1);
+
+    // Get the remaining prime numbers.
+    std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes, n);
+    // size_t q = 1U;
+    for (BigInteger p = 2U; (p * p) <= n; ++p) {
+        if (isWheelMultiple(inc_seqs)) {
+            continue;
+        }
+
+        // ++q;
+        if (notPrime[p] == true) {
+            continue;
+        }
+
+        const size_t _p = (size_t)p;
+        // for (size_t i = q + _p * pOffset; i <= cardinality; i += _p) {
+        for (size_t i = _p * _p; i <= n; i += _p) {
+            notPrime[i] = true;
+        }
+    }
+
+    inc_seqs = wheel_gen(knownPrimes, n);
+    // q = 1U;
+    for (BigInteger p = 2U; p <= n; ++p) {
+        if (isWheelMultiple(inc_seqs)) {
+            continue;
+        }
+
+        // ++q;
+        if (notPrime[p] == true) {
+            continue;
+        }
+
+        knownPrimes.push_back(p);
     }
 
     return knownPrimes;
