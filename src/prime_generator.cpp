@@ -303,6 +303,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes);
     size_t q = 1U;
+    size_t pOffset = knownPrimes.size();
     for (BigInteger o = 2U; ; ++o) {
         if (isWheelMultiple(inc_seqs)) {
             continue;
@@ -317,14 +318,10 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         if (notPrime[q] == true) {
             continue;
         }
+        ++pOffset;
 
-        // TODO: Does this inverse actually work?
-        // size_t j = (size_t)backward(p * p);
-        // for (const size_t& w : wheelPrimes) {
-        //     j = ((w - 1) * j) / w;
-        // }
         const size_t _p = (size_t)p;
-        for (size_t i = q + _p; i <= cardinality; i += _p) {
+        for (size_t i = q + _p * (pOffset - knownPrimes.size()); i <= cardinality; i += _p) {
             notPrime[i] = true;
         }
     }
