@@ -76,7 +76,7 @@ inline BigInteger sqrt(const BigInteger& toTest)
 }
 
 inline BigInteger backward(BigInteger n) {
-    return (~((~n) | 1U)) / 3U;
+    return ((~((~n) | 1U)) / 3U) + 1U;
 }
 
 inline BigInteger forward(BigInteger p) {
@@ -167,7 +167,9 @@ std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigIntege
     std::vector<size_t> wheelPrimes;
     for (const BigInteger& p : primes) {
         wheelPrimes.push_back((size_t)p);
-        output.push_back(wheel_inc(wheelPrimes, limit));
+        if (wheelPrimes.back() > 3) {
+            output.push_back(wheel_inc(wheelPrimes, limit));
+        }
     }
     return output;
 }
@@ -282,54 +284,53 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), n);
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
-    const std::vector<size_t> wheelPrimes = { 2, 3, 5, 7, 11, 13, 17 };
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
-    // const BigInteger cardinality = (~((~n) | 1)) / 3;
-    /* BigInteger _c = n;
-    for (const size_t& w : wheelPrimes) {
-        _c = ((w - 1) * _c) / w;
-    }
-    const size_t cardinality = (size_t)_c; */
+    const BigInteger cardinality = backward(n);
 
     // Create a boolean array "prime[0..cardinality]"
     // and initialize all entries it as true. Rather,
     // reverse the true/false meaning, so we can use
     // default initialization. A value in notPrime[i]
     // will finally be false only if i is a prime.
-    std::vector<bool> notPrime(n + 1);
+    std::vector<bool> notPrime(cardinality + 1);
 
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes, n);
-    // size_t q = 1U;
-    for (BigInteger p = 2U; (p * p) <= n; ++p) {
+    for (BigInteger o = 2U; ; ++o) {
         if (isWheelMultiple(inc_seqs)) {
             continue;
         }
 
-        // ++q;
-        if (notPrime[p] == true) {
+        const BigInteger p = forward(o);
+        if ((p * p) > n) {
+            break;
+        }
+
+        if (notPrime[o] == true) {
             continue;
         }
 
         const size_t _p = (size_t)p;
-        // for (size_t i = q + _p * pOffset; i <= cardinality; i += _p) {
         for (size_t i = _p * _p; i <= n; i += _p) {
-            notPrime[i] = true;
+            notPrime[backward(i)] = true;
         }
     }
 
     inc_seqs = wheel_gen(knownPrimes, n);
-    // q = 1U;
-    for (BigInteger p = 2U; p <= n; ++p) {
+    for (BigInteger o = 2U; ; ++o) {
         if (isWheelMultiple(inc_seqs)) {
             continue;
         }
 
-        // ++q;
-        if (notPrime[p] == true) {
+        const BigInteger p = forward(o);
+        if (p > n) {
+            break;
+        }
+
+        if (notPrime[o] == true) {
             continue;
         }
 
@@ -341,5 +342,5 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
 PYBIND11_MODULE(prime_gen, m) {
     m.doc() = "pybind11 plugin to generate prime numbers";
-    m.def("prime_gen", &TrialDivision, "A function that returns all primes up to the value of its argument");
+    m.def("prime_gen", &SieveOfEratosthenes, "A function that returns all primes up to the value of its argument");
 }
