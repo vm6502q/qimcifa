@@ -174,7 +174,7 @@ std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<BigInte
 bool isWheelMultiple(std::vector<boost::dynamic_bitset<uint64_t>>& inc_seqs) {
     for (size_t i = 0; i < inc_seqs.size(); ++i) {
         boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
-        const bool is_wheel_multiple = wheel[0U];
+        const bool is_wheel_multiple = wheel.test(0U);
         wheel >>= 1U;
         if (is_wheel_multiple) {
             wheel[wheel.size() - 1U] = true;
