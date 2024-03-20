@@ -344,17 +344,15 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             continue;
         }
 
-        const BigInteger p = forward(o);
-        if (p > n) {
+        ++q;
+        if (q > cardinality) {
             break;
         }
-
-        ++q;
         if (notPrime[q] == true) {
             continue;
         }
 
-        knownPrimes.push_back(p);
+        knownPrimes.push_back(forward(o));
     }
 
     return knownPrimes;
