@@ -273,7 +273,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
-    std::vector<BigInteger> knownPrimes= { 2, 3, 5, 7, 11 };
+    std::vector<BigInteger> knownPrimes= { 2, 3, 5, 7, 11, 13, 17 };
     if (n < 2) {
         return std::vector<BigInteger>();
     }
@@ -282,7 +282,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), n);
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
-    const std::vector<size_t> wheelPrimes = { 2, 3, 5, 7, 11 };
+    const std::vector<size_t> wheelPrimes = { 2, 3, 5, 7, 11, 13, 17 };
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
