@@ -285,8 +285,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // 2 and 3, this reduces complexity by 2/3.
     // const BigInteger cardinality = (~((~n) | 1)) / 3;
     size_t cardinality = backward(n);
-    for (const size_t& p : wheelPrimes) {
-        cardinality = ((p - 1) * cardinality) / p;
+    for (const size_t& w : wheelPrimes) {
+        cardinality = ((w - 1) * cardinality) / w;
     }
     // Create a boolean array "prime[0..cardinality]"
     // and initialize all entries it as true. Rather,
@@ -313,7 +313,11 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             continue;
         }
 
-        for (BigInteger i = q + p; i <= cardinality; i += p) {
+        size_t j = backward(p * p);
+        for (const size_t& w : wheelPrimes) {
+            j = ((w - 1) * j) / w;
+        }
+        for (BigInteger i = j; i <= cardinality; i += p) {
             notPrime[i] = true;
         }
     }
