@@ -75,10 +75,8 @@ inline BigInteger sqrt(const BigInteger& toTest)
     return ans;
 }
 
-inline BigInteger backward(BigInteger ni) {
-    ni = (ni + 1) >> 1;
-    ni = ((ni + 1) << 1) / 3;
-    return ni;
+inline BigInteger backward(BigInteger n) {
+    return (~((~n) | 1)) / 3;
 }
 
 inline BigInteger forward(BigInteger p) {

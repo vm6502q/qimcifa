@@ -129,10 +129,8 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
     std::cout << "(Waiting to join other threads...)" << std::endl;
 }
 
-template <typename BigInteger> inline BigInteger backward(BigInteger ni) {
-    ni = (ni + 1) >> 1;
-    ni = ((ni + 1) << 1) / 3;
-    return ni;
+template <typename BigInteger> inline BigInteger backward(BigInteger n) {
+    return (~((~n) | 1)) / 3;
 }
 
 template <typename BigInteger> inline BigInteger forward(BigInteger p) {
