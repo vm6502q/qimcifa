@@ -79,8 +79,7 @@ inline BigInteger backward(BigInteger n) {
 
 inline BigInteger forward(BigInteger p) {
     // Make this NOT a multiple of 2 or 3.
-    p += (p >> 1U);
-    return (p << 1U) - 1U;
+    return (p << 1U) + (~(~p | 1U)) - 1U;
 }
 
 bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,

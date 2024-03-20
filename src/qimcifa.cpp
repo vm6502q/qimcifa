@@ -271,8 +271,7 @@ template <typename BigInteger> inline BigInteger backward(BigInteger n) {
 
 template <typename BigInteger> inline BigInteger forward(BigInteger p) {
     // Make this NOT a multiple of 2 or 3.
-    p += (p >> 1U);
-    return (p << 1U) - 1U;
+    return (p << 1U) + (~(~p | 1U)) - 1U;
 }
 
 template <typename BigInteger> bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
