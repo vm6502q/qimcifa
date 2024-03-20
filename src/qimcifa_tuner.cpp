@@ -130,7 +130,7 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
 }
 
 template <typename BigInteger> inline BigInteger backward(BigInteger n) {
-    return (~((~n) | 1)) / 3;
+    return (~((~n) | 1U)) / 3U;
 }
 
 template <typename BigInteger> inline BigInteger forward(BigInteger p) {
