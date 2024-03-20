@@ -134,7 +134,7 @@ bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes)
     return false;
 }
 
-boost::dynamic_bitset<uint64_t> wheel_inc(std::vector<BigInteger> primes) {
+boost::dynamic_bitset<uint64_t> wheel_inc(std::vector<size_t> primes) {
     BigInteger radius = 1U;
     for (const BigInteger& i : primes) {
         radius *= i;
@@ -157,10 +157,10 @@ boost::dynamic_bitset<uint64_t> wheel_inc(std::vector<BigInteger> primes) {
     return output;
 }
 
-std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<BigInteger>& primes) {
+std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<size_t>& primes) {
     std::vector<boost::dynamic_bitset<uint64_t>> output;
-    std::vector<BigInteger> wheelPrimes;
-    for (const BigInteger& p : primes) {
+    std::vector<size_t> wheelPrimes;
+    for (const size_t& p : primes) {
         wheelPrimes.push_back(p);
         if (wheelPrimes.back() > 3) {
             output.push_back(wheel_inc(wheelPrimes));
@@ -198,7 +198,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
-    std::vector<BigInteger> wheelPrimes= { 2, 3, 5 };
+    std::vector<size_t> wheelPrimes= { 2, 3, 5 };
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
