@@ -318,12 +318,13 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             continue;
         }
 
-        size_t j = (size_t)backward(p * p);
-        for (const size_t& w : wheelPrimes) {
-            j = ((w - 1) * j) / w;
-        }
+        // TODO: Does this inverse actually work?
+        // size_t j = (size_t)backward(p * p);
+        // for (const size_t& w : wheelPrimes) {
+        //     j = ((w - 1) * j) / w;
+        // }
         const size_t _p = (size_t)p;
-        for (size_t i = j; i <= cardinality; i += _p) {
+        for (size_t i = q + _p; i <= cardinality; i += _p) {
             notPrime[i] = true;
         }
     }
