@@ -142,16 +142,14 @@ boost::dynamic_bitset<uint64_t> wheel_inc(std::vector<BigInteger> primes) {
     const BigInteger prime = primes.back();
     primes.pop_back();
     std::vector<bool> o;
-    size_t count = 0;
     for (size_t i = 1U; i < radius; ++i) {
         if (!isMultiple(i, primes)) {
             o.push_back((i % prime) == 0);
-            ++count;
         }
     }
 
-    boost::dynamic_bitset<uint64_t> output(count);
-    for (size_t i = 0U; i < count; ++i) {
+    boost::dynamic_bitset<uint64_t> output(o.size());
+    for (size_t i = 0U; i < o.size(); ++i) {
         output[i] = o[i];
     }
     output >>= 1U;
