@@ -141,7 +141,7 @@ boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes) {
     const BigInteger prime = primes.back();
     primes.pop_back();
     std::vector<bool> o;
-    for (BigInteger i = 1U; i < radius; ++i) {
+    for (BigInteger i = 1U; i <= radius; ++i) {
         if (!isMultiple(i, primes)) {
             o.push_back((i % prime) == 0);
         }
@@ -193,8 +193,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     }
 
     if (n < (knownPrimes.back() + 2)) {
-        const BigInteger sqrtN = sqrt(n);
-        const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrtN);
+        const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), n);
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
