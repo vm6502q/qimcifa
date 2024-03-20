@@ -199,7 +199,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
-    std::vector<BigInteger> wheelPrimes= { 2, 3, 5 };
+    std::vector<size_t> wheelPrimes= { 2, 3, 5 };
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
@@ -211,7 +211,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // multiples of 5 are skipped.
 
     // Get the remaining prime numbers.
-    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs;
+    std::vector<boost::dynamic_bitset<size_t>> inc_seqs;
     const size_t wheel_limit = 17U;
     for (BigInteger o = 2U; forward(o) < n; o += 10U) {
         for (int lcv5 = 1; lcv5 < 7; ++lcv5) {
@@ -230,9 +230,9 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
             knownPrimes.push_back(p);
             if (p <= wheel_limit) {
-                wheelPrimes.push_back(p);
+                wheelPrimes.push_back((size_t)p);
                 inc_seqs.push_back(wheel_inc(knownPrimes));
-                boost::dynamic_bitset<uint64_t>& wheel = inc_seqs.back();
+                boost::dynamic_bitset<size_t>& wheel = inc_seqs.back();
                 wheel >>= 1U;
                 wheel[wheel.size() - 1U] = true;
             }
@@ -258,9 +258,9 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
             knownPrimes.push_back(p);
             if (p <= wheel_limit) {
-                wheelPrimes.push_back(p);
+                wheelPrimes.push_back((size_t)p);
                 inc_seqs.push_back(wheel_inc(knownPrimes));
-                boost::dynamic_bitset<uint64_t>& wheel = inc_seqs.back();
+                boost::dynamic_bitset<size_t>& wheel = inc_seqs.back();
                 wheel >>= 1U;
                 wheel[wheel.size() - 1U] = true;
             }
