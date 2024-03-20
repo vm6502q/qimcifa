@@ -189,7 +189,7 @@ bool isWheelMultiple(std::vector<boost::dynamic_bitset<uint64_t>>& inc_seqs) {
 
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
-    // First 2 primes
+    // First 3 primes
     std::vector<BigInteger> knownPrimes= { 2, 3, 5 };
 
     if (n < 2) {
