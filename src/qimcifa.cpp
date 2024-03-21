@@ -342,7 +342,12 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     // If we're lucky enough that the above is true, for a^2 = toTest and (b^2 mod N) = remainder,
     // then we can immediately find a factor.
 
-    bitCapInt remainder = (toTest * toTest) % toFactor;
+    // Consider a^2 to be equal to "toTest."
+    const bitCapInt a = sqrt(toTest);
+    if ((a * a) != toTest) {
+        return false;
+    }
+    bitCapInt remainder = toTest % toFactor;
 
     // The sqrt() algorithm is adapted from Gaurav Ahirwar's suggestion on
     // https://www.geeksforgeeks.org/square-root-of-an-integer/
@@ -380,8 +385,8 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
         remainder = ans;
     }
 
-    bitCapInt f1 = gcd(toTest + remainder, toFactor);
-    bitCapInt f2 = gcd(toTest - remainder, toFactor);
+    bitCapInt f1 = gcd(a + remainder, toFactor);
+    bitCapInt f2 = gcd(a - remainder, toFactor);
     bitCapInt fmul = f1 * f2;
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
         fmul = f1;
