@@ -460,7 +460,11 @@ bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
+#if IS_SQUARES_CONGRUENCE_CHECK
+        const bitCapInt batchStart = batchNum * BASE_TRIALS + offset;
+#else
         const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + offset);
+#endif
         for (int batchItem = 0U; batchItem < BASE_TRIALS;) {
             batchItem += GetWheelIncrement(inc_seqs);
             if (singleWordLoopBody(toFactor, forward(batchStart + batchItem), iterClock)) {
