@@ -353,8 +353,8 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
         return false;
     }
 
-    bitCapInt f1 = gcd(a + remainder, toFactor);
-    bitCapInt f2 = gcd(a - remainder, toFactor);
+    bitCapInt f1 = gcd(a + b, toFactor);
+    bitCapInt f2 = gcd(a - b, toFactor);
     bitCapInt fmul = f1 * f2;
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
         fmul = f1;
