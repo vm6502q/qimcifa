@@ -167,9 +167,7 @@ std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigIntege
     std::vector<BigInteger> wheelPrimes;
     for (const BigInteger& p : primes) {
         wheelPrimes.push_back(p);
-        if (wheelPrimes.back() > 3) {
-            output.push_back(wheel_inc(wheelPrimes, limit));
-        }
+        output.push_back(wheel_inc(wheelPrimes, limit));
     }
     return output;
 }
@@ -299,6 +297,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes, n);
+    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
     for (BigInteger o = 2U; ; ++o) {
         if (isWheelMultiple(inc_seqs)) {
             continue;
@@ -322,6 +321,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     }
 
     inc_seqs = wheel_gen(knownPrimes, n);
+    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
     for (BigInteger o = 2U; ; ++o) {
         if (isWheelMultiple(inc_seqs)) {
             continue;
