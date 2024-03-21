@@ -6,7 +6,7 @@ include (GNUInstallDirs)
 
 option (IS_RSA_SEMIPRIME "Optimize for RSA semiprime numbers, only. (Might restrict bounds too far on certain RSA semiprimes.)" ON)
 option (IS_PARALLEL "Enable parallelism within nodes." ON)
-option (IS_DISTRIBUTED "Enable node distribution configuration dialog." ON)
+option (IS_DISTRIBUTED "Enable node distribution configuration dialog." OFF)
 option (IS_RANDOM "Enable 'quantum-inspired' randomness." OFF)
 option (USE_GMP "Use GMP library instead of Boost or pure language for arbitrary precision integers." OFF)
 option (USE_BOOST "Use Boost library instead of pure language for arbitrary precision integers." ON)
