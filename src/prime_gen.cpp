@@ -255,7 +255,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2 and 3, this reduces complexity by 2/3.
-    const BigInteger cardinality = backward(n);
+    const size_t cardinality = (size_t)backward(n);
 
     // Create a boolean array "prime[0..cardinality]"
     // and initialize all entries it as true. Rather,
@@ -267,7 +267,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes, n);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
-    for (BigInteger o = 2U; ;) {
+    for (size_t o = 2U; ;) {
         o += GetWheelIncrement(inc_seqs);
 
         const BigInteger p = forward(o);
@@ -282,14 +282,14 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         const size_t _p = (size_t)p;
         for (size_t i = _p * _p; i <= n; i += _p) {
             if (((i & 1) != 0) && ((i % 3) != 0)) {
-                notPrime[backward(i)] = true;
+                notPrime[(size_t)backward(i)] = true;
             }
         }
     }
 
     inc_seqs = wheel_gen(knownPrimes, n);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
-    for (BigInteger o = 2U; ;) {
+    for (size_t o = 2U; ;) {
         o += GetWheelIncrement(inc_seqs);
 
         const BigInteger p = forward(o);
