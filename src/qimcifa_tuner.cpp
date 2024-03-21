@@ -206,8 +206,7 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
 
 #if IS_SQUARES_CONGRUENCE_CHECK
 template <typename bitCapInt>
-inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest,
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest)
 {
     // The basic idea is "congruence of squares":
     // a^2 = b^2 mod N
@@ -264,7 +263,7 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
         // Inform the other threads on this node that we've succeeded and are done:
         // isFinished = true;
-        printSuccess<bitCapInt>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
+        // printSuccess<bitCapInt>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
         return true;
     }
 
@@ -290,7 +289,7 @@ inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base)
 #endif
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-    if (checkCongruenceOfSquares<bitCapInt>(toFactor, base, iterClock)) {
+    if (checkCongruenceOfSquares<bitCapInt>(toFactor, base)) {
         // finish();
         // return true;
     }
@@ -325,20 +324,20 @@ double singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 }
 #else
 template <typename bitCapInt>
-double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs)
+double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const bitCapInt& offset)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
-    // for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
-        const bitCapInt batchStart = 2U;
+    for (bitCapInt batchNum = 0; batchNum < 10; ++batchNum) {
+        const bitCapInt batchStart = batchNum * BASE_TRIALS + offset;
         for (int batchItem = 0U; batchItem < BASE_TRIALS;) {
             batchItem += GetWheelIncrement(inc_seqs);
             if (singleWordLoopBody(toFactor, forward(batchStart + batchItem))) {
                 return true;
             }
         }
-    // }
+    }
 
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9;
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-10;
 }
 #endif
 
@@ -347,17 +346,31 @@ double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::ve
 {
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the squatdLevel + 1Ure root, or in a pair where one is higher and one lower than the square root.
+
+#if IS_SQUARES_CONGRUENCE_CHECK
+    const bitCapInt fullMaxBase = backward(sqrt<bitCapInt>(toFactor));
+    const bitCapInt offset = (fullMaxBase / BASE_TRIALS) * BASE_TRIALS + 2U;
+#else
+    const bitCapInt offset = 2U;
+#endif
+
 #if IS_RANDOM
     std::random_device seeder;
     boost::random::mt19937_64 rng(seeder());
-    const bitCapInt fullRange = backward(sqrt<bitCapInt>(toFactor));
 
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, rng);
+#if IS_SQUARES_CONGRUENCE_CHECK
+    const bitCapInt fullRange = backward(1U + toFactor - offset);
+#else
+    const bitCapInt fullMaxBase = backward(sqrt<bitCapInt>(toFactor));
+    const bitCapInt fullRange = backward(fullMaxBase - 1U);
+#endif
+
+    return singleWordLoop<bitCapInt>(toFactor, fullRange, offset, rng);
 #else
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
 
-    return singleWordLoop<bitCapInt>(toFactor, inc_seqs);
+    return singleWordLoop<bitCapInt>(toFactor, inc_seqs, offset);
 #endif
 }
 } // namespace Qimcifa

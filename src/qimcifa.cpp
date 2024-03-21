@@ -479,10 +479,11 @@ bool singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bit
 }
 #else
 template <typename bitCapInt>
-bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+bool singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const bitCapInt& offset,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
-        const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + 2U);
+        const bitCapInt batchStart = (bitCapInt)((batchCount - (batchNum + 1U)) * BASE_TRIALS + offset);
         for (int batchItem = 0U; batchItem < BASE_TRIALS;) {
             batchItem += GetWheelIncrement(inc_seqs);
             if (singleWordLoopBody(toFactor, forward(batchStart + batchItem), iterClock)) {
@@ -529,7 +530,14 @@ int mainBody(const bitCapInt& toFactor, const uint64_t& tdLevel, const std::vect
         ++primeIndex;
     }
 
-    const bitCapInt fullRange = backward(fullMaxBase);
+#if IS_SQUARES_CONGRUENCE_CHECK
+    const bitCapInt offset = (fullMaxBase / BASE_TRIALS) * BASE_TRIALS + 2U;
+    const bitCapInt fullRange = backward(1U + toFactor - offset);
+#else
+    const bitCapInt offset = 2U;
+    const bitCapInt fullRange = backward(fullMaxBase - 1U);
+#endif
+
 #if IS_RANDOM
     std::random_device seeder;
 #else
@@ -549,20 +557,20 @@ int mainBody(const bitCapInt& toFactor, const uint64_t& tdLevel, const std::vect
         rngMutex.lock();
         boost::random::mt19937_64 rng(seeder());
         rngMutex.unlock();
-        singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin + 2, iterClock, rng);
+        singleWordLoop<bitCapInt>(toFactor, threadRange, threadMin, iterClock, rng);
     };
 
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        const bitCapInt threadMin = nodeMin + threadRange * cpu;
+        const bitCapInt threadMin = nodeMin + threadRange * cpu + offset;
         futures[cpu] = std::async(std::launch::async, workerFn, threadMin);
     }
 #else
     batchNumber = ((nodeId * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchBound = (((nodeId + 1) * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchCount = ((nodeCount * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
-    const auto workerFn = [toFactor, iterClock, qubitCount, &inc_seqs]() {
-        singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
+    const auto workerFn = [toFactor, iterClock, qubitCount, &inc_seqs, &offset]() {
+        singleWordLoop<bitCapInt>(toFactor, inc_seqs, offset, iterClock);
     };
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
@@ -574,19 +582,19 @@ int mainBody(const bitCapInt& toFactor, const uint64_t& tdLevel, const std::vect
         futures[cpu].get();
     }
 #elif IS_DISTRIBUTED
-    const bitCapInt nodeMin = nodeRange * nodeId;
+    const bitCapInt nodeMin = nodeRange * nodeId + offset;
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin + 2, iterClock, rng);
+    singleWordLoop<bitCapInt>(toFactor, nodeRange, nodeMin, iterClock, rng);
 #else
     singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
 #endif
 #else
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, iterClock, rng);
+    singleWordLoop<bitCapInt>(toFactor, fullRange, offset, iterClock, rng);
 #else
-    singleWordLoop<bitCapInt>(toFactor, inc_seqs, iterClock);
+    singleWordLoop<bitCapInt>(toFactor, inc_seqs, offset, iterClock);
 #endif
 #endif
 
