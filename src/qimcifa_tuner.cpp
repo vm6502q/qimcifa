@@ -53,7 +53,7 @@ constexpr int BASE_TRIALS = 1U << 20U;
 // constexpr int BASE_TRIALS = 510510;
 constexpr int BASE_TRIALS = 1021020;
 #endif
-constexpr int MIN_RTD_LEVEL = 3;
+constexpr int MIN_RTD_LEVEL = 2;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int bitCapIntInput;
@@ -185,18 +185,23 @@ std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigIntege
     return output;
 }
 
-inline bool isWheelMultiple(std::vector<boost::dynamic_bitset<size_t>>& inc_seqs) {
-    for (size_t i = 0; i < inc_seqs.size(); ++i) {
-        boost::dynamic_bitset<size_t>& wheel = inc_seqs[i];
-        const bool is_wheel_multiple = wheel.test(0U);
-        wheel >>= 1U;
-        if (is_wheel_multiple) {
-            wheel[wheel.size() - 1U] = true;
-            return true;
+inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_seqs) {
+    size_t wheelIncrement = 0U;
+    bool is_wheel_multiple = false;
+    do {
+        for (size_t i = 0; i < inc_seqs.size(); ++i) {
+            boost::dynamic_bitset<size_t>& wheel = inc_seqs[i];
+            is_wheel_multiple = wheel.test(0U);
+            wheel >>= 1U;
+            if (is_wheel_multiple) {
+                wheel[wheel.size() - 1U] = true;
+                break;
+            }
         }
-    }
+        wheelIncrement++;
+    } while (is_wheel_multiple);
 
-    return false;
+    return wheelIncrement;
 }
 
 #if IS_SQUARES_CONGRUENCE_CHECK
@@ -325,24 +330,10 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
     auto iterClock = std::chrono::high_resolution_clock::now();
     // for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = 2U;
-        for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup+=10) {
-            for (int lcv5 = 1; lcv5 < 7; ++lcv5) {
-                if (isWheelMultiple(inc_seqs)) {
-                    continue;
-                }
-
-                if (singleWordLoopBody(toFactor, forward(batchStart + batchGroup + lcv5))) {
-                    return true;
-                }
-            }
-            for (int lcv5 = 8; lcv5 < 10; ++lcv5) {
-                if (isWheelMultiple(inc_seqs)) {
-                    continue;
-                }
-
-                if (singleWordLoopBody(toFactor, forward(batchStart + batchGroup + lcv5))) {
-                    return true;
-                }
+        for (int batchItem = 0U; batchItem < BASE_TRIALS;) {
+            batchItem += GetWheelIncrement(inc_seqs);
+            if (singleWordLoopBody(toFactor, forward(batchStart + batchItem))) {
+                return true;
             }
         }
     // }
@@ -364,7 +355,7 @@ double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::ve
     return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, rng);
 #else
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
-    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 3U);
+    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
 
     return singleWordLoop<bitCapInt>(toFactor, inc_seqs);
 #endif
