@@ -347,42 +347,10 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     if ((a * a) != toTest) {
         return false;
     }
-    bitCapInt remainder = toTest % toFactor;
-
-    // The sqrt() algorithm is adapted from Gaurav Ahirwar's suggestion on
-    // https://www.geeksforgeeks.org/square-root-of-an-integer/
-    // It's a binary search for floor(sqrt(toTest)).
-
-    // If a^2 = 1 mod N, then b = 1.
-    if (remainder > 1U) {
-        // Otherwise, find b = sqrt(b^2).
-        bitCapInt start = 1U, ans = 0U;
-        remainder >>= 1U;
-        do {
-            const bitCapInt mid = (start + remainder) >> 1U;
-
-            // If toTest is a perfect square
-            const bitCapInt sqr = mid * mid;
-            if (sqr == toTest) {
-                ans = mid;
-                break;
-            }
-
-            if (sqr < toTest) {
-                // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
-                start = mid + 1U;
-                ans = mid;
-            } else {
-                // If mid*mid is greater than p
-                remainder = mid - 1U;
-            }
-        } while (start <= remainder);
-        if (start > remainder) {
-            // Must be a perfect square.
-            return false;
-        }
-
-        remainder = ans;
+    const bitCapInt bSqr = toTest % toFactor;
+    const bitCapInt b = sqrt(bSqr);
+    if ((b * b) != bSqr) {
+        return false;
     }
 
     bitCapInt f1 = gcd(a + remainder, toFactor);
