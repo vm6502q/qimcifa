@@ -191,7 +191,7 @@ bool isWheelMultiple(std::vector<boost::dynamic_bitset<size_t>>& inc_seqs) {
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
     // First 3 primes
-    std::vector<BigInteger> knownPrimes= { 2, 3, 5 };
+    std::vector<BigInteger> knownPrimes = { 2, 3, 5 };
 
     if (n < 2) {
         return std::vector<BigInteger>();
@@ -275,7 +275,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
-    std::vector<BigInteger> knownPrimes= { 2, 3, 5, 7, 11 };
+    std::vector<BigInteger> knownPrimes = { 2, 3, 5, 7, 11 };
     if (n < 2) {
         return std::vector<BigInteger>();
     }
