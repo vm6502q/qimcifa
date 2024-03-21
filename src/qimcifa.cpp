@@ -453,7 +453,7 @@ int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vec
     for (size_t i = 0U; i < tdLevel; ++i) {
         radius *= trialDivisionPrimes[i];
     }
-    radius = (BigInteger)pow((uint64_t)radius, exp / 10.0);
+    radius = (BigInteger)pow((uint64_t)radius, exp / 25.0);
 
 #if IS_PARALLEL
     const unsigned cpuCount = std::thread::hardware_concurrency();
@@ -590,7 +590,8 @@ int main()
     }
 #endif
 
-    int64_t tdLevel = 3;
+    const int64_t tdLevel = 7;
+#if 0
     std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of 7, or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
@@ -600,6 +601,7 @@ int main()
         tdLevel = 7;
     }
     tdLevel = pickTrialDivisionLevel<BigIntegerInput>(tdLevel, nodeCount);
+#endif
 
 #if IS_PARALLEL || IS_DISTRIBUTED
 #if !(USE_GMP || USE_BOOST)
