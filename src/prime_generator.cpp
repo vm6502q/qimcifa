@@ -162,9 +162,9 @@ boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes, BigInteg
 template <typename BigInteger>
 std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigInteger>& primes, BigInteger limit) {
     std::vector<boost::dynamic_bitset<size_t>> output;
-    std::vector<size_t> wheelPrimes;
+    std::vector<BigInteger> wheelPrimes;
     for (const BigInteger& p : primes) {
-        wheelPrimes.push_back((size_t)p);
+        wheelPrimes.push_back(p);
         if (wheelPrimes.back() > 3) {
             output.push_back(wheel_inc(wheelPrimes, limit));
         }
@@ -343,7 +343,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 // Driver Code
 int main()
 {
-    BigInteger n = 10000000000; // 1e10
+    BigInteger n = 1000000000U; // 1e9
 
     std::cout << "Primes up to number: ";
     std::cin >> n;
@@ -351,7 +351,7 @@ int main()
     std::cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
     // const std::vector<BigInteger> primes = TrialDivision(n);
-    const std::vector<size_t> primes = SieveOfEratosthenes(n);
+    const std::vector<BigInteger> primes = SieveOfEratosthenes(n);
 
     for (BigInteger p : primes) {
         std::cout << p << " ";
