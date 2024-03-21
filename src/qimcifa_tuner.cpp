@@ -521,10 +521,10 @@ int main() {
         // Test
         const double time = mainCase(toFactor, i);
         const bitCapIntInput range = backward(sqrt(toFactor));
-#if USE_BOOST || USE_GMP
-        oSettingsFile << i << " " << range << " " << time << " " << (range.convert_to<double>() * (time / BASE_TRIALS)) << std::endl;
-#else
+#if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
         oSettingsFile << i << " " << range << " " << time << " " << (bi_to_double(range) * (time / BASE_TRIALS)) << std::endl;
+#else
+        oSettingsFile << i << " " << range << " " << time << " " << (range.convert_to<double>() * (time / BASE_TRIALS)) << std::endl;
 #endif
     }
     oSettingsFile.close();

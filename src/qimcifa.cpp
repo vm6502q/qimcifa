@@ -128,11 +128,7 @@ inline bitCapIntInput getNextBatch() {
     std::lock_guard<std::mutex> lock(batchMutex);
     bitCapIntInput result = batchNumber;
     if (batchNumber < batchBound) {
-#if USE_GMP || USE_BOOST
         ++batchNumber;
-#else
-        bi_increment(&batchNumber, 1U);
-#endif
     }
 
     return result;
@@ -201,11 +197,7 @@ template <typename bitCapInt> inline bool isPowerOfTwo(const bitCapInt& x)
 
 template <typename bitCapInt> inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
-#if USE_GMP || USE_BOOST
-    while (n2) {
-#else
-    if (bi_compare_0(n2) != 0) {
-#endif
+    while (n2 != 0) {
         const bitCapInt t = n1;
         n1 = n2;
         n2 = t % n2;
@@ -357,18 +349,10 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     // It's a binary search for floor(sqrt(toTest)).
 
     // If a^2 = 1 mod N, then b = 1.
-#if USE_GMP || USE_BOOST
     if (remainder > 1U) {
-#else
-    if (bi_compare_1(remainder) > 0) {
-#endif
         // Otherwise, find b = sqrt(b^2).
         bitCapInt start = 1U, ans = 0U;
-#if USE_GMP || USE_BOOST
         remainder >>= 1U;
-#else
-        bi_rshift_ip(&remainder, 1U);
-#endif
         do {
             const bitCapInt mid = (start + remainder) >> 1U;
 
@@ -399,21 +383,13 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     bitCapInt f1 = gcd(toTest + remainder, toFactor);
     bitCapInt f2 = gcd(toTest - remainder, toFactor);
     bitCapInt fmul = f1 * f2;
-#if USE_GMP || USE_BOOST
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
-#else
-    while ((bi_compare_1(fmul) > 0) && (bi_compare(fmul, toFactor) != 0) && (bi_compare_0(toFactor % fmul) == 0)) {
-#endif
         fmul = f1;
         f1 = f1 * f2;
         f2 = toFactor / (fmul * f2);
         fmul = f1 * f2;
     }
-#if USE_GMP || USE_BOOST
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
-#else
-    if ((bi_compare(fmul, toFactor) == 0) && (bi_compare_1(f1) > 0) && (bi_compare_1(f2) > 0)) {
-#endif
         // Inform the other threads on this node that we've succeeded and are done:
         printSuccess<bitCapInt>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
         return true;
@@ -427,11 +403,7 @@ template <typename bitCapInt>
 inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
 #if IS_RSA_SEMIPRIME
-#if USE_GMP || USE_BOOST
     if ((toFactor % base) == 0U) {
-#else
-    if (bi_compare_0(toFactor % base) == 0U) {
-#endif
         finish();
         printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
         return true;
@@ -518,11 +490,7 @@ int mainBody(const bitCapInt& toFactor, const uint64_t& tdLevel, const std::vect
 
     for (uint64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
         const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-#if USE_GMP || USE_BOOST
         if ((toFactor % currentPrime) == 0) {
-#else
-        if (bi_compare_0(toFactor % currentPrime) == 0) {
-#endif
             std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
                       << std::endl;
             return 0;
@@ -680,13 +648,8 @@ int main()
 
     uint32_t qubitCount = 0;
     bitCapIntInput p = toFactor >> 1U;
-#if USE_GMP || USE_BOOST
-    while (p) {
+    while (p != 0) {
         p >>= 1U;
-#else
-    while (bi_compare_0(p)) {
-        bi_rshift_ip(&p, 1U);
-#endif
         ++qubitCount;
     }
     if (!isPowerOfTwo(toFactor)) {
