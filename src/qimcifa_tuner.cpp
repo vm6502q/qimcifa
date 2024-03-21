@@ -56,22 +56,24 @@ constexpr int BASE_TRIALS = 1021020;
 constexpr int MIN_RTD_LEVEL = 2;
 
 #if USE_GMP
-typedef boost::multiprecision::mpz_int bitCapIntInput;
-#else
+typedef boost::multiprecision::mpz_int BigIntegerInput;
+#elif USE_BOOST
 typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
     boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-    bitCapIntInput;
+    BigIntegerInput;
+#else
+typedef BigInteger BigIntegerInput;
 #endif
 
-template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
+template <typename BigInteger> inline BigInteger sqrt(const BigInteger& toTest)
 {
     // Otherwise, find b = sqrt(b^2).
-    bitCapInt start = 1U, end = toTest >> 1U, ans = 0U;
+    BigInteger start = 1U, end = toTest >> 1U, ans = 0U;
     do {
-        const bitCapInt mid = (start + end) >> 1U;
+        const BigInteger mid = (start + end) >> 1U;
 
         // If toTest is a perfect square
-        const bitCapInt sqr = mid * mid;
+        const BigInteger sqr = mid * mid;
         if (sqr == toTest) {
             ans = mid;
             break;
@@ -90,9 +92,9 @@ template <typename bitCapInt> inline bitCapInt sqrt(const bitCapInt& toTest)
     return ans;
 }
 
-template <typename bitCapInt> inline uint64_t log2(bitCapInt n) {
+template <typename BigInteger> inline uint64_t log2(BigInteger n) {
     uint64_t pow = 0U;
-    bitCapInt p = n >> 1U;
+    BigInteger p = n >> 1U;
     while (p) {
         p >>= 1U;
         ++pow;
@@ -100,16 +102,16 @@ template <typename bitCapInt> inline uint64_t log2(bitCapInt n) {
     return pow;
 }
 
-template <typename bitCapInt> inline bool isPowerOfTwo(const bitCapInt& x)
+template <typename BigInteger> inline bool isPowerOfTwo(const BigInteger& x)
 {
     // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
     return (x && !(x & (x - 1ULL)));
 }
 
-template <typename bitCapInt> inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
+template <typename BigInteger> inline BigInteger gcd(BigInteger n1, BigInteger n2)
 {
     while (n2) {
-        const bitCapInt t = n1;
+        const BigInteger t = n1;
         n1 = n2;
         n2 = t % n2;
     }
@@ -117,8 +119,8 @@ template <typename bitCapInt> inline bitCapInt gcd(bitCapInt n1, bitCapInt n2)
     return n1;
 }
 
-template <typename bitCapInt>
-void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toFactor, const std::string& message,
+template <typename BigInteger>
+void printSuccess(const BigInteger& f1, const BigInteger& f2, const BigInteger& toFactor, const std::string& message,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     std::cout << message << f1 << " * " << f2 << " = " << toFactor << std::endl;
@@ -205,8 +207,8 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
 }
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-template <typename bitCapInt>
-inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt& toTest)
+template <typename BigInteger>
+inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest)
 {
     // The basic idea is "congruence of squares":
     // a^2 = b^2 mod N
@@ -214,15 +216,15 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     // then we can immediately find a factor.
 
     // Consider a to be equal to "toTest."
-    const bitCapInt bSqr = (toTest * toTest) % toFactor;
-    const bitCapInt b = sqrt(bSqr);
+    const BigInteger bSqr = (toTest * toTest) % toFactor;
+    const BigInteger b = sqrt(bSqr);
     if ((b * b) != bSqr) {
         return false;
     }
 
-    bitCapInt f1 = gcd(toTest + b, toFactor);
-    bitCapInt f2 = gcd(toTest - b, toFactor);
-    bitCapInt fmul = f1 * f2;
+    BigInteger f1 = gcd(toTest + b, toFactor);
+    BigInteger f2 = gcd(toTest - b, toFactor);
+    BigInteger fmul = f1 * f2;
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
         fmul = f1;
         f1 = f1 * f2;
@@ -231,7 +233,7 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     }
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
         // Inform the other threads on this node that we've succeeded and are done:
-        // printSuccess<bitCapInt>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
+        // printSuccess<BigInteger>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
         return true;
     }
 
@@ -239,25 +241,25 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
 }
 #endif
 
-template <typename bitCapInt>
-inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base) {
+template <typename BigInteger>
+inline bool singleWordLoopBody(const BigInteger& toFactor, const BigInteger& base) {
 #if IS_RSA_SEMIPRIME
     if ((toFactor % base) == 0U) {
         // finish();
-        // printSuccess<bitCapInt>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
+        // printSuccess<BigInteger>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
         // return true;
     }
 #else
-    bitCapInt n = gcd(base, toFactor);
+    BigInteger n = gcd(base, toFactor);
     if (n != 1U) {
         // finish();
-        // printSuccess<bitCapInt>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
+        // printSuccess<BigInteger>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
         // return true;
     }
 #endif
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-    if (checkCongruenceOfSquares<bitCapInt>(toFactor, base)) {
+    if (checkCongruenceOfSquares<BigInteger>(toFactor, base)) {
         // finish();
         // return true;
     }
@@ -267,16 +269,16 @@ inline bool singleWordLoopBody(const bitCapInt& toFactor, const bitCapInt& base)
 }
 
 #if IS_RANDOM
-template <typename bitCapInt>
-double singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const bitCapInt& threadMin, boost::random::mt19937_64& rng)
+template <typename BigInteger>
+double singleWordLoop(const BigInteger& toFactor, const BigInteger& range, const BigInteger& threadMin, boost::random::mt19937_64& rng)
 {
-    boost::random::uniform_int_distribution<bitCapInt> rngDist(threadMin, threadMin + range - 1U);
+    boost::random::uniform_int_distribution<BigInteger> rngDist(threadMin, threadMin + range - 1U);
     auto iterClock = std::chrono::high_resolution_clock::now();
 
     // for (;;) {
         for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
             // Choose a base at random, >1 and <toFactor.
-            bitCapInt base = forward(rngDist(rng));
+            BigInteger base = forward(rngDist(rng));
 
             if (singleWordLoopBody(toFactor, base)) {
                 // return true;
@@ -291,12 +293,12 @@ double singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9;
 }
 #else
-template <typename bitCapInt>
-double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const bitCapInt& offset)
+template <typename BigInteger>
+double singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
-    for (bitCapInt batchNum = 0; batchNum < 10; ++batchNum) {
-        const bitCapInt batchStart = batchNum * BASE_TRIALS + offset;
+    for (BigInteger batchNum = 0; batchNum < 10; ++batchNum) {
+        const BigInteger batchStart = batchNum * BASE_TRIALS + offset;
         for (int batchItem = 0U; batchItem < BASE_TRIALS;) {
             batchItem += GetWheelIncrement(inc_seqs);
             if (singleWordLoopBody(toFactor, forward(batchStart + batchItem))) {
@@ -309,17 +311,17 @@ double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bits
 }
 #endif
 
-template <typename bitCapInt>
-double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
+template <typename BigInteger>
+double mainBody(const BigInteger& toFactor, const int64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
 {
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the squatdLevel + 1Ure root, or in a pair where one is higher and one lower than the square root.
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-    const bitCapInt fullMaxBase = backward(sqrt<bitCapInt>(toFactor));
-    const bitCapInt offset = (fullMaxBase / BASE_TRIALS) * BASE_TRIALS + 2U;
+    const BigInteger fullMaxBase = backward(sqrt<BigInteger>(toFactor));
+    const BigInteger offset = (fullMaxBase / BASE_TRIALS) * BASE_TRIALS + 2U;
 #else
-    const bitCapInt offset = 2U;
+    const BigInteger offset = 2U;
 #endif
 
 #if IS_RANDOM
@@ -327,28 +329,28 @@ double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::ve
     boost::random::mt19937_64 rng(seeder());
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-    const bitCapInt fullRange = backward(1U + toFactor - offset);
+    const BigInteger fullRange = backward(1U + toFactor - offset);
 #else
-    const bitCapInt fullMaxBase = backward(sqrt<bitCapInt>(toFactor));
-    const bitCapInt fullRange = backward(fullMaxBase - 1U);
+    const BigInteger fullMaxBase = backward(sqrt<BigInteger>(toFactor));
+    const BigInteger fullRange = backward(fullMaxBase - 1U);
 #endif
 
-    return singleWordLoop<bitCapInt>(toFactor, fullRange, offset, rng);
+    return singleWordLoop<BigInteger>(toFactor, fullRange, offset, rng);
 #else
-    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
+    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
 
-    return singleWordLoop<bitCapInt>(toFactor, inc_seqs, offset);
+    return singleWordLoop<BigInteger>(toFactor, inc_seqs, offset);
 #endif
 }
 } // namespace Qimcifa
 
 using namespace Qimcifa;
 
-double mainCase(bitCapIntInput toFactor, int tdLevel)
+double mainCase(BigIntegerInput toFactor, int tdLevel)
 {
     uint32_t qubitCount = 0;
-    bitCapIntInput p = toFactor;
+    BigIntegerInput p = toFactor;
     while (p) {
         p >>= 1U;
         ++qubitCount;
@@ -421,54 +423,54 @@ double mainCase(bitCapIntInput toFactor, int tdLevel)
     // }
 
     if (qubitCount < 64) {
-        typedef uint64_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+        typedef uint64_t BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
 #if USE_GMP
     } else {
-        return mainBody<bitCapIntInput>(toFactor, tdLevel, trialDivisionPrimes);
+        return mainBody<BigIntegerInput>(toFactor, tdLevel, trialDivisionPrimes);
     }
 #else
     } else if (qubitCount < 128) {
-        typedef boost::multiprecision::uint128_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+        typedef boost::multiprecision::uint128_t BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+            BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+            BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+            BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+            BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     } else {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
+            BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     }
 #endif
 }
 
 int main() {
-    bitCapIntInput toFactor;
+    BigIntegerInput toFactor;
 
     std::cout << "The qimcifa_tuner number need not be the exact number that will be factored with qimcifa, but closer is better." << std::endl;
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
     uint32_t qubitCount = 0;
-    bitCapIntInput p = toFactor >> 1U;
+    BigIntegerInput p = toFactor >> 1U;
     while (p) {
         p >>= 1U;
         ++qubitCount;
@@ -488,7 +490,7 @@ int main() {
     for (size_t i = MIN_RTD_LEVEL; i < 8U; ++i) {
         // Test
         const double time = mainCase(toFactor, i);
-        const bitCapIntInput range = backward(sqrt(toFactor));
+        const BigIntegerInput range = backward(sqrt(toFactor));
 #if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
         oSettingsFile << i << " " << range << " " << time << " " << (bi_to_double(range) * (time / BASE_TRIALS)) << std::endl;
 #else
@@ -505,7 +507,7 @@ int main() {
     while (iSettingsFile.peek() != EOF)
     {
         size_t level;
-        bitCapIntInput cardinality;
+        BigIntegerInput cardinality;
         double batchTime, cost;
         iSettingsFile >> level;
         iSettingsFile >> cardinality;
