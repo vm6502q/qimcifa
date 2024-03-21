@@ -275,7 +275,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
-    std::vector<BigInteger> knownPrimes= { 2, 3, 5, 7, 11, 13, 17 };
+    std::vector<BigInteger> knownPrimes= { 2, 3, 5, 7, 11 };
     if (n < 2) {
         return std::vector<BigInteger>();
     }
