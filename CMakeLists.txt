@@ -8,7 +8,6 @@ option (IS_RSA_SEMIPRIME "Optimize for RSA semiprime numbers, only. (Might restr
 option (IS_PARALLEL "Enable parallelism within nodes." ON)
 option (IS_DISTRIBUTED "Enable node distribution configuration dialog." ON)
 option (IS_RANDOM "Enable 'quantum-inspired' randomness." OFF)
-option (IS_SQUARES_CONGRUENCE_CHECK "Optionally additionally check random number generator outputs for factoring via congruence of squares." OFF)
 option (USE_GMP "Use GMP library instead of Boost or pure language for arbitrary precision integers." OFF)
 option (USE_BOOST "Use Boost library instead of pure language for arbitrary precision integers." ON)
 set(BIG_INT_BITS "64" CACHE STRING "Change the maximum bit width of arbitrary precision 'big integers.'")

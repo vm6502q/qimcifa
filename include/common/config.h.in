@@ -10,7 +10,5 @@
 #cmakedefine USE_GMP 1
 // Use GMP arbitrary precision integers, (or use Boost alternative, if turned off).
 #cmakedefine USE_BOOST 1
-// Optionally additionally check random number generator outputs for factoring via congruence of squares.
-#cmakedefine IS_SQUARES_CONGRUENCE_CHECK 1
 // Bit width of (OpenCL) arbitrary precision "big integers"
 #cmakedefine BIG_INT_BITS @BIG_INT_BITS@

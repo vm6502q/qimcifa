@@ -139,6 +139,25 @@ inline BigIntegerInput getNextBatch() {
 
 #endif
 
+// See https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int
+template <typename BigInteger> BigInteger ipow(BigInteger base, unsigned exp)
+{
+    BigInteger result = 1U;
+    for (;;)
+    {
+        if (exp & 1U) {
+            result *= base;
+        }
+        exp >>= 1U;
+        if (!exp) {
+            break;
+        }
+        base *= base;
+    }
+
+    return result;
+}
+
 template <typename BigInteger> inline BigInteger sqrt(const BigInteger& toTest)
 {
     // Otherwise, find b = sqrt(b^2).
@@ -330,9 +349,8 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
     return wheelIncrement;
 }
 
-#if IS_SQUARES_CONGRUENCE_CHECK
 template <typename BigInteger>
-inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest,
+inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest, const BigInteger& radius,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     // The basic idea is "congruence of squares":
@@ -344,6 +362,10 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
     const BigInteger bSqr = (toTest * toTest) % toFactor;
     const BigInteger b = sqrt(bSqr);
     if ((b * b) != bSqr) {
+        if (bSqr > radius) {
+            return false;
+        }
+        std::cout << bSqr << std::endl;
         return false;
     }
 
@@ -364,10 +386,9 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
 
     return false;
 }
-#endif
 
 template <typename BigInteger>
-inline bool singleWordLoopBody(const BigInteger& toFactor, const BigInteger& base,
+inline bool singleWordLoopBody(const BigInteger& toFactor, const BigInteger& base, const BigInteger& radius,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
 #if IS_RSA_SEMIPRIME
     if ((toFactor % base) == 0U) {
@@ -384,12 +405,10 @@ inline bool singleWordLoopBody(const BigInteger& toFactor, const BigInteger& bas
     }
 #endif
 
-#if IS_SQUARES_CONGRUENCE_CHECK
-    if (checkCongruenceOfSquares<BigInteger>(toFactor, base, iterClock)) {
+    if (checkCongruenceOfSquares<BigInteger>(toFactor, base, radius, iterClock)) {
         finish();
         return true;
     }
-#endif
 
     return false;
 }
@@ -419,17 +438,13 @@ bool singleWordLoop(const BigInteger& toFactor, const BigInteger& range, const B
 #else
 template <typename BigInteger>
 bool singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+    const BigInteger& radius, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchBound; batchNum = (BigInteger)getNextBatch()) {
-#if IS_SQUARES_CONGRUENCE_CHECK
         const BigInteger batchStart = batchNum * BASE_TRIALS + offset;
-#else
-        const BigInteger batchStart = (BigInteger)((batchCount - (batchNum + 1U)) * BASE_TRIALS + offset);
-#endif
         for (int batchItem = 0U; batchItem < BASE_TRIALS;) {
             batchItem += GetWheelIncrement(inc_seqs);
-            if (singleWordLoopBody(toFactor, forward(batchStart + batchItem), iterClock)) {
+            if (singleWordLoopBody(toFactor, forward(batchStart + batchItem), radius, iterClock)) {
                 return true;
             }
         }
@@ -439,17 +454,13 @@ bool singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitse
 }
 #endif
 
-#if IS_PARALLEL
+#if IS_PARALLEL || IS_DISTRIBUTED
 template <typename BigInteger>
 int mainBody(const BigInteger& toFactor, const size_t& qubitCount, const size_t& nodeCount, const size_t& nodeId, const uint64_t& tdLevel,
     const std::vector<unsigned>& trialDivisionPrimes)
-#elif IS_DISTRIBUTED
-template <typename BigInteger>
-int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const size_t& nodeCount, const size_t& nodeId,
-    const std::vector<unsigned>& trialDivisionPrimes)
 #else
 template <typename BigInteger>
-int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
+int mainBody(const BigInteger& toFactor, const size_t& qubitCount, const uint64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
 #endif
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
@@ -469,19 +480,21 @@ int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vec
         ++primeIndex;
     }
 
-#if IS_SQUARES_CONGRUENCE_CHECK
     const BigInteger offset = (fullMaxBase / BASE_TRIALS) * BASE_TRIALS + 2U;
     const BigInteger fullRange = backward(1U + toFactor - offset);
-#else
-    const BigInteger offset = 2U;
-    const BigInteger fullRange = backward(fullMaxBase - 1U);
-#endif
 
 #if IS_RANDOM
     std::random_device seeder;
+    const BigInteger radius = (BigInteger)pow(36U, qubitCount / 10.0);
 #else
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
+
+    BigInteger radius = 1U;
+    for (size_t i = 0U; i < tdLevel; ++i) {
+        radius *= trialDivisionPrimes[i];
+    }
+    radius = (BigInteger)pow((uint64_t)radius, qubitCount / 10.0);
 #endif
 
 #if IS_PARALLEL
@@ -496,7 +509,7 @@ int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vec
         rngMutex.lock();
         boost::random::mt19937_64 rng(seeder());
         rngMutex.unlock();
-        singleWordLoop<BigInteger>(toFactor, threadRange, threadMin, iterClock, rng);
+        singleWordLoop<BigInteger>(toFactor, threadRange, threadMin, radius, iterClock, rng);
     };
 
     std::vector<std::future<void>> futures(cpuCount);
@@ -508,8 +521,8 @@ int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vec
     batchNumber = ((nodeId * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchBound = (((nodeId + 1) * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchCount = ((nodeCount * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
-    const auto workerFn = [toFactor, iterClock, qubitCount, &inc_seqs, &offset]() {
-        singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, iterClock);
+    const auto workerFn = [toFactor, iterClock, qubitCount, &inc_seqs, &offset, &radius]() {
+        singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, radius, iterClock);
     };
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
@@ -524,16 +537,16 @@ int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vec
     const BigInteger nodeMin = nodeRange * nodeId + offset;
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<BigInteger>(toFactor, nodeRange, nodeMin, iterClock, rng);
+    singleWordLoop<BigInteger>(toFactor, nodeRange, nodeMin, radius, iterClock, rng);
 #else
-    singleWordLoop<BigInteger>(toFactor, inc_seqs, iterClock);
+    singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, radius, iterClock);
 #endif
 #else
 #if IS_RANDOM
     boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<BigInteger>(toFactor, fullRange, offset, iterClock, rng);
+    singleWordLoop<BigInteger>(toFactor, fullRange, offset, radius, iterClock, rng);
 #else
-    singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, iterClock);
+    singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, radius, iterClock);
 #endif
 #endif
 
@@ -670,7 +683,7 @@ int main()
     tdLevel = pickTrialDivisionLevel<BigIntegerInput>(tdLevel, nodeCount);
 #endif
 
-#if IS_PARALLEL
+#if IS_PARALLEL || IS_DISTRIBUTED
 #if !(USE_GMP || USE_BOOST)
     typedef BigInteger BigInteger;
     return mainBody<BigInteger>((BigInteger)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
@@ -711,50 +724,6 @@ int main()
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
         return mainBody<BigInteger>((BigInteger)toFactor, qubitCount, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
-    }
-#endif
-#endif
-#elif IS_DISTRIBUTED
-#if !(USE_GMP || USE_BOOST)
-    typedef BigInteger BigInteger;
-    return mainBody<BigInteger>((BigInteger)toFactor, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
-#else
-    if (qubitCount < 64) {
-        typedef uint64_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
-#if USE_GMP
-    } else {
-        return mainBody<BigIntegerInput>(toFactor, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
-    }
-#elif USE_BOOST
-    } else if (qubitCount < 128) {
-        typedef boost::multiprecision::uint128_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 192) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 256) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 512) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 1024) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 2048) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, nodeCount, nodeId, tdLevel, trialDivisionPrimes);
     }
 #endif
 #endif
