@@ -343,18 +343,15 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     // then we can immediately find a factor.
 
     // Consider a^2 to be equal to "toTest."
-    const bitCapInt a = sqrt(toTest);
-    if ((a * a) != toTest) {
-        return false;
-    }
-    const bitCapInt bSqr = toTest % toFactor;
+    const bitCapInt aSqr = toTest * toTest;
+    const bitCapInt bSqr = aSqr % toFactor;
     const bitCapInt b = sqrt(bSqr);
     if ((b * b) != bSqr) {
         return false;
     }
 
-    bitCapInt f1 = gcd(a + b, toFactor);
-    bitCapInt f2 = gcd(a - b, toFactor);
+    bitCapInt f1 = gcd(toTest + b, toFactor);
+    bitCapInt f2 = gcd(toTest - b, toFactor);
     bitCapInt fmul = f1 * f2;
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
         fmul = f1;
