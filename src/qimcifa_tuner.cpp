@@ -130,7 +130,7 @@ void printSuccess(const bitCapInt& f1, const bitCapInt& f2, const bitCapInt& toF
 }
 
 template <typename BigInteger> inline BigInteger backward(BigInteger n) {
-    return (~((~n) | 1U)) / 3U;
+    return ((~((~n) | 1U)) / 3U) + 1U;
 }
 
 template <typename BigInteger> inline BigInteger forward(BigInteger p) {
@@ -147,24 +147,26 @@ template <typename BigInteger> bool isMultiple(const BigInteger& p, const std::v
     return false;
 }
 
-template <typename BigInteger> boost::dynamic_bitset<uint64_t> wheel_inc(std::vector<BigInteger> primes) {
+template <typename BigInteger>
+boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes, BigInteger limit) {
     BigInteger radius = 1U;
     for (const BigInteger& i : primes) {
         radius *= i;
     }
+    if (limit < radius) {
+        radius = limit;
+    }
     const BigInteger prime = primes.back();
     primes.pop_back();
     std::vector<bool> o;
-    size_t count = 0;
-    for (size_t i = 1U; i < radius; ++i) {
-        if (!isMultiple((BigInteger)i, primes)) {
+    for (BigInteger i = 1U; i <= radius; ++i) {
+        if (!isMultiple(i, primes)) {
             o.push_back((i % prime) == 0);
-            ++count;
         }
     }
 
-    boost::dynamic_bitset<uint64_t> output(count);
-    for (size_t i = 0U; i < count; ++i) {
+    boost::dynamic_bitset<size_t> output(o.size());
+    for (size_t i = 0U; i < o.size(); ++i) {
         output[i] = o[i];
     }
     output >>= 1U;
@@ -172,16 +174,29 @@ template <typename BigInteger> boost::dynamic_bitset<uint64_t> wheel_inc(std::ve
     return output;
 }
 
-template <typename BigInteger> std::vector<boost::dynamic_bitset<uint64_t>> wheel_gen(const std::vector<BigInteger>& primes) {
-    std::vector<boost::dynamic_bitset<uint64_t>> output;
+template <typename BigInteger>
+std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigInteger>& primes, BigInteger limit) {
+    std::vector<boost::dynamic_bitset<size_t>> output;
     std::vector<BigInteger> wheelPrimes;
     for (const BigInteger& p : primes) {
         wheelPrimes.push_back(p);
-        if (wheelPrimes.back() > 3) {
-            output.push_back(wheel_inc(wheelPrimes));
-        }
+        output.push_back(wheel_inc(wheelPrimes, limit));
     }
     return output;
+}
+
+inline bool isWheelMultiple(std::vector<boost::dynamic_bitset<size_t>>& inc_seqs) {
+    for (size_t i = 0; i < inc_seqs.size(); ++i) {
+        boost::dynamic_bitset<size_t>& wheel = inc_seqs[i];
+        const bool is_wheel_multiple = wheel.test(0U);
+        wheel >>= 1U;
+        if (is_wheel_multiple) {
+            wheel[wheel.size() - 1U] = true;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 #if IS_SQUARES_CONGRUENCE_CHECK
@@ -305,57 +320,28 @@ double singleWordLoop(const bitCapInt& toFactor, const bitCapInt& range, const b
 }
 #else
 template <typename bitCapInt>
-// double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs)
-double singleWordLoop(const bitCapInt& toFactor)
+double singleWordLoop(const bitCapInt& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs)
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
     // for (bitCapInt batchNum = (bitCapInt)getNextBatch(); batchNum < batchBound; batchNum = (bitCapInt)getNextBatch()) {
         const bitCapInt batchStart = 2U;
         for (int batchGroup = 0U; batchGroup < BASE_TRIALS; batchGroup+=10) {
             for (int lcv5 = 1; lcv5 < 7; ++lcv5) {
-                bitCapInt o = batchStart + batchGroup + lcv5;
-
-#if 0
-                bool is_wheel_multiple = false;
-                for (size_t i = 0; i < inc_seqs.size(); ++i) {
-                    boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
-                    is_wheel_multiple = wheel[0U];
-                    wheel >>= 1U;
-                    if (is_wheel_multiple) {
-                        wheel[wheel.size() - 1U] = true;
-                        break;
-                    }
-                }
-                if (is_wheel_multiple) {
+                if (isWheelMultiple(inc_seqs)) {
                     continue;
                 }
-#endif
 
-                if (singleWordLoopBody(toFactor, forward(o))) {
-                    // return true;
+                if (singleWordLoopBody(toFactor, forward(batchStart + batchGroup + lcv5))) {
+                    return true;
                 }
             }
             for (int lcv5 = 8; lcv5 < 10; ++lcv5) {
-                bitCapInt o = batchStart + batchGroup + lcv5;
-
-#if 0
-                bool is_wheel_multiple = false;
-                for (size_t i = 0; i < inc_seqs.size(); ++i) {
-                    boost::dynamic_bitset<uint64_t>& wheel = inc_seqs[i];
-                    is_wheel_multiple = wheel[0U];
-                    wheel >>= 1U;
-                    if (is_wheel_multiple) {
-                        wheel[wheel.size() - 1U] = true;
-                        break;
-                    }
-                }
-                if (is_wheel_multiple) {
+                if (isWheelMultiple(inc_seqs)) {
                     continue;
                 }
-#endif
 
-                if (singleWordLoopBody(toFactor, forward(o))) {
-                    // return true;
+                if (singleWordLoopBody(toFactor, forward(batchStart + batchGroup + lcv5))) {
+                    return true;
                 }
             }
         }
@@ -366,8 +352,7 @@ double singleWordLoop(const bitCapInt& toFactor)
 #endif
 
 template <typename bitCapInt>
-// double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
-double mainBody(const bitCapInt& toFactor)
+double mainBody(const bitCapInt& toFactor, const int64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
 {
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the squatdLevel + 1Ure root, or in a pair where one is higher and one lower than the square root.
@@ -378,18 +363,17 @@ double mainBody(const bitCapInt& toFactor)
 
     return singleWordLoop<bitCapInt>(toFactor, fullRange, (bitCapInt)2U, rng);
 #else
-    // std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel));
+    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<bitCapInt>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
+    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 3U);
 
-    // return singleWordLoop<bitCapInt>(toFactor, inc_seqs);
-    return singleWordLoop<bitCapInt>(toFactor);
+    return singleWordLoop<bitCapInt>(toFactor, inc_seqs);
 #endif
 }
 } // namespace Qimcifa
 
 using namespace Qimcifa;
 
-// double mainCase(bitCapIntInput toFactor, int tdLevel)
-double mainCase(bitCapIntInput toFactor)
+double mainCase(bitCapIntInput toFactor, int tdLevel)
 {
     uint32_t qubitCount = 0;
     bitCapIntInput p = toFactor;
@@ -404,7 +388,6 @@ double mainCase(bitCapIntInput toFactor)
     // First 1000 primes
     // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
-#if 0
     const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
@@ -459,7 +442,6 @@ double mainCase(bitCapIntInput toFactor)
         7481, 7487, 7489, 7499, 7507, 7517, 7523, 7529, 7537, 7541, 7547, 7549, 7559, 7561, 7573, 7577, 7583, 7589,
         7591, 7603, 7607, 7621, 7639, 7643, 7649, 7669, 7673, 7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741,
         7753, 7757, 7759, 7789, 7793, 7817, 7823, 7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919 };
-#endif
 
     // Print primes table by index:
     // for (size_t i = 0; i < trialDivisionPrimes.size(); ++i) {
@@ -468,40 +450,40 @@ double mainCase(bitCapIntInput toFactor)
 
     if (qubitCount < 64) {
         typedef uint64_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
 #if USE_GMP
     } else {
-        return mainBody<bitCapIntInput>(toFactor);
+        return mainBody<bitCapIntInput>(toFactor, tdLevel, trialDivisionPrimes);
     }
 #else
     } else if (qubitCount < 128) {
         typedef boost::multiprecision::uint128_t bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     } else {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             bitCapInt;
-        return mainBody<bitCapInt>((bitCapInt)toFactor);
+        return mainBody<bitCapInt>((bitCapInt)toFactor, tdLevel, trialDivisionPrimes);
     }
 #endif
 }
@@ -528,7 +510,6 @@ int main() {
     std::cout << "Total thread count (across all nodes): ";
     std::cin >> threadCount;
 
-#if 0
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     // "Warm-up"
@@ -565,16 +546,8 @@ int main() {
         }
     }
     iSettingsFile.close();
-#endif
-    const double time = mainCase(toFactor);
-    const bitCapIntInput range = backward(sqrt(toFactor));
-#if USE_BOOST || USE_GMP
-    const double bestCost =  range.convert_to<double>() * (time / BASE_TRIALS);
-#else
-    const double bestCost = bi_to_double(range) * (time / BASE_TRIALS);
-#endif
 
-    // std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
+    std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
 #if IS_RANDOM
     std::cout << "Estimated average time to exit: " << (bestCost / threadCount) << " seconds" << std::endl;
 #else
