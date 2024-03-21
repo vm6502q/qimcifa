@@ -33,11 +33,6 @@
 
 #include <boost/dynamic_bitset.hpp>
 
-#if IS_RANDOM
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
-#endif
-
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
 #else
@@ -46,13 +41,9 @@
 
 namespace Qimcifa {
 
-#if IS_RANDOM
-constexpr int BASE_TRIALS = 1U << 20U;
-#else
 // Make this a multiple of 2, 3, 5, 7, 11, 13, and 17.
 // constexpr int BASE_TRIALS = 510510;
 constexpr int BASE_TRIALS = 1021020;
-#endif
 constexpr int MIN_RTD_LEVEL = 2;
 
 #if USE_GMP
@@ -287,31 +278,6 @@ inline bool singleWordLoopBody(const BigInteger& toFactor, const BigInteger& bas
     return false;
 }
 
-#if IS_RANDOM
-template <typename BigInteger>
-double singleWordLoop(const BigInteger& toFactor, const BigInteger& range, const BigInteger& threadMin, const BigInteger& radius, boost::random::mt19937_64& rng)
-{
-    boost::random::uniform_int_distribution<BigInteger> rngDist(threadMin, threadMin + range - 1U);
-    auto iterClock = std::chrono::high_resolution_clock::now();
-
-    // for (;;) {
-        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-            // Choose a base at random, >1 and <toFactor.
-            BigInteger base = forward(rngDist(rng));
-
-            if (singleWordLoopBody(toFactor, base, radius)) {
-                // return true;
-            }
-        }
-        // Check if finished, between batches.
-        // if (isFinished) {
-        //     return false;
-        // }
-    // }
-
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-9;
-}
-#else
 template <typename BigInteger>
 double singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset, const BigInteger& radius)
 {
@@ -328,7 +294,6 @@ double singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bit
 
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-10;
 }
-#endif
 
 template <typename BigInteger>
 double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
@@ -348,15 +313,6 @@ double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::
 #endif
     std::cout << exp << std::endl;
 
-#if IS_RANDOM
-    std::random_device seeder;
-    boost::random::mt19937_64 rng(seeder());
-
-    const BigInteger fullMaxBase = backward(sqrt<BigInteger>(toFactor));
-    const BigInteger fullRange = backward(fullMaxBase - 1U);
-
-    return singleWordLoop<BigInteger>(toFactor, fullRange, offset, pow(36U, exp / 10.0), rng);
-#else
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
 
@@ -367,7 +323,6 @@ double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::
     radius = (BigInteger)pow((uint64_t)radius, exp / 10.0);
 
     return singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, radius);
-#endif
 }
 } // namespace Qimcifa
 
@@ -548,11 +503,7 @@ int main() {
     iSettingsFile.close();
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-#if IS_RANDOM
-    std::cout << "Estimated average time to exit: " << (bestCost / threadCount) << " seconds" << std::endl;
-#else
     std::cout << "Estimated average time to exit: " << (bestCost / (2 * threadCount)) << " seconds" << std::endl;
-#endif
 
     return 0;
 }

@@ -73,11 +73,6 @@
 
 #include <boost/dynamic_bitset.hpp>
 
-#if IS_RANDOM
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
-#endif
-
 #if USE_GMP
 #include <boost/multiprecision/gmp.hpp>
 #elif USE_BOOST
@@ -88,13 +83,9 @@
 
 namespace Qimcifa {
 
-#if IS_RANDOM
-constexpr int BASE_TRIALS = 1U << 20U;
-#else
 // Make this a multiple of 2, 3, 5, 7, 11, 13, and 17.
 // constexpr int BASE_TRIALS = 510510;
 constexpr int BASE_TRIALS = 1021020;
-#endif
 constexpr int MIN_RTD_LEVEL = 2;
 
 #if USE_GMP
@@ -107,13 +98,6 @@ typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<409
 typedef BigInteger BigIntegerInput;
 #endif
 
-#if IS_RANDOM
-std::atomic<bool> isFinished;
-
-inline void finish() {
-    isFinished = true;
-}
-#else
 BigIntegerInput batchNumber;
 BigIntegerInput batchBound;
 BigIntegerInput batchCount;
@@ -133,7 +117,6 @@ inline BigIntegerInput getNextBatch() {
 
     return result;
 }
-#endif
 
 #if !(USE_GMP || USE_BOOST)
 
@@ -253,11 +236,7 @@ template <typename BigInteger> inline size_t pickTrialDivisionLevel(const int64_
 
     std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
     const unsigned cpuCount = std::thread::hardware_concurrency();
-#if IS_RANDOM
-    std::cout << "Estimated average time to exit: " << (bestCost / (cpuCount * nodeCount)) << " seconds" << std::endl;
-#else
     std::cout << "Estimated average time to exit: " << (bestCost / (2 * cpuCount * nodeCount)) << " seconds" << std::endl;
-#endif
 
     return bestLevel;
 }
@@ -413,29 +392,6 @@ inline bool singleWordLoopBody(const BigInteger& toFactor, const BigInteger& bas
     return false;
 }
 
-#if IS_RANDOM
-template <typename BigInteger>
-bool singleWordLoop(const BigInteger& toFactor, const BigInteger& range, const BigInteger& threadMin,
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
-    boost::random::mt19937_64& rng)
-{
-    boost::random::uniform_int_distribution<BigInteger> rngDist(threadMin, threadMin + range - 1U);
-    for (;;) {
-        for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
-            // Choose a base at random, >1 and <toFactor.
-            BigInteger base = forward(rngDist(rng));
-
-            if (singleWordLoopBody(toFactor, base, iterClock)) {
-                return true;
-            }
-        }
-        // Check if finished, between batches.
-        if (isFinished) {
-            return false;
-        }
-    }
-}
-#else
 template <typename BigInteger>
 bool singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
     const BigInteger& radius, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
@@ -452,7 +408,6 @@ bool singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitse
 
     return false;
 }
-#endif
 
 #if IS_PARALLEL || IS_DISTRIBUTED
 template <typename BigInteger>
@@ -491,10 +446,6 @@ int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vec
     const double exp = log2(toFactor);
 #endif
 
-#if IS_RANDOM
-    std::random_device seeder;
-    const BigInteger radius = (BigInteger)pow(36U, exp / 10.0);
-#else
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
 
@@ -503,29 +454,10 @@ int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vec
         radius *= trialDivisionPrimes[i];
     }
     radius = (BigInteger)pow((uint64_t)radius, exp / 10.0);
-#endif
 
 #if IS_PARALLEL
     const unsigned cpuCount = std::thread::hardware_concurrency();
     const BigInteger nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
-#if IS_RANDOM
-    const BigInteger threadRange = (nodeRange + cpuCount - 1U) / cpuCount;
-    const BigInteger nodeMin = nodeRange * nodeId;
-    std::mutex rngMutex;
-    const auto workerFn = [toFactor, iterClock, qubitCount, threadRange, &seeder, &rngMutex]
-        (BigInteger threadMin) {
-        rngMutex.lock();
-        boost::random::mt19937_64 rng(seeder());
-        rngMutex.unlock();
-        singleWordLoop<BigInteger>(toFactor, threadRange, threadMin, radius, iterClock, rng);
-    };
-
-    std::vector<std::future<void>> futures(cpuCount);
-    for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        const BigInteger threadMin = nodeMin + threadRange * cpu + offset;
-        futures[cpu] = std::async(std::launch::async, workerFn, threadMin);
-    }
-#else
     batchNumber = ((nodeId * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchBound = (((nodeId + 1) * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
     batchCount = ((nodeCount * nodeRange) + BASE_TRIALS - 1U) / BASE_TRIALS;
@@ -536,26 +468,15 @@ int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vec
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         futures[cpu] = std::async(std::launch::async, workerFn);
     }
-#endif
 
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         futures[cpu].get();
     }
 #elif IS_DISTRIBUTED
     const BigInteger nodeMin = nodeRange * nodeId + offset;
-#if IS_RANDOM
-    boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<BigInteger>(toFactor, nodeRange, nodeMin, radius, iterClock, rng);
+    singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, radius, iterClock);
 #else
     singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, radius, iterClock);
-#endif
-#else
-#if IS_RANDOM
-    boost::random::mt19937_64 rng(seeder());
-    singleWordLoop<BigInteger>(toFactor, fullRange, offset, radius, iterClock, rng);
-#else
-    singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, radius, iterClock);
-#endif
 #endif
 
     return 0;
@@ -566,10 +487,6 @@ using namespace Qimcifa;
 
 int main()
 {
-#if IS_RANDOM
-    isFinished = false;
-#endif
-
     // First 1000 primes
     // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
@@ -673,12 +590,6 @@ int main()
     }
 #endif
 
-#if IS_RANDOM
-    // Because removing multiples of 5 is based on skipping 1/5 of elements in sequence,
-    // we need to use the same range value as multiples of 2 and 3, but the tuner should
-    // estimate 4/5 the cardinality.
-    const int64_t tdLevel = 3;
-#else
     int64_t tdLevel = 3;
     std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of 7, or -1 for calibration file): ";
     std::cin >> tdLevel;
@@ -689,7 +600,6 @@ int main()
         tdLevel = 7;
     }
     tdLevel = pickTrialDivisionLevel<BigIntegerInput>(tdLevel, nodeCount);
-#endif
 
 #if IS_PARALLEL || IS_DISTRIBUTED
 #if !(USE_GMP || USE_BOOST)
