@@ -342,9 +342,8 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     // If we're lucky enough that the above is true, for a^2 = toTest and (b^2 mod N) = remainder,
     // then we can immediately find a factor.
 
-    // Consider a^2 to be equal to "toTest."
-    const bitCapInt aSqr = toTest * toTest;
-    const bitCapInt bSqr = aSqr % toFactor;
+    // Consider a to be equal to "toTest."
+    const bitCapInt bSqr = (toTest * toTest) % toFactor;
     const bitCapInt b = sqrt(bSqr);
     if ((b * b) != bSqr) {
         return false;
