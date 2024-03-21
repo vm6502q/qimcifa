@@ -460,7 +460,7 @@ int mainBody(const BigInteger& toFactor, const size_t& qubitCount, const size_t&
     const std::vector<unsigned>& trialDivisionPrimes)
 #else
 template <typename BigInteger>
-int mainBody(const BigInteger& toFactor, const size_t& qubitCount, const uint64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
+int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
 #endif
 {
     auto iterClock = std::chrono::high_resolution_clock::now();
@@ -483,9 +483,17 @@ int mainBody(const BigInteger& toFactor, const size_t& qubitCount, const uint64_
     const BigInteger offset = (fullMaxBase / BASE_TRIALS) * BASE_TRIALS + 2U;
     const BigInteger fullRange = backward(1U + toFactor - offset);
 
+#if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
+    const double exp = log2(bi_to_double(toFactor));
+#elif BIG_INTEGER_BITS > 64 && USE_BOOST || USE_GMP
+    const double exp = log2(toFactor.convert_to<double>());
+#else
+    const double exp = log2(toFactor);
+#endif
+
 #if IS_RANDOM
     std::random_device seeder;
-    const BigInteger radius = (BigInteger)pow(36U, qubitCount / 10.0);
+    const BigInteger radius = (BigInteger)pow(36U, exp / 10.0);
 #else
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
@@ -494,7 +502,7 @@ int mainBody(const BigInteger& toFactor, const size_t& qubitCount, const uint64_
     for (size_t i = 0U; i < tdLevel; ++i) {
         radius *= trialDivisionPrimes[i];
     }
-    radius = (BigInteger)pow((uint64_t)radius, qubitCount / 10.0);
+    radius = (BigInteger)pow((uint64_t)radius, exp / 10.0);
 #endif
 
 #if IS_PARALLEL

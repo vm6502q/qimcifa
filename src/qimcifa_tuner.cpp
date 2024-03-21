@@ -331,13 +331,22 @@ double singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bit
 #endif
 
 template <typename BigInteger>
-double mainBody(const BigInteger& toFactor, const uint64_t& qubitCount, const uint64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
+double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
 {
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the squatdLevel + 1Ure root, or in a pair where one is higher and one lower than the square root.
 
     const BigInteger fullMaxBase = backward(sqrt<BigInteger>(toFactor));
     const BigInteger offset = (fullMaxBase / BASE_TRIALS) * BASE_TRIALS + 2U;
+
+#if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
+    const double exp = log2(bi_to_double(toFactor));
+#elif BIG_INTEGER_BITS > 64 && USE_BOOST || USE_GMP
+    const double exp = log2(toFactor.convert_to<double>());
+#else
+    const double exp = log2(toFactor);
+#endif
+    std::cout << exp << std::endl;
 
 #if IS_RANDOM
     std::random_device seeder;
@@ -346,7 +355,7 @@ double mainBody(const BigInteger& toFactor, const uint64_t& qubitCount, const ui
     const BigInteger fullMaxBase = backward(sqrt<BigInteger>(toFactor));
     const BigInteger fullRange = backward(fullMaxBase - 1U);
 
-    return singleWordLoop<BigInteger>(toFactor, fullRange, offset, pow(36U, qubitCount / 10.0), rng);
+    return singleWordLoop<BigInteger>(toFactor, fullRange, offset, pow(36U, exp / 10.0), rng);
 #else
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
@@ -355,7 +364,7 @@ double mainBody(const BigInteger& toFactor, const uint64_t& qubitCount, const ui
     for (size_t i = 0U; i < tdLevel; ++i) {
         radius *= trialDivisionPrimes[i];
     }
-    radius = (BigInteger)pow((uint64_t)radius, qubitCount / 10.0);
+    radius = (BigInteger)pow((uint64_t)radius, exp / 10.0);
 
     return singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, radius);
 #endif
@@ -441,40 +450,40 @@ double mainCase(BigIntegerInput toFactor, int tdLevel)
 
     if (qubitCount < 64) {
         typedef uint64_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, qubitCount, tdLevel, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
 #if USE_GMP
     } else {
-        return mainBody<BigIntegerInput>(toFactor, qubitCount, tdLevel, trialDivisionPrimes);
+        return mainBody<BigIntegerInput>(toFactor, tdLevel, trialDivisionPrimes);
     }
 #else
     } else if (qubitCount < 128) {
         typedef boost::multiprecision::uint128_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, qubitCount, tdLevel, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, qubitCount, tdLevel, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, qubitCount, tdLevel, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, qubitCount, tdLevel, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     } else if (qubitCount < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, qubitCount, tdLevel, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     } else {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, qubitCount, tdLevel, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
     }
 #endif
 }
