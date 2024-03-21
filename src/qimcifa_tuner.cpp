@@ -218,19 +218,20 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
     if ((a * a) != toTest) {
         return false;
     }
-    bitCapInt remainder = toTest % toFactor;
+    const bitCapInt bSqr = toTest % toFactor;
+    bitCapInt b = bSqr;
 
     // The sqrt() algorithm is adapted from Gaurav Ahirwar's suggestion on
     // https://www.geeksforgeeks.org/square-root-of-an-integer/
     // It's a binary search for floor(sqrt(toTest)).
 
     // If a^2 = 1 mod N, then b = 1.
-    if (remainder > 1U) {
+    if (b > 1U) {
         // Otherwise, find b = sqrt(b^2).
         bitCapInt start = 1U, ans = 0U;
-        remainder >>= 1U;
+        b >>= 1U;
         do {
-            const bitCapInt mid = (start + remainder) >> 1U;
+            const bitCapInt mid = (start + b) >> 1U;
 
             // If toTest is a perfect square
             const bitCapInt sqr = mid * mid;
@@ -245,19 +246,17 @@ inline bool checkCongruenceOfSquares(const bitCapInt& toFactor, const bitCapInt&
                 ans = mid;
             } else {
                 // If mid*mid is greater than p
-                remainder = mid - 1U;
+                b = mid - 1U;
             }
-        } while (start <= remainder);
-        if (start > remainder) {
-            // Must be a perfect square.
-            return false;
-        }
-
-        remainder = ans;
+        } while (start <= b);
+        b = ans;
+    }
+    if ((b * b) != bSqr) {
+        return false;
     }
 
-    bitCapInt f1 = gcd(a + remainder, toFactor);
-    bitCapInt f2 = gcd(a - remainder, toFactor);
+    bitCapInt f1 = gcd(a + b, toFactor);
+    bitCapInt f2 = gcd(a - b, toFactor);
     bitCapInt fmul = f1 * f2;
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
         fmul = f1;
