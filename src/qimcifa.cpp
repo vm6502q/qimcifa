@@ -337,16 +337,19 @@ bool singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitse
     BigInteger lastFound = 0U;
     for (BigInteger batchItem = offset; batchItem < range;) {
         batchItem += GetWheelIncrement(inc_seqs);
+
         const Status status = singleWordLoopBody(toFactor, forward(batchItem), radius, iterClock);
+
         if (status == FINISHED) {
             return true;
         }
+
         if (status == FOUND) {
             lastFound = batchItem;
-            if (diffLimit == 0) {
-                diffLimit = lastFound;
+            if (diffLimit == 0U) {
+                diffLimit = lastFound - offset;
             }
-        } else if (diffLimit && ((batchItem - lastFound) > diffLimit)) {
+        } else if ((diffLimit > 0) && ((batchItem - lastFound) > diffLimit)) {
             return false;
         }
     }
