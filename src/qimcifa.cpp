@@ -229,9 +229,10 @@ int mainBody(const BigInteger& toFactor)
     radius = (BigInteger)pow((uint64_t)radius, exp / 32.0);
 #endif
 
-    const BigInteger nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
-    batchNumber = ((nodeId * nodeRange) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
-    batchBound = (((nodeId + 1) * nodeRange) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
+    const BigInteger nodeRange = (((fullRange + nodeCount - 1U) / nodeCount) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
+    batchNumber = nodeId * nodeRange;
+    batchBound = (nodeId + 1) * nodeRange;
+    batchCount = nodeCount * nodeRange;
 
     const auto workerFn = [toFactor, &inc_seqs, &offset, &iterClock] {
         std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs_clone;
