@@ -83,8 +83,7 @@
 namespace Qimcifa {
 
 // Make this a multiple of 2, 3, 5, 7, 11, 13, and 17.
-// constexpr int BIGGEST_WHEEL = 510510;
-constexpr int BIGGEST_WHEEL = 1021020;
+constexpr int BIGGEST_WHEEL = 510510;
 constexpr int MIN_RTD_LEVEL = 2;
 
 #if USE_GMP

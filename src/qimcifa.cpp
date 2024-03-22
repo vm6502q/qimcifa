@@ -161,7 +161,31 @@ int mainBody(const BigInteger& toFactor)
         std::cout << "Estimated average time to exit: " << (bestCost / (2 * cpuCount)) << " seconds" << std::endl;
     }
 
+    size_t nodeCount = 1U;
+    size_t nodeId = 0U;
+#if IS_DISTRIBUTED
+    std::cout << "You can split this work across nodes, without networking!" << std::endl;
+    do {
+        std::cout << "Number of nodes (>=1): ";
+        std::cin >> nodeCount;
+        if (!nodeCount) {
+            std::cout << "Invalid node count choice!" << std::endl;
+        }
+    } while (!nodeCount);
+    if (nodeCount > 1U) {
+        do {
+            std::cout << "Which node is this? (0-" << (nodeCount - 1U) << "): ";
+            std::cin >> nodeId;
+            if (nodeId >= nodeCount) {
+                std::cout << "Invalid node ID choice!" << std::endl;
+            }
+        } while (nodeId >= nodeCount);
+    }
+#endif
+
+    // Starting clock right after user input is finished
     auto iterClock = std::chrono::high_resolution_clock::now();
+
     const BigInteger fullMaxBase = sqrt<BigInteger>(toFactor);
     if (fullMaxBase * fullMaxBase == toFactor) {
         std::cout << "Number to factor is a perfect square: " << fullMaxBase << " * " << fullMaxBase << " = " << toFactor;
@@ -177,7 +201,6 @@ int mainBody(const BigInteger& toFactor)
         }
         ++primeIndex;
     }
-
 
 #if IS_SQUARES_CONGRUENCE_CHECK
     const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
@@ -206,30 +229,10 @@ int mainBody(const BigInteger& toFactor)
     radius = (BigInteger)pow((uint64_t)radius, exp / 32.0);
 #endif
 
-    size_t nodeCount = 1U;
-    size_t nodeId = 0U;
-#if IS_DISTRIBUTED
-    std::cout << "You can split this work across nodes, without networking!" << std::endl;
-    do {
-        std::cout << "Number of nodes (>=1): ";
-        std::cin >> nodeCount;
-        if (!nodeCount) {
-            std::cout << "Invalid node count choice!" << std::endl;
-        }
-    } while (!nodeCount);
-    if (nodeCount > 1U) {
-        do {
-            std::cout << "Which node is this? (0-" << (nodeCount - 1U) << "): ";
-            std::cin >> nodeId;
-            if (nodeId >= nodeCount) {
-                std::cout << "Invalid node ID choice!" << std::endl;
-            }
-        } while (nodeId >= nodeCount);
-    }
-#endif
     const BigInteger nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
     batchNumber = ((nodeId * nodeRange) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
     batchBound = (((nodeId + 1) * nodeRange) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
+
     const auto workerFn = [toFactor, &inc_seqs, &offset, &iterClock] {
         std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs_clone;
         inc_seqs_clone.reserve(inc_seqs.size());
@@ -238,11 +241,14 @@ int mainBody(const BigInteger& toFactor)
         }
         getSmoothNumbers(toFactor, inc_seqs_clone, offset, iterClock);
     };
+
     std::vector<std::future<void>> futures;
     futures.reserve(cpuCount);
+
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         futures.push_back(std::async(std::launch::async, workerFn));
     }
+
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         futures[cpu].get();
     }
