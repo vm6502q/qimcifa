@@ -89,7 +89,7 @@ constexpr int MIN_RTD_LEVEL = 2;
 #if USE_GMP
 typedef boost::multiprecision::mpz_int BigIntegerInput;
 #elif USE_BOOST
-typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
+typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<8192, 8192,
     boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
     BigIntegerInput;
 #else

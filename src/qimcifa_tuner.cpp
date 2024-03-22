@@ -205,13 +205,29 @@ double mainCase(BigIntegerInput toFactor, int tdLevel)
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
         return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
-    } else {
+    } else if (qubitCount < 2048) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+        return mainBody((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+    } else if (qubitCount < 4096) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            BigInteger;
+        return mainBody((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+    } else if (qubitCount < 8192) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<8192, 8192,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            BigInteger;
+        return mainBody((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+    }
+
+    if (qubitCount >= 8192) {
+        throw std::runtime_error("Number to factor exceeds 8192 templated max bit width!");
     }
 #endif
+
+    return -999.0;
 }
 
 int main() {

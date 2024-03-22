@@ -323,7 +323,18 @@ int main()
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
         return mainBody((BigInteger)toFactor);
+    } else if (qubitCount < 8192) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<8192, 8192,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            BigInteger;
+        return mainBody((BigInteger)toFactor);
+    }
+
+    if (qubitCount >= 8192) {
+        throw std::runtime_error("Number to factor exceeds 8192 templated max bit width!");
     }
 #endif
 #endif
+
+    return 0;
 }
