@@ -264,7 +264,7 @@ enum Status {
 
 template <typename BigInteger>
 inline Status checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest, const BigInteger& radius,
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock, std::vector<BigInteger>& smoothNumbers)
 {
     // The basic idea is "congruence of squares":
     // a^2 = b^2 mod N
@@ -278,7 +278,9 @@ inline Status checkCongruenceOfSquares(const BigInteger& toFactor, const BigInte
         if (bSqr > radius) {
             return FAILED;
         }
-        std::cout << bSqr << std::endl;
+
+        smoothNumbers.push_back(toTest);
+
         return FOUND;
     }
 
@@ -301,8 +303,8 @@ inline Status checkCongruenceOfSquares(const BigInteger& toFactor, const BigInte
 }
 
 template <typename BigInteger>
-inline Status singleWordLoopBody(const BigInteger& toFactor, const BigInteger& base, const BigInteger& radius,
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
+inline Status getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteger& base, const BigInteger& radius,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock, std::vector<BigInteger>& smoothNumbers) {
 #if IS_RSA_SEMIPRIME
     if ((toFactor % base) == 0U) {
         printSuccess<BigInteger>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
@@ -316,19 +318,20 @@ inline Status singleWordLoopBody(const BigInteger& toFactor, const BigInteger& b
     }
 #endif
 
-    return checkCongruenceOfSquares<BigInteger>(toFactor, base, radius, iterClock);
+    return checkCongruenceOfSquares<BigInteger>(toFactor, base, radius, iterClock, smoothNumbers);
 }
 
 template <typename BigInteger>
-bool singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
-    const BigInteger& range, const BigInteger& radius, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
+    const BigInteger& range, const BigInteger& radius, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
+    std::vector<BigInteger>& smoothNumbers)
 {
     BigInteger diffLimit = 0U;
     BigInteger lastFound = 0U;
     for (BigInteger batchItem = offset; batchItem < range;) {
         batchItem += GetWheelIncrement(inc_seqs);
 
-        const Status status = singleWordLoopBody(toFactor, forward(batchItem), radius, iterClock);
+        const Status status = getSmoothNumbersIteration(toFactor, forward(batchItem), radius, iterClock, smoothNumbers);
 
         if (status == FINISHED) {
             return true;
@@ -451,7 +454,14 @@ int mainBody(const BigInteger& toFactor)
     }
     radius = (BigInteger)pow((uint64_t)radius, exp / 28.0);
 
-    singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, fullRange, radius, iterClock);
+    std::vector<BigInteger> smoothNumbers;
+    if (getSmoothNumbers(toFactor, inc_seqs, offset, fullRange, radius, iterClock, smoothNumbers)) {
+        return 0;
+    }
+
+    for (const BigInteger& s : smoothNumbers) {
+        std::cout << s << std::endl;
+    }
 
     return 0;
 }
