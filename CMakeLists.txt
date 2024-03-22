@@ -40,6 +40,9 @@ if (USE_GMP OR USE_BOOST)
 add_executable (qimcifa
     src/qimcifa.cpp
     )
+add_executable (qimcifa_tuner
+    src/qimcifa_tuner.cpp
+    )
 add_executable (prime_generator
     src/prime_generator.cpp
     src/common/dispatchqueue.cpp
@@ -47,6 +50,10 @@ add_executable (prime_generator
 else (USE_GMP OR USE_BOOST)
 add_executable (qimcifa
     src/qimcifa.cpp
+    src/common/big_integer.cpp
+    )
+add_executable (qimcifa_tuner
+    src/qimcifa_tuner.cpp
     src/common/big_integer.cpp
     )
 add_executable (prime_generator

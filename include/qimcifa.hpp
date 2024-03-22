@@ -351,9 +351,11 @@ bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bit
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchCount; batchNum = (BigInteger)getNextBatch()) {
-        for (size_t batchItem = 0U; batchItem < BIGGEST_WHEEL;) {
-            batchItem += GetWheelIncrement(inc_seqs);
-            if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(batchItem), radius, iterClock)) {
+        const BigInteger batchStart = batchNum * BIGGEST_WHEEL + 2U;
+        const BigInteger batchEnd = (batchNum + 1U) * BIGGEST_WHEEL + 2U;
+        for (size_t p = batchStart; p < batchEnd;) {
+            p += GetWheelIncrement(inc_seqs);
+            if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(p), radius, iterClock)) {
                 return true;
             }
         }

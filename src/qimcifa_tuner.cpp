@@ -59,12 +59,63 @@
 namespace Qimcifa {
 
 template <typename BigInteger>
-int mainBody(const BigInteger& toFactor)
+double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vector<unsigned>& trialDivisionPrimes)
 {
+    // When we factor this number, we split it into two factors (which themselves may be composite).
+    // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
+
+#if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
+    const double exp = log2(bi_to_double(toFactor));
+#elif BIG_INTEGER_BITS > 64 && USE_BOOST || USE_GMP
+    const double exp = log2(toFactor.convert_to<double>());
+#else
+    const double exp = log2(toFactor);
+#endif
+    std::cout << exp << std::endl;
+
+    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
+    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
+
+    BigInteger radius = 1U;
+    for (size_t i = 0U; i < tdLevel; ++i) {
+        radius *= trialDivisionPrimes[i];
+    }
+    radius = (BigInteger)pow((uint64_t)radius, exp / 10.0);
+
+    std::vector<BigInteger> smoothNumbers;
+    auto iterClock = std::chrono::high_resolution_clock::now();
+#if IS_PARALLEL
+    batchNumber = 0U;
+    batchCount = 1U;
+    getSmoothNumbers(toFactor, inc_seqs, radius, iterClock);
+#else
+    const BigInteger fullMaxBase = backward(sqrt<BigInteger>(toFactor));
+    const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
+    getSmoothNumbers(toFactor, inc_seqs, offset, radius, BIGGEST_WHEEL, iterClock);
+#endif
+
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-10;
+}
+} // namespace Qimcifa
+
+using namespace Qimcifa;
+
+double mainCase(BigIntegerInput toFactor, int tdLevel)
+{
+    uint32_t qubitCount = 0;
+    BigIntegerInput p = toFactor;
+    while (p) {
+        p >>= 1U;
+        ++qubitCount;
+    }
+    if (!isPowerOfTwo(toFactor)) {
+        qubitCount++;
+    }
+
     // First 1000 primes
     // (Only 100 included in program)
     // Source: https://gist.github.com/cblanc/46ebbba6f42f61e60666#file-gistfile1-txt
-    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+    const std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
         61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
         181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
         311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439,
@@ -124,120 +175,56 @@ int mainBody(const BigInteger& toFactor)
     //     std::cout << i << ": " << trialDivisionPrimes[i] << ", ";
     // }
 
-#if IS_PARALLEL
-    const unsigned cpuCount = std::thread::hardware_concurrency();
-#else
-    const unsigned cpuCount = 1U;
-#endif
-
-    int64_t tdLevel = 7;
-    std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of 7, or -1 for calibration file): ";
-    std::cin >> tdLevel;
-    if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
-        tdLevel = MIN_RTD_LEVEL;
-    }
-    if (tdLevel > 7) {
-        tdLevel = 7;
-    }
-    if (tdLevel < 0) {
-        std::ifstream settingsFile ("qimcifa_calibration.ssv");
-        std::string header;
-        std::getline(settingsFile, header);
-        size_t bestLevel = MIN_RTD_LEVEL;
-        double bestCost = DBL_MAX;
-        while (settingsFile.peek() != EOF)
-        {
-            size_t level;
-            BigInteger cardinality;
-            double batchTime, cost;
-            settingsFile >> level;
-            settingsFile >> cardinality;
-            settingsFile >> batchTime;
-            settingsFile >> cost;
-
-            if ((level >= MIN_RTD_LEVEL) && (cost < bestCost)) {
-                tdLevel = level;
-                bestCost = cost;
-            }
-        }
-        settingsFile.close();
-
-        std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
-        std::cout << "Estimated average time to exit: " << (bestCost / (2 * cpuCount)) << " seconds" << std::endl;
-    }
-
-    auto iterClock = std::chrono::high_resolution_clock::now();
-    const BigInteger fullMaxBase = sqrt<BigInteger>(toFactor);
-    if (fullMaxBase * fullMaxBase == toFactor) {
-        std::cout << "Number to factor is a perfect square: " << fullMaxBase << " * " << fullMaxBase << " = " << toFactor;
-        return 0;
-    }
-
-    for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
-        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        if ((toFactor % currentPrime) == 0) {
-            std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
-                      << std::endl;
-            return 0;
-        }
-        ++primeIndex;
-    }
-
-    const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
-    const BigInteger fullRange = backward(1U + toFactor - offset);
-
-    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
-    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
-
-#if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
-    const double exp = log2(bi_to_double(toFactor));
-#elif BIG_INTEGER_BITS > 64 && USE_BOOST || USE_GMP
-    const double exp = log2(toFactor.convert_to<double>());
-#else
-    const double exp = log2(toFactor);
-#endif
-
-    BigInteger radius = 1U;
-    for (int64_t i = 0U; i < tdLevel; ++i) {
-        radius *= trialDivisionPrimes[i];
-    }
-    radius = (BigInteger)pow((uint64_t)radius, exp / 32.0);
-
-#if IS_PARALLEL
-    const BigInteger threadRange = ((((fullRange + cpuCount - 1U) / cpuCount) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL) * BIGGEST_WHEEL;
-    batchNumber = 0U;
-    batchCount = (cpuCount * threadRange) / BIGGEST_WHEEL;
-    const auto workerFn = [toFactor, &inc_seqs, &radius, &iterClock] {
-        getSmoothNumbers(toFactor, inc_seqs, radius, iterClock);
-    };
-    std::vector<std::future<void>> futures(cpuCount);
-    for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        futures[cpu] = std::async(std::launch::async, workerFn);
-    }
-    for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        futures[cpu].get();
+    if (qubitCount < 64) {
+        typedef uint64_t BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+#if USE_GMP
+    } else {
+        return mainBody<BigIntegerInput>(toFactor, tdLevel, trialDivisionPrimes);
     }
 #else
-    std::vector<BigInteger> smoothNumbers;
-    getSmoothNumbers(toFactor, inc_seqs, offset, radius, fullRange, iterClock);
+    } else if (qubitCount < 128) {
+        typedef boost::multiprecision::uint128_t BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+    } else if (qubitCount < 192) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+    } else if (qubitCount < 256) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+    } else if (qubitCount < 512) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+    } else if (qubitCount < 1024) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+    } else {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            BigInteger;
+        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
+    }
 #endif
-
-    return 0;
 }
-} // namespace Qimcifa
 
-using namespace Qimcifa;
-
-int main()
-{
+int main() {
     BigIntegerInput toFactor;
 
+    std::cout << "The qimcifa_tuner number need not be the exact number that will be factored with qimcifa, but closer is better." << std::endl;
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
     uint32_t qubitCount = 0;
     BigIntegerInput p = toFactor >> 1U;
-    while (p != 0) {
+    while (p) {
         p >>= 1U;
         ++qubitCount;
     }
@@ -246,52 +233,49 @@ int main()
     }
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
-#if !(USE_GMP || USE_BOOST)
-    typedef BigInteger BigInteger;
-    return mainBody<BigInteger>((BigInteger)toFactor);
+    size_t threadCount = 1;
+    std::cout << "Total thread count (across all nodes): ";
+    std::cin >> threadCount;
+
+    std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
+    oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
+    // "Warm-up"
+    for (size_t i = MIN_RTD_LEVEL; i < 8U; ++i) {
+        // Test
+        const double time = mainCase(toFactor, i);
+        const BigIntegerInput range = backward(sqrt(toFactor));
+#if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
+        oSettingsFile << i << " " << range << " " << time << " " << (bi_to_double(range) * (time / BIGGEST_WHEEL)) << std::endl;
 #else
-    if (qubitCount < 64) {
-        typedef uint64_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor);
-#if USE_GMP
-    } else {
-        return mainBody<BigIntegerInput>(toFactor);
-    }
-#elif USE_BOOST
-    } else if (qubitCount < 128) {
-        typedef boost::multiprecision::uint128_t BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 192) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 256) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 512) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 1024) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 2048) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 4096) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    }
+        oSettingsFile << i << " " << range << " " << time << " " << (range.convert_to<double>() * (time / BIGGEST_WHEEL)) << std::endl;
 #endif
-#endif
+    }
+    oSettingsFile.close();
+
+    std::ifstream iSettingsFile ("qimcifa_calibration.ssv");
+    std::string header;
+    std::getline(iSettingsFile, header);
+    size_t bestLevel = -1;
+    double bestCost = DBL_MAX;
+    while (iSettingsFile.peek() != EOF)
+    {
+        size_t level;
+        BigIntegerInput cardinality;
+        double batchTime, cost;
+        iSettingsFile >> level;
+        iSettingsFile >> cardinality;
+        iSettingsFile >> batchTime;
+        iSettingsFile >> cost;
+
+        if ((level >= MIN_RTD_LEVEL) && (cost < bestCost)) {
+            bestLevel = level;
+            bestCost = cost;
+        }
+    }
+    iSettingsFile.close();
+
+    std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
+    std::cout << "Estimated average time to exit: " << (bestCost / (2 * threadCount)) << " seconds" << std::endl;
+
+    return 0;
 }
