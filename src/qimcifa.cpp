@@ -453,7 +453,7 @@ int mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::vec
     for (size_t i = 0U; i < tdLevel; ++i) {
         radius *= trialDivisionPrimes[i];
     }
-    radius = (BigInteger)pow((uint64_t)radius, exp / 25.0);
+    radius = (BigInteger)pow((uint64_t)radius, exp / 28.0);
 
 #if IS_PARALLEL
     const unsigned cpuCount = std::thread::hardware_concurrency();
