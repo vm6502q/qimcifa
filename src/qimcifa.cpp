@@ -278,6 +278,10 @@ inline Status checkCongruenceOfSquares(const BigInteger& toFactor, const BigInte
         if (bSqr > radius) {
             return FAILED;
         }
+        const BigInteger aSqrt = sqrt(toTest);
+        if ((aSqrt * aSqrt) == toTest) {
+            return FAILED;
+        }
 
         smoothNumbers.push_back(toTest);
 
