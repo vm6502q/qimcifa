@@ -361,7 +361,7 @@ inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteg
 }
 
 template <typename BigInteger>
-bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
+bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>>& inc_seqs, const BigInteger& offset,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchBound; batchNum = (BigInteger)getNextBatch()) {
