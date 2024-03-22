@@ -82,16 +82,17 @@ double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::
     }
     radius = (BigInteger)pow((uint64_t)radius, exp / 10.0);
 
+    const BigInteger fullMaxBase = backward(sqrt<BigInteger>(toFactor));
+    const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
+
     std::vector<BigInteger> smoothNumbers;
     auto iterClock = std::chrono::high_resolution_clock::now();
 #if IS_PARALLEL
     batchNumber = 0U;
     batchCount = 1U;
-    getSmoothNumbers(toFactor, inc_seqs, radius, iterClock);
+    getSmoothNumbers(toFactor, inc_seqs, offset, radius, iterClock);
 #else
-    const BigInteger fullMaxBase = backward(sqrt<BigInteger>(toFactor));
-    const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
-    getSmoothNumbers(toFactor, inc_seqs, offset, radius, BIGGEST_WHEEL, iterClock);
+    getSmoothNumbers(toFactor, inc_seqs, offset, offset, radius, BIGGEST_WHEEL, iterClock);
 #endif
 
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-10;

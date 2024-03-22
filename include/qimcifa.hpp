@@ -347,12 +347,12 @@ inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteg
 
 #if IS_PARALLEL
 template <typename BigInteger>
-bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& radius,
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
+    const BigInteger& radius, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchCount; batchNum = (BigInteger)getNextBatch()) {
-        const BigInteger batchStart = batchNum * BIGGEST_WHEEL + 2U;
-        const BigInteger batchEnd = (batchNum + 1U) * BIGGEST_WHEEL + 2U;
+        const BigInteger batchStart = batchNum * BIGGEST_WHEEL + offset;
+        const BigInteger batchEnd = (batchNum + 1U) * BIGGEST_WHEEL + offset;
         for (size_t p = batchStart; p < batchEnd;) {
             p += GetWheelIncrement(inc_seqs);
             if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(p), radius, iterClock)) {

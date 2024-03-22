@@ -207,8 +207,8 @@ int mainBody(const BigInteger& toFactor)
     const BigInteger threadRange = ((((fullRange + cpuCount - 1U) / cpuCount) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL) * BIGGEST_WHEEL;
     batchNumber = 0U;
     batchCount = (cpuCount * threadRange) / BIGGEST_WHEEL;
-    const auto workerFn = [toFactor, &inc_seqs, &radius, &iterClock] {
-        getSmoothNumbers(toFactor, inc_seqs, radius, iterClock);
+    const auto workerFn = [toFactor, &inc_seqs, &radius, &offset, &iterClock] {
+        getSmoothNumbers(toFactor, inc_seqs, offset, radius, iterClock);
     };
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
