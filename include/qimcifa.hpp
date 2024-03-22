@@ -99,18 +99,18 @@ typedef BigInteger BigIntegerInput;
 
 #if IS_PARALLEL
 BigIntegerInput batchNumber;
-BigIntegerInput batchCount;
+BigIntegerInput batchBound;
 std::mutex batchMutex;
 
 inline void finish() {
     std::lock_guard<std::mutex> lock(batchMutex);
-    batchNumber = batchCount;
+    batchNumber = batchBound;
 }
 
 inline BigIntegerInput getNextBatch() {
     std::lock_guard<std::mutex> lock(batchMutex);
     BigIntegerInput result = batchNumber;
-    if (batchNumber < batchCount) {
+    if (batchNumber < batchBound) {
         ++batchNumber;
     }
 
@@ -289,8 +289,9 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
     return wheelIncrement;
 }
 
+#if IS_SQUARES_CONGRUENCE_CHECK
 template <typename BigInteger>
-inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest, const BigInteger& radius,
+inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     // The basic idea is "congruence of squares":
@@ -302,9 +303,6 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
     const BigInteger bSqr = (toTest * toTest) % toFactor;
     const BigInteger b = sqrt(bSqr);
     if ((b * b) != bSqr) {
-        if (bSqr < radius) {
-            std::cout << toTest << std::endl;
-        }
         return false;
     }
 
@@ -325,9 +323,10 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
 
     return false;
 }
+#endif
 
 template <typename BigInteger>
-inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteger& base, const BigInteger& radius,
+inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteger& base,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
 #if IS_RSA_SEMIPRIME
     if ((toFactor % base) == 0U) {
@@ -342,20 +341,24 @@ inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteg
     }
 #endif
 
-    return checkCongruenceOfSquares<BigInteger>(toFactor, base, radius, iterClock);
+#if IS_SQUARES_CONGRUENCE_CHECK
+    return checkCongruenceOfSquares<BigInteger>(toFactor, base, iterClock);
+#else
+    return false;
+#endif
 }
 
 #if IS_PARALLEL
 template <typename BigInteger>
 bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
-    const BigInteger& radius, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
-    for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchCount; batchNum = (BigInteger)getNextBatch()) {
+    for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchBound; batchNum = (BigInteger)getNextBatch()) {
         const BigInteger batchStart = batchNum * BIGGEST_WHEEL + offset;
         const BigInteger batchEnd = (batchNum + 1U) * BIGGEST_WHEEL + offset;
         for (size_t p = batchStart; p < batchEnd;) {
             p += GetWheelIncrement(inc_seqs);
-            if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(p), radius, iterClock)) {
+            if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(p), iterClock)) {
                 return true;
             }
         }
@@ -366,11 +369,11 @@ bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bit
 #else
 template <typename BigInteger>
 bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
-    const BigInteger& range, const BigInteger& radius, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+    const BigInteger& range, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (BigInteger batchItem = offset; batchItem < range;) {
         batchItem += GetWheelIncrement(inc_seqs);
-        if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(batchItem), radius, iterClock)) {
+        if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(batchItem), iterClock)) {
             return true;
         }
     }

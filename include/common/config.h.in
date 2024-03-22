@@ -2,9 +2,15 @@
 #cmakedefine IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across threads within this node.
 #cmakedefine IS_PARALLEL 1
+// Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
+#cmakedefine IS_DISTRIBUTED 1
+// Turn this off, if you don't want 'quantum-inspired' randomness.
+#cmakedefine IS_RANDOM 1
 // Use GMP arbitrary precision integers, (or use Boost alternative, if turned off).
 #cmakedefine USE_GMP 1
 // Use GMP arbitrary precision integers, (or use Boost alternative, if turned off).
 #cmakedefine USE_BOOST 1
+// Optionally additionally check random number generator outputs for factoring via congruence of squares.
+#cmakedefine IS_SQUARES_CONGRUENCE_CHECK 1
 // Bit width of (OpenCL) arbitrary precision "big integers"
 #cmakedefine BIG_INT_BITS @BIG_INT_BITS@

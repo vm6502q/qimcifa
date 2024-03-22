@@ -143,7 +143,6 @@ int mainBody(const BigInteger& toFactor)
         std::ifstream settingsFile ("qimcifa_calibration.ssv");
         std::string header;
         std::getline(settingsFile, header);
-        size_t bestLevel = MIN_RTD_LEVEL;
         double bestCost = DBL_MAX;
         while (settingsFile.peek() != EOF)
         {
@@ -162,7 +161,7 @@ int mainBody(const BigInteger& toFactor)
         }
         settingsFile.close();
 
-        std::cout << "Calibrated reverse trial division level: " << bestLevel << std::endl;
+        std::cout << "Calibrated reverse trial division level: " << tdLevel << std::endl;
         std::cout << "Estimated average time to exit: " << (bestCost / (2 * cpuCount)) << " seconds" << std::endl;
     }
 
@@ -183,12 +182,19 @@ int mainBody(const BigInteger& toFactor)
         ++primeIndex;
     }
 
+
+#if IS_SQUARES_CONGRUENCE_CHECK
     const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
     const BigInteger fullRange = backward(1U + toFactor - offset);
+#else
+    const BigInteger offset = 2U;
+    const BigInteger fullRange = backward(fullMaxBase - 1U);
+#endif
 
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
 
+#if 0
 #if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
     const double exp = log2(bi_to_double(toFactor));
 #elif BIG_INTEGER_BITS > 64 && USE_BOOST || USE_GMP
@@ -202,24 +208,55 @@ int mainBody(const BigInteger& toFactor)
         radius *= trialDivisionPrimes[i];
     }
     radius = (BigInteger)pow((uint64_t)radius, exp / 32.0);
+#endif
+
+    size_t nodeCount = 1U;
+#if IS_PARALLEL || IS_DISTRIBUTED
+    size_t nodeId = 0U;
+#endif
+#if IS_DISTRIBUTED
+    std::cout << "You can split this work across nodes, without networking!" << std::endl;
+    do {
+        std::cout << "Number of nodes (>=1): ";
+        std::cin >> nodeCount;
+        if (!nodeCount) {
+            std::cout << "Invalid node count choice!" << std::endl;
+        }
+    } while (!nodeCount);
+    if (nodeCount > 1U) {
+        do {
+            std::cout << "Which node is this? (0-" << (nodeCount - 1U) << "): ";
+            std::cin >> nodeId;
+            if (nodeId >= nodeCount) {
+                std::cout << "Invalid node ID choice!" << std::endl;
+            }
+        } while (nodeId >= nodeCount);
+    }
+#endif
+    const BigInteger nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
 
 #if IS_PARALLEL
-    const BigInteger threadRange = ((((fullRange + cpuCount - 1U) / cpuCount) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL) * BIGGEST_WHEEL;
-    batchNumber = 0U;
-    batchCount = (cpuCount * threadRange) / BIGGEST_WHEEL;
-    const auto workerFn = [toFactor, &inc_seqs, &radius, &offset, &iterClock] {
-        getSmoothNumbers(toFactor, inc_seqs, offset, radius, iterClock);
+    batchNumber = ((nodeId * nodeRange) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
+    batchBound = (((nodeId + 1) * nodeRange) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
+    const auto workerFn = [toFactor, &inc_seqs, &offset, &iterClock] {
+        std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs_clone;
+        inc_seqs_clone.reserve(inc_seqs.size());
+        for (const auto& b : inc_seqs) {
+            inc_seqs_clone.emplace_back(b);
+        }
+        getSmoothNumbers(toFactor, inc_seqs_clone, offset, iterClock);
     };
-    std::vector<std::future<void>> futures(cpuCount);
+    std::vector<std::future<void>> futures;
+    futures.reserve(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
-        futures[cpu] = std::async(std::launch::async, workerFn);
+        futures.push_back(std::async(std::launch::async, workerFn));
     }
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         futures[cpu].get();
     }
 #else
     std::vector<BigInteger> smoothNumbers;
-    getSmoothNumbers(toFactor, inc_seqs, offset, radius, fullRange, iterClock);
+    getSmoothNumbers(toFactor, inc_seqs, offset, nodeRange, iterClock);
 #endif
 
     return 0;

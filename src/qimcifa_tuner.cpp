@@ -64,6 +64,10 @@ double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::
     // When we factor this number, we split it into two factors (which themselves may be composite).
     // Those two numbers are either equal to the square root, or in a pair where one is higher and one lower than the square root.
 
+    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
+    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
+
+#if 0
 #if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
     const double exp = log2(bi_to_double(toFactor));
 #elif BIG_INTEGER_BITS > 64 && USE_BOOST || USE_GMP
@@ -73,14 +77,12 @@ double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::
 #endif
     std::cout << exp << std::endl;
 
-    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
-    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
-
     BigInteger radius = 1U;
     for (size_t i = 0U; i < tdLevel; ++i) {
         radius *= trialDivisionPrimes[i];
     }
     radius = (BigInteger)pow((uint64_t)radius, exp / 10.0);
+#endif
 
     const BigInteger fullMaxBase = backward(sqrt<BigInteger>(toFactor));
     const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
@@ -89,10 +91,10 @@ double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::
     auto iterClock = std::chrono::high_resolution_clock::now();
 #if IS_PARALLEL
     batchNumber = 0U;
-    batchCount = 1U;
-    getSmoothNumbers(toFactor, inc_seqs, offset, radius, iterClock);
+    batchBound = 1U;
+    getSmoothNumbers(toFactor, inc_seqs, offset, iterClock);
 #else
-    getSmoothNumbers(toFactor, inc_seqs, offset, offset, radius, BIGGEST_WHEEL, iterClock);
+    getSmoothNumbers(toFactor, inc_seqs, offset, offset, BIGGEST_WHEEL, iterClock);
 #endif
 
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-10;
