@@ -266,8 +266,14 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
     return wheelIncrement;
 }
 
+enum Status {
+    FAILED = 0U,
+    FOUND = 1U,
+    FINISHED = 2U
+};
+
 template <typename BigInteger>
-inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest, const BigInteger& radius,
+inline Status checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest, const BigInteger& radius,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     // The basic idea is "congruence of squares":
@@ -280,10 +286,10 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
     const BigInteger b = sqrt(bSqr);
     if ((b * b) != bSqr) {
         if (bSqr > radius) {
-            return false;
+            return FAILED;
         }
         std::cout << bSqr << std::endl;
-        return false;
+        return FOUND;
     }
 
     BigInteger f1 = gcd(toTest + b, toFactor);
@@ -298,43 +304,50 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
         // Inform the other threads on this node that we've succeeded and are done:
         printSuccess<BigInteger>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
-        return true;
+        return FINISHED;
     }
 
-    return false;
+    return FAILED;
 }
 
 template <typename BigInteger>
-inline bool singleWordLoopBody(const BigInteger& toFactor, const BigInteger& base, const BigInteger& radius,
+inline Status singleWordLoopBody(const BigInteger& toFactor, const BigInteger& base, const BigInteger& radius,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
 #if IS_RSA_SEMIPRIME
     if ((toFactor % base) == 0U) {
         printSuccess<BigInteger>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
-        return true;
+        return FINISHED;
     }
 #else
     BigInteger n = gcd(base, toFactor);
     if (n != 1U) {
         printSuccess<BigInteger>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
-        return true;
+        return FINISHED;
     }
 #endif
 
-    if (checkCongruenceOfSquares<BigInteger>(toFactor, base, radius, iterClock)) {
-        return true;
-    }
-
-    return false;
+    return checkCongruenceOfSquares<BigInteger>(toFactor, base, radius, iterClock);
 }
 
 template <typename BigInteger>
 bool singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
     const BigInteger& range, const BigInteger& radius, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
+    BigInteger diffLimit = 0U;
+    BigInteger lastFound = 0U;
     for (BigInteger batchItem = offset; batchItem < range;) {
         batchItem += GetWheelIncrement(inc_seqs);
-        if (singleWordLoopBody(toFactor, forward(batchItem), radius, iterClock)) {
+        const Status status = singleWordLoopBody(toFactor, forward(batchItem), radius, iterClock);
+        if (status == FINISHED) {
             return true;
+        }
+        if (status == FOUND) {
+            lastFound = batchItem;
+            if (diffLimit == 0) {
+                diffLimit = lastFound;
+            }
+        } else if (diffLimit && ((batchItem - lastFound) > diffLimit)) {
+            return false;
         }
     }
 
