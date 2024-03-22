@@ -183,7 +183,7 @@ int mainBody(const BigInteger& toFactor)
     const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
     const BigInteger fullRange = backward(1U + toFactor - offset);
 #else
-    const BigInteger offset = 2U;
+    const BigInteger offset = 1U;
     const BigInteger fullRange = backward(fullMaxBase - 1U);
 #endif
 
