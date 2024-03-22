@@ -5,7 +5,6 @@ project (qimcifa VERSION 0.1.0 DESCRIPTION "Quantum-inspired Monte Carlo integer
 include (GNUInstallDirs)
 
 option (IS_RSA_SEMIPRIME "Optimize for RSA semiprime numbers, only. (Might restrict bounds too far on certain RSA semiprimes.)" ON)
-option (IS_PARALLEL "Enable parallelism within nodes." ON)
 option (IS_DISTRIBUTED "Enable node distribution configuration dialog." ON)
 option (IS_SQUARES_CONGRUENCE_CHECK "Optionally additionally check random number generator outputs for factoring via congruence of squares." OFF)
 option (USE_GMP "Use GMP library instead of Boost or pure language for arbitrary precision integers." OFF)
@@ -13,7 +12,6 @@ option (USE_BOOST "Use Boost library instead of pure language for arbitrary prec
 set(BIG_INT_BITS "64" CACHE STRING "Change the maximum bit width of arbitrary precision 'big integers.'")
 
 message ("Optimize for RSA semiprime numbers: ${IS_RSA_SEMIPRIME}")
-message ("Enable parallelism within nodes: ${IS_PARALLEL}")
 message ("Enable node distribution configuration dialog: ${IS_DISTRIBUTED}")
 message ("Enable congruence of squares check: ${IS_SQUARES_CONGRUENCE_CHECK}")
 message ("Use GMP library instead of Boost or pure language for arbitrary precision integers: ${USE_GMP}")

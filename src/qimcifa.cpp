@@ -124,11 +124,7 @@ int mainBody(const BigInteger& toFactor)
     //     std::cout << i << ": " << trialDivisionPrimes[i] << ", ";
     // }
 
-#if IS_PARALLEL
     const unsigned cpuCount = std::thread::hardware_concurrency();
-#else
-    const unsigned cpuCount = 1U;
-#endif
 
     int64_t tdLevel = 7;
     std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of 7, or -1 for calibration file): ";
@@ -211,9 +207,7 @@ int mainBody(const BigInteger& toFactor)
 #endif
 
     size_t nodeCount = 1U;
-#if IS_PARALLEL || IS_DISTRIBUTED
     size_t nodeId = 0U;
-#endif
 #if IS_DISTRIBUTED
     std::cout << "You can split this work across nodes, without networking!" << std::endl;
     do {
@@ -234,8 +228,6 @@ int mainBody(const BigInteger& toFactor)
     }
 #endif
     const BigInteger nodeRange = (fullRange + nodeCount - 1U) / nodeCount;
-
-#if IS_PARALLEL
     batchNumber = ((nodeId * nodeRange) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
     batchBound = (((nodeId + 1) * nodeRange) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
     const auto workerFn = [toFactor, &inc_seqs, &offset, &iterClock] {
@@ -254,10 +246,6 @@ int mainBody(const BigInteger& toFactor)
     for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
         futures[cpu].get();
     }
-#else
-    std::vector<BigInteger> smoothNumbers;
-    getSmoothNumbers(toFactor, inc_seqs, offset, nodeRange, iterClock);
-#endif
 
     return 0;
 }

@@ -97,7 +97,6 @@ typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<409
 typedef BigInteger BigIntegerInput;
 #endif
 
-#if IS_PARALLEL
 BigIntegerInput batchNumber;
 BigIntegerInput batchBound;
 std::mutex batchMutex;
@@ -116,7 +115,6 @@ inline BigIntegerInput getNextBatch() {
 
     return result;
 }
-#endif
 
 // See https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int
 template <typename BigInteger> BigInteger ipow(BigInteger base, unsigned exp)
@@ -348,7 +346,6 @@ inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteg
 #endif
 }
 
-#if IS_PARALLEL
 template <typename BigInteger>
 bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
@@ -366,19 +363,4 @@ bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bit
 
     return false;
 }
-#else
-template <typename BigInteger>
-bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
-    const BigInteger& range, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
-{
-    for (BigInteger batchItem = offset; batchItem < range;) {
-        batchItem += GetWheelIncrement(inc_seqs);
-        if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(batchItem), iterClock)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-#endif
 } // namespace Qimcifa

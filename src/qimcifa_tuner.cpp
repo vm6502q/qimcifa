@@ -89,13 +89,9 @@ double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::
 
     std::vector<BigInteger> smoothNumbers;
     auto iterClock = std::chrono::high_resolution_clock::now();
-#if IS_PARALLEL
     batchNumber = 0U;
     batchBound = 1U;
     getSmoothNumbers(toFactor, inc_seqs, offset, iterClock);
-#else
-    getSmoothNumbers(toFactor, inc_seqs, offset, offset, BIGGEST_WHEEL, iterClock);
-#endif
 
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - iterClock).count() * 1e-10;
 }
