@@ -349,7 +349,7 @@ bool singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitse
             if (diffLimit == 0U) {
                 diffLimit = lastFound - offset;
             }
-        } else if ((diffLimit > 0) && ((batchItem - lastFound) > diffLimit)) {
+        } else if (diffLimit && ((batchItem - lastFound) > diffLimit)) {
             return false;
         }
     }
