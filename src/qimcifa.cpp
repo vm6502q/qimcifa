@@ -358,55 +358,7 @@ bool singleWordLoop(const BigInteger& toFactor, std::vector<boost::dynamic_bitse
 }
 
 template <typename BigInteger>
-int mainBody(const BigInteger& toFactor, const std::vector<unsigned>& trialDivisionPrimes)
-{
-    const size_t tdLevel = 7U;
-    auto iterClock = std::chrono::high_resolution_clock::now();
-    const BigInteger fullMaxBase = sqrt<BigInteger>(toFactor);
-    if (fullMaxBase * fullMaxBase == toFactor) {
-        std::cout << "Number to factor is a perfect square: " << fullMaxBase << " * " << fullMaxBase << " = " << toFactor;
-        return 0;
-    }
-
-    for (size_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
-        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
-        if ((toFactor % currentPrime) == 0) {
-            std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
-                      << std::endl;
-            return 0;
-        }
-        ++primeIndex;
-    }
-
-    const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
-    const BigInteger fullRange = backward(1U + toFactor - offset);
-
-#if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
-    const double exp = log2(bi_to_double(toFactor));
-#elif BIG_INTEGER_BITS > 64 && USE_BOOST || USE_GMP
-    const double exp = log2(toFactor.convert_to<double>());
-#else
-    const double exp = log2(toFactor);
-#endif
-
-    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
-    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
-
-    BigInteger radius = 1U;
-    for (size_t i = 0U; i < tdLevel; ++i) {
-        radius *= trialDivisionPrimes[i];
-    }
-    radius = (BigInteger)pow((uint64_t)radius, exp / 28.0);
-
-    singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, fullRange, radius, iterClock);
-
-    return 0;
-}
-} // namespace Qimcifa
-
-using namespace Qimcifa;
-
-int main()
+int mainBody(const BigInteger& toFactor)
 {
     // First 1000 primes
     // (Only 100 included in program)
@@ -471,6 +423,54 @@ int main()
     //     std::cout << i << ": " << trialDivisionPrimes[i] << ", ";
     // }
 
+    const size_t tdLevel = 7U;
+    auto iterClock = std::chrono::high_resolution_clock::now();
+    const BigInteger fullMaxBase = sqrt<BigInteger>(toFactor);
+    if (fullMaxBase * fullMaxBase == toFactor) {
+        std::cout << "Number to factor is a perfect square: " << fullMaxBase << " * " << fullMaxBase << " = " << toFactor;
+        return 0;
+    }
+
+    for (size_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
+        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
+        if ((toFactor % currentPrime) == 0) {
+            std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
+                      << std::endl;
+            return 0;
+        }
+        ++primeIndex;
+    }
+
+    const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
+    const BigInteger fullRange = backward(1U + toFactor - offset);
+
+#if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
+    const double exp = log2(bi_to_double(toFactor));
+#elif BIG_INTEGER_BITS > 64 && USE_BOOST || USE_GMP
+    const double exp = log2(toFactor.convert_to<double>());
+#else
+    const double exp = log2(toFactor);
+#endif
+
+    std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
+    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
+
+    BigInteger radius = 1U;
+    for (size_t i = 0U; i < tdLevel; ++i) {
+        radius *= trialDivisionPrimes[i];
+    }
+    radius = (BigInteger)pow((uint64_t)radius, exp / 28.0);
+
+    singleWordLoop<BigInteger>(toFactor, inc_seqs, offset, fullRange, radius, iterClock);
+
+    return 0;
+}
+} // namespace Qimcifa
+
+using namespace Qimcifa;
+
+int main()
+{
     BigIntegerInput toFactor;
 
     std::cout << "Number to factor: ";
@@ -489,44 +489,44 @@ int main()
 
 #if !(USE_GMP || USE_BOOST)
     typedef BigInteger BigInteger;
-    return mainBody<BigInteger>((BigInteger)toFactor, trialDivisionPrimes);
+    return mainBody<BigInteger>((BigInteger)toFactor);
 #else
     if (qubitCount < 64) {
         typedef uint64_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor);
 #if USE_GMP
     } else {
-        return mainBody<BigIntegerInput>(toFactor, trialDivisionPrimes);
+        return mainBody<BigIntegerInput>(toFactor);
     }
 #elif USE_BOOST
     } else if (qubitCount < 128) {
         typedef boost::multiprecision::uint128_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor);
     } else if (qubitCount < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor);
     } else if (qubitCount < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor);
     } else if (qubitCount < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor);
     } else if (qubitCount < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor);
     } else if (qubitCount < 2048) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, trialDivisionPrimes);
+        return mainBody<BigInteger>((BigInteger)toFactor);
     }
 #endif
 #endif
