@@ -501,32 +501,32 @@ int main()
 #elif USE_BOOST
     } else if (qubitCount < 128) {
         typedef boost::multiprecision::uint128_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor);
+        return mainBody((BigInteger)toFactor);
     } else if (qubitCount < 192) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor);
+        return mainBody((BigInteger)toFactor);
     } else if (qubitCount < 256) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor);
+        return mainBody((BigInteger)toFactor);
     } else if (qubitCount < 512) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor);
+        return mainBody((BigInteger)toFactor);
     } else if (qubitCount < 1024) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor);
+        return mainBody((BigInteger)toFactor);
     } else if (qubitCount < 2048) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor);
+        return mainBody((BigInteger)toFactor);
     }
 #endif
 #endif
