@@ -1,5 +1,7 @@
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
 #cmakedefine IS_RSA_SEMIPRIME 1
+// Turn this off, if you don't want to coordinate across threads within this node.
+#cmakedefine IS_PARALLEL 1
 // Use GMP arbitrary precision integers, (or use Boost alternative, if turned off).
 #cmakedefine USE_GMP 1
 // Use GMP arbitrary precision integers, (or use Boost alternative, if turned off).

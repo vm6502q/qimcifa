@@ -61,6 +61,7 @@
 #include <cmath>
 #include <float.h>
 #include <fstream>
+#include <future>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -84,6 +85,37 @@ namespace Qimcifa {
 // Make this a multiple of 2, 3, 5, 7, 11, 13, and 17.
 // constexpr int BIGGEST_WHEEL = 510510;
 constexpr int BIGGEST_WHEEL = 1021020;
+
+#if USE_GMP
+typedef boost::multiprecision::mpz_int BigIntegerInput;
+#elif USE_BOOST
+typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
+    boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+    BigIntegerInput;
+#else
+typedef BigInteger BigIntegerInput;
+#endif
+
+#if IS_PARALLEL
+BigIntegerInput batchNumber;
+BigIntegerInput batchCount;
+std::mutex batchMutex;
+
+inline void finish() {
+    std::lock_guard<std::mutex> lock(batchMutex);
+    batchNumber = batchCount;
+}
+
+inline BigIntegerInput getNextBatch() {
+    std::lock_guard<std::mutex> lock(batchMutex);
+    BigIntegerInput result = batchNumber;
+    if (batchNumber < batchCount) {
+        ++batchNumber;
+    }
+
+    return result;
+}
+#endif
 
 // See https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int
 template <typename BigInteger> BigInteger ipow(BigInteger base, unsigned exp)
@@ -256,15 +288,9 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
     return wheelIncrement;
 }
 
-enum Status {
-    FAILED = 0U,
-    FOUND = 1U,
-    FINISHED = 2U
-};
-
 template <typename BigInteger>
-inline Status checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest, const BigInteger& radius,
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock, std::vector<BigInteger>& smoothNumbers)
+inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest, const BigInteger& radius,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     // The basic idea is "congruence of squares":
     // a^2 = b^2 mod N
@@ -275,17 +301,10 @@ inline Status checkCongruenceOfSquares(const BigInteger& toFactor, const BigInte
     const BigInteger bSqr = (toTest * toTest) % toFactor;
     const BigInteger b = sqrt(bSqr);
     if ((b * b) != bSqr) {
-        if (bSqr > radius) {
-            return FAILED;
+        if (bSqr < radius) {
+            std::cout << toTest << std::endl;
         }
-        const BigInteger aSqrt = sqrt(toTest);
-        if ((aSqrt * aSqrt) == toTest) {
-            return FAILED;
-        }
-
-        smoothNumbers.push_back(toTest);
-
-        return FOUND;
+        return false;
     }
 
     BigInteger f1 = gcd(toTest + b, toFactor);
@@ -300,59 +319,62 @@ inline Status checkCongruenceOfSquares(const BigInteger& toFactor, const BigInte
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
         // Inform the other threads on this node that we've succeeded and are done:
         printSuccess<BigInteger>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
-        return FINISHED;
+        return true;
     }
 
-    return FAILED;
+    return false;
 }
 
 template <typename BigInteger>
-inline Status getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteger& base, const BigInteger& radius,
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock, std::vector<BigInteger>& smoothNumbers) {
+inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteger& base, const BigInteger& radius,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
 #if IS_RSA_SEMIPRIME
     if ((toFactor % base) == 0U) {
         printSuccess<BigInteger>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
-        return FINISHED;
+        return true;
     }
 #else
     BigInteger n = gcd(base, toFactor);
     if (n != 1U) {
         printSuccess<BigInteger>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
-        return FINISHED;
+        return true;
     }
 #endif
 
-    return checkCongruenceOfSquares<BigInteger>(toFactor, base, radius, iterClock, smoothNumbers);
+    return checkCongruenceOfSquares<BigInteger>(toFactor, base, radius, iterClock);
 }
 
+#if IS_PARALLEL
 template <typename BigInteger>
-bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
-    const BigInteger& range, const BigInteger& radius, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
-    std::vector<BigInteger>& smoothNumbers)
+bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& radius,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
-    BigInteger diffLimit = 0U;
-    BigInteger lastFound = 0U;
-    for (BigInteger batchItem = offset; batchItem < range;) {
-        batchItem += GetWheelIncrement(inc_seqs);
-
-        const Status status = getSmoothNumbersIteration(toFactor, forward(batchItem), radius, iterClock, smoothNumbers);
-
-        if (status == FINISHED) {
-            return true;
-        }
-
-        if (status == FOUND) {
-            lastFound = batchItem;
-            if (diffLimit == 0U) {
-                diffLimit = lastFound - offset;
+    for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchCount; batchNum = (BigInteger)getNextBatch()) {
+        for (size_t batchItem = 0U; batchItem < BIGGEST_WHEEL;) {
+            batchItem += GetWheelIncrement(inc_seqs);
+            if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(batchItem), radius, iterClock)) {
+                return true;
             }
-        } else if (diffLimit && ((batchItem - lastFound) > diffLimit)) {
-            return false;
         }
     }
 
     return false;
 }
+#else
+template <typename BigInteger>
+bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs, const BigInteger& offset,
+    const BigInteger& range, const BigInteger& radius, const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+{
+    for (BigInteger batchItem = offset; batchItem < range;) {
+        batchItem += GetWheelIncrement(inc_seqs);
+        if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(batchItem), radius, iterClock)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+#endif
 
 template <typename BigInteger>
 int mainBody(const BigInteger& toFactor)
@@ -441,14 +463,6 @@ int mainBody(const BigInteger& toFactor)
     const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 2U;
     const BigInteger fullRange = backward(1U + toFactor - offset);
 
-#if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
-    const double exp = log2(bi_to_double(toFactor));
-#elif BIG_INTEGER_BITS > 64 && USE_BOOST || USE_GMP
-    const double exp = log2(toFactor.convert_to<double>());
-#else
-    const double exp = log2(toFactor);
-#endif
-
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
 
@@ -456,16 +470,27 @@ int mainBody(const BigInteger& toFactor)
     for (size_t i = 0U; i < tdLevel; ++i) {
         radius *= trialDivisionPrimes[i];
     }
-    radius = (BigInteger)pow((uint64_t)radius, exp / 28.0);
+    radius *= radius;
 
+#if IS_PARALLEL
+    const unsigned cpuCount = std::thread::hardware_concurrency();
+    const BigInteger threadRange = ((((fullRange + cpuCount - 1U) / cpuCount) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL) * BIGGEST_WHEEL;
+    batchNumber = 0;
+    batchCount = (cpuCount * threadRange) / BIGGEST_WHEEL;
+    const auto workerFn = [toFactor, &inc_seqs, &radius, &iterClock] {
+        getSmoothNumbers(toFactor, inc_seqs, radius, iterClock);
+    };
+    std::vector<std::future<void>> futures(cpuCount);
+    for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
+        futures[cpu] = std::async(std::launch::async, workerFn);
+    }
+    for (unsigned cpu = 0U; cpu < cpuCount; ++cpu) {
+        futures[cpu].get();
+    }
+#else
     std::vector<BigInteger> smoothNumbers;
-    if (getSmoothNumbers(toFactor, inc_seqs, offset, fullRange, radius, iterClock, smoothNumbers)) {
-        return 0;
-    }
-
-    for (const BigInteger& s : smoothNumbers) {
-        std::cout << s << std::endl;
-    }
+    getSmoothNumbers(toFactor, inc_seqs, offset, fullRange, radius, iterClock);
+#endif
 
     return 0;
 }
@@ -475,16 +500,6 @@ using namespace Qimcifa;
 
 int main()
 {
-#if USE_GMP
-    typedef boost::multiprecision::mpz_int BigIntegerInput;
-#elif USE_BOOST
-    typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
-        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-        BigIntegerInput;
-#else
-    typedef BigInteger BigIntegerInput;
-#endif
-
     BigIntegerInput toFactor;
 
     std::cout << "Number to factor: ";
