@@ -85,16 +85,6 @@ namespace Qimcifa {
 // constexpr int BIGGEST_WHEEL = 510510;
 constexpr int BIGGEST_WHEEL = 1021020;
 
-#if USE_GMP
-typedef boost::multiprecision::mpz_int BigIntegerInput;
-#elif USE_BOOST
-typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
-    boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-    BigIntegerInput;
-#else
-typedef BigInteger BigIntegerInput;
-#endif
-
 // See https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int
 template <typename BigInteger> BigInteger ipow(BigInteger base, unsigned exp)
 {
@@ -471,6 +461,16 @@ using namespace Qimcifa;
 
 int main()
 {
+#if USE_GMP
+    typedef boost::multiprecision::mpz_int BigIntegerInput;
+#elif USE_BOOST
+    typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
+        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+        BigIntegerInput;
+#else
+    typedef BigInteger BigIntegerInput;
+#endif
+
     BigIntegerInput toFactor;
 
     std::cout << "Number to factor: ";
@@ -524,6 +524,11 @@ int main()
         return mainBody((BigInteger)toFactor);
     } else if (qubitCount < 2048) {
         typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
+            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+            BigInteger;
+        return mainBody((BigInteger)toFactor);
+    } else if (qubitCount < 4096) {
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
             boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
             BigInteger;
         return mainBody((BigInteger)toFactor);
