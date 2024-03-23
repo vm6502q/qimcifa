@@ -149,33 +149,6 @@ template <typename BigInteger> BigInteger ipow(BigInteger base, unsigned exp)
     return result;
 }
 
-template <typename BigInteger> inline BigInteger sqrt(const BigInteger& toTest)
-{
-    // Otherwise, find b = sqrt(b^2).
-    BigInteger start = 1U, end = toTest >> 1U, ans = 0U;
-    do {
-        const BigInteger mid = (start + end) >> 1U;
-
-        // If toTest is a perfect square
-        const BigInteger sqr = mid * mid;
-        if (sqr == toTest) {
-            ans = mid;
-            break;
-        }
-
-        if (sqr < toTest) {
-            // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
-            start = mid + 1U;
-            ans = mid;
-        } else {
-            // If mid*mid is greater than p
-            end = mid - 1U;
-        }
-    } while (start <= end);
-
-    return ans;
-}
-
 template <typename BigInteger> inline uint64_t log2(BigInteger n) {
 #if USE_GMP || USE_BOOST
     uint64_t pow = 0U;
@@ -188,6 +161,11 @@ template <typename BigInteger> inline uint64_t log2(BigInteger n) {
 #else
     return bi_log2(n);
 #endif
+}
+
+template <typename BigInteger> inline BigInteger sqrt(const BigInteger& toTest)
+{
+    return 1U << (log2(toTest) >> 1U);
 }
 
 template <typename BigInteger> inline bool isPowerOfTwo(const BigInteger& x)
