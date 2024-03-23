@@ -163,8 +163,29 @@ template <typename BigInteger> inline uint64_t log2(BigInteger n) {
 
 template <typename BigInteger> inline BigInteger sqrt(const BigInteger& toTest)
 {
-    // See https://www.geeksforgeeks.org/square-root-of-an-integer#tablist4-panel1
-    return 1U << (log2(toTest) >> 1U);
+    // Otherwise, find b = sqrt(b^2).
+    BigInteger start = 1U, end = toTest >> 1U, ans = 0U;
+    do {
+        const BigInteger mid = (start + end) >> 1U;
+
+        // If toTest is a perfect square
+        const BigInteger sqr = mid * mid;
+        if (sqr == toTest) {
+            ans = mid;
+            break;
+        }
+
+        if (sqr < toTest) {
+            // Since we need floor, we update answer when mid*mid is smaller than p, and move closer to sqrt(p).
+            start = mid + 1U;
+            ans = mid;
+        } else {
+            // If mid*mid is greater than p
+            end = mid - 1U;
+        }
+    } while (start <= end);
+
+    return ans;
 }
 
 template <typename BigInteger> inline bool isPowerOfTwo(const BigInteger& x)
