@@ -118,7 +118,7 @@ inline BigIntegerInput getNextBatch() {
 
     return result;
 #else
-    BigIntegerInput result = batchCount - batchNumber;
+    BigIntegerInput result = batchCount - (batchNumber + 1U);
 
     if (!result) {
         return batchBound;
