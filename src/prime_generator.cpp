@@ -287,20 +287,20 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         const BigInteger p4 = p << 2U;
         BigInteger i = p * p;
         if ((p % 3U) == 2U) {
-             if ((i % 5U) != 0) {
+             if (i % 5U) {
                  notPrime[(size_t)backward5(i)] = true;
              }
              i += p2;
         }
         for (; i <= n; ) {
-            if ((i % 5U) != 0) {
+            if (i % 5U) {
                 notPrime[(size_t)backward5(i)] = true;
             }
             i += p4;
             if (i > n) {
                 break;
             }
-            if ((i % 5U) != 0) {
+            if (i % 5U) {
                 notPrime[(size_t)backward5(i)] = true;
             }
             i += p2;
