@@ -58,8 +58,7 @@ inline BigInteger sqrt(const BigInteger& toTest)
         // If toTest is a perfect square
         const BigInteger sqr = mid * mid;
         if (sqr == toTest) {
-            ans = mid;
-            break;
+            return mid;
         }
 
         if (sqr < toTest) {
