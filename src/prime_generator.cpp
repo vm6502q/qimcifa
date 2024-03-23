@@ -245,7 +245,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
-    std::vector<BigInteger> knownPrimes = { 2, 3, 5, 7, 11 };
+    std::vector<BigInteger> knownPrimes = { 2, 3, 5, 7 };
     if (n < 2) {
         return std::vector<BigInteger>();
     }
@@ -348,18 +348,18 @@ int main()
 {
     BigInteger n = 1000000000U; // 1e9
 
-    std::cout << "Primes up to number: ";
-    std::cin >> n;
+    // std::cout << "Primes up to number: ";
+    // std::cin >> n;
 
-    std::cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
+    // std::cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
     // const std::vector<BigInteger> primes = TrialDivision(n);
     const std::vector<BigInteger> primes = SieveOfEratosthenes(n);
 
-    for (BigInteger p : primes) {
-        std::cout << p << " ";
-    }
-    std::cout << std::endl;
+    // for (BigInteger p : primes) {
+    //     std::cout << p << " ";
+    // }
+    // std::cout << std::endl;
 
     return 0;
 }
