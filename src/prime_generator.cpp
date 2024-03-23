@@ -257,7 +257,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
-    // 2, 3, and 5 this reduces complexity by 4/15.
+    // 2, 3, and 5 this reduces complexity to 4/15.
     const size_t cardinality = (size_t)backward5(n);
 
     // Create a boolean array "prime[0..cardinality]"
