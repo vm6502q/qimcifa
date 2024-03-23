@@ -74,13 +74,19 @@ inline BigInteger sqrt(const BigInteger& toTest)
     return ans;
 }
 
-inline BigInteger backward(BigInteger n) {
+inline BigInteger backward(const BigInteger& n) {
     return ((~((~n) | 1U)) / 3U) + 1U;
 }
 
-inline BigInteger forward(BigInteger p) {
+inline BigInteger forward(const BigInteger& p) {
     // Make this NOT a multiple of 2 or 3.
     return (p << 1U) + (~(~p | 1U)) - 1U;
+}
+
+inline BigInteger backward5(BigInteger n) {
+    n = ((n + 1U) << 2U) / 5;
+    n = ((n + 1U) << 1U) / 3;
+    return (n + 1U) >> 1U;
 }
 
 bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,
@@ -253,8 +259,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
-    // 2 and 3, this reduces complexity by 2/3.
-    const size_t cardinality = (size_t)backward(n);
+    // 2, 3, and 5 this reduces complexity by 4/15.
+    const size_t cardinality = (size_t)backward5(n);
 
     // Create a boolean array "prime[0..cardinality]"
     // and initialize all entries it as true. Rather,
@@ -274,7 +280,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             break;
         }
 
-        if (notPrime[o] == true) {
+        const size_t q = (size_t)backward5(p);
+        if (notPrime[q] == true) {
             continue;
         }
 
@@ -282,16 +289,22 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         const BigInteger p4 = p << 2U;
         BigInteger i = p * p;
         if ((p % 3U) == 2U) {
-             notPrime[(size_t)backward(i)] = true;
+             if ((i % 5U) != 0) {
+                 notPrime[(size_t)backward5(i)] = true;
+             }
              i += p2;
         }
         for (; i <= n; ) {
-            notPrime[(size_t)backward(i)] = true;
+            if ((i % 5U) != 0) {
+                notPrime[(size_t)backward5(i)] = true;
+            }
             i += p4;
             if (i > n) {
                 break;
             }
-            notPrime[(size_t)backward(i)] = true;
+            if ((i % 5U) != 0) {
+                notPrime[(size_t)backward5(i)] = true;
+            }
             i += p2;
         }
     }
@@ -306,7 +319,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             break;
         }
 
-        if (notPrime[o] == true) {
+        if (notPrime[(size_t)backward5(p)] == true) {
             continue;
         }
 
