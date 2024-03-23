@@ -302,8 +302,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
              }
              i += p2;
              if (i > n) {
-                break;
-            }
+                continue;
+             }
         }
         for (;;) {
             if (i % 5U) {
