@@ -252,13 +252,12 @@ int main() {
     std::cout << "Total thread count (across all nodes): ";
     std::cin >> threadCount;
 
+    const BigIntegerInput range = backward(sqrt(toFactor));
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
-    // "Warm-up"
     for (size_t i = MIN_RTD_LEVEL; i < 8U; ++i) {
         // Test
         const double time = mainCase(toFactor, i);
-        const BigIntegerInput range = backward(sqrt(toFactor));
 #if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
         oSettingsFile << i << " " << range << " " << time << " " << (bi_to_double(range) * (time / BIGGEST_WHEEL)) << std::endl;
 #else

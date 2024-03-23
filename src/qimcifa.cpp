@@ -207,7 +207,7 @@ int mainBody(const BigInteger& toFactor)
     const BigInteger fullRange = backward(1U + toFactor - offset);
 #else
     const BigInteger offset = 1U;
-    const BigInteger fullRange = backward(fullMaxBase - 1U);
+    const BigInteger fullRange = backward(fullMaxBase);
 #endif
 
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
