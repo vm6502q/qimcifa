@@ -152,9 +152,7 @@ template <typename BigInteger> BigInteger ipow(BigInteger base, unsigned exp)
 template <typename BigInteger> inline uint64_t log2(BigInteger n) {
 #if USE_GMP || USE_BOOST
     uint64_t pow = 0U;
-    BigInteger p = n >> 1U;
-    while (p) {
-        p >>= 1U;
+    while (n >>= 1U) {
         ++pow;
     }
     return pow;
