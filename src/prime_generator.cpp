@@ -213,7 +213,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<size_t>> inc_seqs;
     const size_t wheel_limit = 17U;
-    for (BigInteger o = 2U; forward(o) < n;) {
+    for (BigInteger o = 1U; forward(o) < n;) {
         o += GetWheelIncrement(inc_seqs);
 
         const BigInteger p = forward(o);
@@ -265,7 +265,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes, n);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
-    for (size_t o = 2U; ;) {
+    for (size_t o = 1U; ;) {
         o += GetWheelIncrement(inc_seqs);
 
         const BigInteger p = forward(o);
@@ -287,7 +287,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
     inc_seqs = wheel_gen(knownPrimes, n);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
-    for (size_t o = 2U; ;) {
+    for (size_t o = 1U; ;) {
         o += GetWheelIncrement(inc_seqs);
 
         const BigInteger p = forward(o);
