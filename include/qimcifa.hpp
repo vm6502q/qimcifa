@@ -311,8 +311,10 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
     // If we're lucky enough that the above is true, for a^2 = toTest and (b^2 mod N) = remainder,
     // then we can immediately find a factor.
 
-    // Consider a to be equal to "toTest."
-    const BigInteger bSqr = (toTest * toTest) % toFactor;
+    // Consider "a" to be equal to "toTest."
+    // "a" is a  number n^(1/2) < a < n.
+    // Hence, modulo can be just subtraction.
+    const BigInteger bSqr = (toTest * toTest) - toFactor;
     const BigInteger b = sqrt(bSqr);
     if ((b * b) != bSqr) {
         return false;
