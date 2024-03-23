@@ -165,6 +165,7 @@ template <typename BigInteger> inline uint64_t log2(BigInteger n) {
 
 template <typename BigInteger> inline BigInteger sqrt(const BigInteger& toTest)
 {
+    // See https://www.geeksforgeeks.org/square-root-of-an-integer#tablist4-panel1
     return 1U << (log2(toTest) >> 1U);
 }
 
