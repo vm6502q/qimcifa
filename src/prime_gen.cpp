@@ -285,16 +285,29 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             continue;
         }
 
+        // We are skipping multiples of 2, 3, and 5
+        // for space complexity, for 4/15 the bits.
+        // More are skipped by the wheel for time.
         const BigInteger p2 = p << 1U;
         const BigInteger p4 = p << 2U;
         BigInteger i = p * p;
+
+        // "p" already definitely not a multiple of 3.
+        // Its remainder when divided by 3 can be 1 or 2.
+        // If it is 2, we can do a "half iteration" of the
+        // loop that would handle remainder of 1, and then
+        // we can proceed with the 1 remainder loop.
+        // This saves 2/3 of updates (or modulo).
         if ((p % 3U) == 2U) {
              if (i % 5U) {
                  notPrime[(size_t)backward5(i)] = true;
              }
              i += p2;
+             if (i > n) {
+                break;
+            }
         }
-        for (; i <= n; ) {
+        for (;;) {
             if (i % 5U) {
                 notPrime[(size_t)backward5(i)] = true;
             }
@@ -306,6 +319,9 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                 notPrime[(size_t)backward5(i)] = true;
             }
             i += p2;
+            if (i > n) {
+                break;
+            }
         }
     }
 
