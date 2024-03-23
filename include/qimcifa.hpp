@@ -109,6 +109,7 @@ inline void finish() {
 inline BigIntegerInput getNextBatch() {
     std::lock_guard<std::mutex> lock(batchMutex);
 
+#if IS_SQUARES_CONGRUENCE_CHECK
     BigIntegerInput result = batchNumber;
 
     if (batchNumber < batchBound) {
@@ -116,6 +117,17 @@ inline BigIntegerInput getNextBatch() {
     }
 
     return result;
+#else
+    BigIntegerInput result = batchCount - (batchNumber + 1U);
+
+    if (batchNumber == batchBound) {
+        return batchBound;
+    }
+
+    ++batchNumber;
+
+    return result;
+#endif
 }
 
 // See https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int
