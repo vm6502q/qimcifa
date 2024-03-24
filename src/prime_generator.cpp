@@ -136,28 +136,6 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                 }
             }
 
-            if ((i + 60U * p) > n) {
-                for (;;) {
-                    if (i % 5) {
-                        notPrime[(size_t)backward5(i)] = true;
-                    }
-                    i += p4;
-                    if (i > n) {
-                        break;
-                    }
-
-                    if (i % 5) {
-                        notPrime[(size_t)backward5(i)] = true;
-                    }
-                    i += p2;
-                    if (i > n) {
-                        break;
-                    }
-                }
-
-                return false;
-            }
-
             std::vector<bool> wheel30;
             wheel30.reserve(30);
             for (int j = 0; j < 15; ++j) {
