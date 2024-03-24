@@ -74,7 +74,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
-    BigInteger threadLimit = 36U;
+    BigInteger threadLimit = 26U;
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
@@ -207,7 +207,7 @@ using namespace qimcifa;
 // Driver Code
 int main()
 {
-    BigInteger n = 1000000000U; // 1e9
+    BigInteger n = 10000000000U; // 1e10
 
     std::cout << "Primes up to number: ";
     std::cin >> n;
