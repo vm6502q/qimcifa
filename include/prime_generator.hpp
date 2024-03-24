@@ -83,8 +83,8 @@ inline BigInteger forward(const BigInteger& p) {
 }
 
 inline BigInteger backward5(BigInteger n) {
-    n = ((n + 1U) << 2U) / 5;
-    n = ((n + 1U) << 1U) / 3;
+    n = ((n + 1U) << 2U) / 5U;
+    n = ((n + 1U) << 1U) / 3U;
     return (n + 1U) >> 1U;
 }
 

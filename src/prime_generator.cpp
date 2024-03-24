@@ -168,7 +168,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                         return false;
                     }
 
-                    if (wheel30[j + 1U]) {
+                    if (wheel30[j + 1]) {
                         notPrime[(size_t)backward5(i)] = true;
                     }
                     i += p2;
