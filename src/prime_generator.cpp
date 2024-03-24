@@ -74,7 +74,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
-    BigInteger threadLimit = 25;
+    BigInteger threadLimit = 36U;
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
