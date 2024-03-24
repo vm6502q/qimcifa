@@ -101,17 +101,18 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             break;
         }
 
+        if (threadLimit < p) {
+            dispatch.finish();
+            threadLimit *= threadLimit;
+        }
+
+
         const size_t q = (size_t)backward5(p);
         if (notPrime[q] == true) {
             continue;
         }
 
         knownPrimes.push_back(p);
-
-        if (threadLimit < p) {
-            dispatch.finish();
-            threadLimit *= threadLimit;
-        }
 
         dispatch.dispatch([&n, p, &notPrime]() {
             // We are skipping multiples of 2, 3, and 5
