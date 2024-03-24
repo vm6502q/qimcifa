@@ -135,8 +135,34 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                     return false;
                 }
             }
-            for (;;) {
-                if (i % 5) {
+
+            if ((i + 60U * p) > n) {
+                for (;;) {
+                    if (i % 5) {
+                        notPrime[(size_t)backward5(i)] = true;
+                    }
+                    i += p4;
+                    if (i > n) {
+                        break;
+                    }
+
+                    if (i % 5) {
+                        notPrime[(size_t)backward5(i)] = true;
+                    }
+                    i += p2;
+                    if (i > n) {
+                        break;
+                    }
+                }
+
+                return false;
+            }
+
+            std::vector<bool> wheel30;
+            wheel30.reserve(30);
+            for (int j = 0; j < 15; ++j) {
+                wheel30.push_back(i % 5);
+                if (wheel30.back()) {
                     notPrime[(size_t)backward5(i)] = true;
                 }
                 i += p4;
@@ -144,12 +170,33 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                     break;
                 }
 
-                if (i % 5) {
+                wheel30.push_back(i % 5);
+                if (wheel30.back()) {
                     notPrime[(size_t)backward5(i)] = true;
                 }
                 i += p2;
                 if (i > n) {
                     break;
+                }
+            }
+
+            for (; i <= n;) {
+                for (int j = 0; j < 30; j+=2) {
+                    if (wheel30[j]) {
+                        notPrime[(size_t)backward5(i)] = true;
+                    }
+                    i += p4;
+                    if (i > n) {
+                        break;
+                    }
+
+                    if (wheel30[j + 1U]) {
+                        notPrime[(size_t)backward5(i)] = true;
+                    }
+                    i += p2;
+                    if (i > n) {
+                        break;
+                    }
                 }
             }
 
