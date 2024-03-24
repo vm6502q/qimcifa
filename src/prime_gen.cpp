@@ -91,7 +91,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // Get the remaining prime numbers.
     std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes, n);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
-    for (size_t o = 1U; ;) {
+    size_t o = 1U;
+    for (;;) {
         o += GetWheelIncrement(inc_seqs);
 
         const BigInteger p = forward(o);
@@ -103,6 +104,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         if (notPrime[q] == true) {
             continue;
         }
+
+        knownPrimes.push_back(p);
 
         // We are skipping multiples of 2, 3, and 5
         // for space complexity, for 4/15 the bits.
@@ -143,9 +146,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         }
     }
 
-    inc_seqs = wheel_gen(knownPrimes, n);
-    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
-    for (size_t o = 1U; ;) {
+    for (;;) {
         o += GetWheelIncrement(inc_seqs);
 
         const BigInteger p = forward(o);
