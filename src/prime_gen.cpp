@@ -76,7 +76,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
-    BigInteger lastPrime = 5;
+    BigInteger threadLimit = 25;
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
@@ -110,12 +110,12 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
         knownPrimes.push_back(p);
 
-        if ((lastPrime * lastPrime) < p) {
+        if (threadLimit < p) {
             dispatch.finish();
-            lastPrime = knownPrimes.back();
+            threadLimit *= threadLimit;
         }
 
-        dispatch.dispatch([&n, &p, &notPrime]() {
+        dispatch.dispatch([&n, p, &notPrime]() {
             // We are skipping multiples of 2, 3, and 5
             // for space complexity, for 4/15 the bits.
             // More are skipped by the wheel for time.
