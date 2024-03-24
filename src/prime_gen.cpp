@@ -147,7 +147,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                 }
                 i += p4;
                 if (i > n) {
-                    break;
+                    return false;
                 }
 
                 wheel30.push_back(i % 5);
@@ -156,7 +156,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                 }
                 i += p2;
                 if (i > n) {
-                    break;
+                    return false;
                 }
             }
 
@@ -167,7 +167,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                     }
                     i += p4;
                     if (i > n) {
-                        break;
+                        return false;
                     }
 
                     if (wheel30[j + 1U]) {
@@ -175,7 +175,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                     }
                     i += p2;
                     if (i > n) {
-                        break;
+                        return false;
                     }
                 }
             }
