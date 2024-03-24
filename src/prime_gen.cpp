@@ -111,14 +111,6 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         const BigInteger p4 = p << 2U;
         BigInteger i = p * p;
 
-        // We are trying to avoid a check of i % 5.
-        // We can do it upfront, then keep a counter
-        // for the remainder, as it changes.
-        int lcv5 = i % 5;
-        const int inc5 = p % 5;
-        const int inc5l1 = (inc5 << 1U) % 5;
-        const int inc5l2 = (inc5 << 2U) % 5;
-
         // "p" already definitely not a multiple of 3.
         // Its remainder when divided by 3 can be 1 or 2.
         // If it is 2, we can do a "half iteration" of the
@@ -131,34 +123,22 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             if (i > n) {
                 continue;
             }
-            lcv5 += inc5l1;
-            if (lcv5 > 4) {
-                lcv5 -= 5;
-            }
         }
         for (;;) {
-            if (lcv5) {
+            if (i % 5) {
                 notPrime[(size_t)backward5(i)] = true;
             }
             i += p4;
             if (i > n) {
                 break;
             }
-            lcv5 += inc5l2;
-            if (lcv5 > 4) {
-                lcv5 -= 5;
-            }
 
-            if (lcv5) {
+            if (i % 5) {
                 notPrime[(size_t)backward5(i)] = true;
             }
             i += p2;
             if (i > n) {
                 break;
-            }
-            lcv5 += inc5l1;
-            if (lcv5 > 4) {
-                lcv5 -= 5;
             }
         }
     }
