@@ -102,11 +102,11 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         if ((p * p) > n) {
             break;
         }
+
         if (threadLimit < p) {
             dispatch.finish();
             threadLimit *= threadLimit;
         }
-
 
         const size_t q = (size_t)backward5(p);
         if (notPrime[q] == true) {
@@ -115,79 +115,47 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
         knownPrimes.push_back(p);
 
-        dispatch.dispatch((p < 60)
-            ? (DispatchFn)[&n, p, &notPrime]() {
-                // We are skipping multiples of 2, 3, and 5
-                // for space complexity, for 4/15 the bits.
-                // More are skipped by the wheel for time.
-                const BigInteger p2 = p << 1U;
-                const BigInteger p4 = p << 2U;
-                BigInteger i = p * p;
+        dispatch.dispatch([&n, p, &notPrime]() {
+            // We are skipping multiples of 2, 3, and 5
+            // for space complexity, for 4/15 the bits.
+            // More are skipped by the wheel for time.
+            const BigInteger p2 = p << 1U;
+            const BigInteger p4 = p << 2U;
+            BigInteger i = p * p;
 
-                // "p" already definitely not a multiple of 3.
-                // Its remainder when divided by 3 can be 1 or 2.
-                // If it is 2, we can do a "half iteration" of the
-                // loop that would handle remainder of 1, and then
-                // we can proceed with the 1 remainder loop.
-                // This saves 2/3 of updates (or modulo).
-                if ((p % 3U) == 2U) {
-                    notPrime[(size_t)backward5(i)] = true;
-                    i += p2;
-                    if (i > n) {
-                        return false;
-                    }
+            // "p" already definitely not a multiple of 3.
+            // Its remainder when divided by 3 can be 1 or 2.
+            // If it is 2, we can do a "half iteration" of the
+            // loop that would handle remainder of 1, and then
+            // we can proceed with the 1 remainder loop.
+            // This saves 2/3 of updates (or modulo).
+            if ((p % 3U) == 2U) {
+                notPrime[(size_t)backward5(i)] = true;
+                i += p2;
+                if (i > n) {
+                    return false;
                 }
-                for (;;) {
-                    if (i % 5) {
-                        notPrime[(size_t)backward5(i)] = true;
-                    }
-                    i += p4;
-                    if (i > n) {
-                        return false;
-                    }
-
-                    if (i % 5) {
-                        notPrime[(size_t)backward5(i)] = true;
-                    }
-                    i += p2;
-                    if (i > n) {
-                        return false;
-                    }
-                }
-
-                return false;
             }
-            : (DispatchFn)[&n, p, &notPrime]() {
-                // We are skipping multiples of 2, 3, and 5
-                // for space complexity, for 4/15 the bits.
-                // More are skipped by the wheel for time.
-                // Above 60, we can simply use the wheel.
-                BigInteger i = p * (p / 30U) * 30U;
-                size_t lcv30 = 0U;
-                const std::vector<unsigned> wheel30 = { 1U, 7U, 11U, 13U, 17U, 19U, 23U, 29U };
-                const std::vector<unsigned> inc30 = { 6U, 4U, 2U, 4U, 2U, 4U, 6U, 2U };
-                const unsigned rem30 = i % 30U;
-                while (rem30 > wheel30[lcv30]) {
-                    ++lcv30;
-                }
-                if (lcv30 >= inc30.size()) {
-                    lcv30 -= inc30.size();
-                }
-                for (;;) {
+            for (;;) {
+                if (i % 5) {
                     notPrime[(size_t)backward5(i)] = true;
-                    i += p * inc30[lcv30];
-                    if (i > n) {
-                        return false;
-                    }
-                    ++lcv30;
-                    if (lcv30 >= inc30.size()) {
-                        lcv30 -= inc30.size();
-                    }
+                }
+                i += p4;
+                if (i > n) {
+                    break;
                 }
 
-                return false;
+                if (i % 5) {
+                    notPrime[(size_t)backward5(i)] = true;
+                }
+                i += p2;
+                if (i > n) {
+                    break;
+                }
             }
-        );
+
+            return false;
+        });
     }
     dispatch.finish();
 
