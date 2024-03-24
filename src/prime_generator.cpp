@@ -113,7 +113,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             lastPrime = knownPrimes.back();
         }
 
-        dispatch.dispatch([&n, &p, &notPrime]() {
+        dispatch.dispatch([n, p, &notPrime]() {
             // We are skipping multiples of 2, 3, and 5
             // for space complexity, for 4/15 the bits.
             // More are skipped by the wheel for time.
