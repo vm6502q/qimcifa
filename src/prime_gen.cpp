@@ -93,7 +93,6 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // Get the remaining prime numbers.
     dispatch.resetResult();
     std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes, n);
-    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
     size_t o = 1U;
     for (;;) {
         o += GetWheelIncrement(inc_seqs);
@@ -186,7 +185,6 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     dispatch.finish();
 
     inc_seqs = wheel_gen(knownPrimes, n);
-    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
     o = 1U;
     for (;;) {
         o += GetWheelIncrement(inc_seqs);
@@ -209,8 +207,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 {
     // TODO: This should scale to the system.
-    // It's 8192 KB in bits, to match cache size.
-    const size_t limit = 67108864U;
+    // It's 16 GB in bytes.
+    const size_t limit = 137438953472U;
 
     // `backward(n)` counts assuming that multiples
     // of 2 and 3 have been removed.

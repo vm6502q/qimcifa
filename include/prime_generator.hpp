@@ -171,7 +171,9 @@ std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigIntege
     std::vector<BigInteger> wheelPrimes;
     for (const BigInteger& p : primes) {
         wheelPrimes.push_back(p);
-        output.push_back(wheel_inc(wheelPrimes, limit));
+        if (wheelPrimes.back() > 3U) {
+            output.push_back(wheel_inc(wheelPrimes, limit));
+        }
     }
     return output;
 }
