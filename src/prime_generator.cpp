@@ -204,7 +204,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 {
     // TODO: This should scale to the system.
     // It's 16 GB in bytes.
-    const size_t limit = BigInteger(137438953472ULL);
+    const BigInteger limit = BigInteger(1U) << 37U;
 
     // `backward(n)` counts assuming that multiples
     // of 2 and 3 have been removed.
@@ -330,7 +330,7 @@ int main()
     std::cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
     // const std::vector<BigInteger> primes = TrialDivision(n);
-    const std::vector<BigInteger> primes = SieveOfEratosthenes(n);
+    const std::vector<BigInteger> primes = SegmentedSieveOfEratosthenes(n);
 
     for (BigInteger p : primes) {
         std::cout << p << " ";

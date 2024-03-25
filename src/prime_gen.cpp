@@ -208,7 +208,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 {
     // TODO: This should scale to the system.
     // It's 16 GB in bytes.
-    const BigInteger limit = BigInteger(137438953472ULL);
+    const BigInteger limit = BigInteger(1U) << 37U;
 
     // `backward(n)` counts assuming that multiples
     // of 2 and 3 have been removed.
