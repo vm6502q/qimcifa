@@ -205,6 +205,122 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
     return knownPrimes;
 }
+
+std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
+{
+    // TODO: This should scale to the system.
+    // It's 8192 KB in bits, to match cache size.
+    const size_t limit = 67108864U;
+
+    // `backward(n)` counts assuming that multiples
+    // of 2 and 3 have been removed.
+    if (backward(n) <= limit) {
+        return SieveOfEratosthenes(n);
+    }
+
+    // Process segments of length `limit` at a time.
+    BigInteger low = limit | 1U;
+    if ((low % 3U) == 0U) {
+        low -= 2U;
+    }
+    BigInteger high = (limit << 1U) | 1U;
+    if ((high % 3U) == 0U) {
+        high -= 2U;
+    }
+
+    // Compute all primes smaller than or equal to limit using simple sieve
+    std::vector<BigInteger> knownPrimes = SieveOfEratosthenes(limit);
+    dispatch.resetResult();
+
+    // Process one segment at a time until we pass n
+    while (low < n) {
+        if (high >= n) {
+            high = n | 1U;
+            if ((high % 3U) == 0U) {
+                high -= 2U;
+            }
+        }
+
+        // Cardinality with multiples of 2 and 3 removed is 1/3 of total.
+        const BigInteger bLow = backward(low);
+        std::vector<bool> notPrime((size_t)(backward(high) - bLow) + 1U);
+
+        // Use the found primes by simpleSieve() to find
+        // primes in current range
+        for (size_t k = 2U; k < knownPrimes.size(); k++) {
+            // Find the minimum number in [low..high] that is
+            // a multiple of prime[i] (divisible by prime[i])
+            // For example, if low is 31 and prime[i] is 3,
+            // we start with 33.
+            const BigInteger& p = knownPrimes[k];
+
+            dispatch.dispatch([&bLow, &high, &low, p, &notPrime]() {
+                // We are skipping multiples of 2, 3, and 5
+                // for space complexity, for 4/15 the bits.
+                // More are skipped by the wheel for time.
+                const BigInteger p2 = p << 1U;
+                const BigInteger p4 = p << 2U;
+                BigInteger i = ((low + p - 1U) / p) * p;
+                while (((i & 1U) == 0U) || ((i % 3U) == 0U)) {
+                    i += p;
+                }
+
+                // "p" already definitely not a multiple of 3.
+                // Its remainder when divided by 3 can be 1 or 2.
+                // If it is 2, we can do a "half iteration" of the
+                // loop that would handle remainder of 1, and then
+                // we can proceed with the 1 remainder loop.
+                // This saves 2/3 of updates (or modulo).
+                if ((i % 3U) == 2U) {
+                    const size_t q = (size_t)(backward(i) - bLow);
+                    if (q >= notPrime.size()) {
+                        return false;
+                    }
+                    notPrime[q] = true;
+                    i += p2;
+                }
+
+                for (;;) {
+                    size_t q = (size_t)(backward(i) - bLow);
+                    if (q >= notPrime.size()) {
+                        return false;
+                    }
+                    notPrime[q] = true;
+                    i += p4;
+
+                    q = (size_t)(backward(i) - bLow);
+                    if (q >= notPrime.size()) {
+                        return false;
+                    }
+                    notPrime[q] = true;
+                    i += p2;
+                }
+
+                return false;
+            });
+        }
+        dispatch.finish();
+
+        // Numbers which are not marked as false are prime
+        for (size_t i = 0; i < notPrime.size(); ++i) {
+            if (notPrime[i] == false) {
+                knownPrimes.push_back(forward(i + bLow));
+            }
+        }
+
+        // Update low and high for next segment
+        low = (low + limit) | 1U;
+        if ((low % 3U) == 0U) {
+            low -= 2U;
+        }
+        high = (high + limit) | 1U;
+        if ((high % 3U) == 0U) {
+            high -= 2U;
+        }
+    }
+
+    return knownPrimes;
+}
 } // namespace qimcifa
 
 using namespace qimcifa;
