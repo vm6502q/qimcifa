@@ -206,11 +206,17 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
 std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 {
-    // Compute all primes smaller than or equal
-    // to square root of n using simple sieve
-    const BigInteger limit = sqrt(n) + 1;
-    // Divide the range [0..n-1] in different segments
-    // We have chosen segment size as sqrt(n).
+    // TODO: This should scale to the system.
+    // It's 8192 KB in bits, to match cache size.
+    const size_t limit = 67108864U;
+
+    // `backward(n)` counts assuming that multiples
+    // of 2 and 3 have been removed.
+    if (backward(n) <= limit) {
+        return SieveOfEratosthenes(n);
+    }
+
+    // Process segments of length `limit` at a time.
     BigInteger low = limit | 1U;
     if ((low % 3U) == 0U) {
         low -= 2U;
@@ -220,11 +226,11 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
         high -= 2U;
     }
 
+    // Compute all primes smaller than or equal to limit using simple sieve
     std::vector<BigInteger> knownPrimes = SieveOfEratosthenes(limit);
     dispatch.resetResult();
 
-    // While all segments of range [0..n-1] are not processed,
-    // process one segment at a time
+    // Process one segment at a time until we pass n
     while (low < n) {
         if (high >= n) {
             high = n | 1U;
@@ -233,11 +239,9 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
             }
         }
 
-        // To mark primes in current range. A value in mark[i]
-        // will finally be false if 'i-low' is Not a prime,
-        // else true.
+        // Cardinality with multiples of 2 and 3 removed is 1/3 of total.
         const BigInteger bLow = backward(low);
-        std::vector<bool> notPrime((size_t)(backward(high) - bLow) + 1);
+        std::vector<bool> notPrime((size_t)(backward(high) - bLow) + 1U);
 
         // Use the found primes by simpleSieve() to find
         // primes in current range
