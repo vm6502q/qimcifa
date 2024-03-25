@@ -364,7 +364,7 @@ bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bit
     for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchBound; batchNum = (BigInteger)getNextBatch()) {
         const BigInteger batchStart = batchNum * BIGGEST_WHEEL + offset;
         const BigInteger batchEnd = (batchNum + 1U) * BIGGEST_WHEEL + offset;
-        for (size_t p = batchStart; p < batchEnd;) {
+        for (BigInteger p = batchStart; p < batchEnd;) {
             p += GetWheelIncrement(inc_seqs);
             if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(p), iterClock)) {
                 return true;
