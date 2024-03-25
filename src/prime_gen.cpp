@@ -185,6 +185,9 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     }
     dispatch.finish();
 
+    inc_seqs = wheel_gen(knownPrimes, n);
+    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
+    o = 1U;
     for (;;) {
         o += GetWheelIncrement(inc_seqs);
 
