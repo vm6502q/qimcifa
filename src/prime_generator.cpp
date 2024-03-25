@@ -64,8 +64,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
-    // Primes up to 36
-    std::vector<BigInteger> knownPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31 };
+    std::vector<BigInteger> knownPrimes = { 2, 3, 5 };
     if (n < 2) {
         return std::vector<BigInteger>();
     }
@@ -74,9 +73,6 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), n);
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
-
-    // Wheels up to 5
-    knownPrimes = { 2, 3, 5 };
 
     BigInteger threadLimit = 26U;
 
@@ -187,6 +183,9 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     }
     dispatch.finish();
 
+    inc_seqs = wheel_gen(knownPrimes, n);
+    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
+    o = 1U;
     for (;;) {
         o += GetWheelIncrement(inc_seqs);
 
