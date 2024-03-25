@@ -330,7 +330,7 @@ int main()
     std::cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
     // const std::vector<BigInteger> primes = TrialDivision(n);
-    const std::vector<BigInteger> primes = SegmentedSieveOfEratosthenes(n);
+    const std::vector<BigInteger> primes = SieveOfEratosthenes(n);
 
     for (BigInteger p : primes) {
         std::cout << p << " ";
