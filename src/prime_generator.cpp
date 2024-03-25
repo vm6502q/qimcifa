@@ -86,7 +86,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // reverse the true/false meaning, so we can use
     // default initialization. A value in notPrime[i]
     // will finally be false only if i is a prime.
-    std::vector<bool> notPrime(cardinality + 1);
+    boost::dynamic_bitset<size_t> notPrime(cardinality + 1);
 
     // Get the remaining prime numbers.
     dispatch.resetResult();
@@ -135,11 +135,11 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                 }
             }
 
-            std::vector<bool> wheel30;
+            boost::dynamic_bitset<size_t> wheel30;
             wheel30.reserve(30);
             for (int j = 0; j < 15; ++j) {
                 wheel30.push_back(i % 5);
-                if (wheel30.back()) {
+                if (wheel30[wheel30.size() - 1U]) {
                     notPrime[(size_t)backward5(i)] = true;
                 }
                 i += p4;
@@ -148,7 +148,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                 }
 
                 wheel30.push_back(i % 5);
-                if (wheel30.back()) {
+                if (wheel30[wheel30.size() - 1U]) {
                     notPrime[(size_t)backward5(i)] = true;
                 }
                 i += p2;
@@ -237,7 +237,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 
         // Cardinality with multiples of 2 and 3 removed is 1/3 of total.
         const BigInteger bLow = backward(low);
-        std::vector<bool> notPrime((size_t)(backward(high) - bLow) + 1U);
+        boost::dynamic_bitset<size_t> notPrime((size_t)(backward(high) - bLow) + 1U);
 
         // Use the found primes by simpleSieve() to find
         // primes in current range
