@@ -64,7 +64,8 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
-    std::vector<BigInteger> knownPrimes = { 2, 3, 5 };
+    // Primes up to 36
+    std::vector<BigInteger> knownPrimes = { 2, 3, 5, 11, 13, 17, 19, 23, 29, 31 };
     if (n < 2) {
         return std::vector<BigInteger>();
     }
@@ -73,6 +74,9 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), n);
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
+
+    // Wheels up to 5
+    knownPrimes = { 2, 3, 5 };
 
     BigInteger threadLimit = 26U;
 
