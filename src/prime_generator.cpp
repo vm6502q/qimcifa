@@ -184,12 +184,12 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     dispatch.finish();
 
     for (;;) {
-        o += GetWheel5Increment(wheel5);
-
         const BigInteger p = forward(o);
         if (p > n) {
             break;
         }
+
+        o += GetWheel5Increment(wheel5);
 
         if (notPrime[(size_t)backward5(p)]) {
             continue;
