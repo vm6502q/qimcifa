@@ -327,5 +327,5 @@ using namespace qimcifa;
 
 PYBIND11_MODULE(prime_gen, m) {
     m.doc() = "pybind11 plugin to generate prime numbers";
-    m.def("prime_gen", &SieveOfEratosthenes, "A function that returns all primes up to the value of its argument");
+    m.def("prime_gen", &SegmentedSieveOfEratosthenes, "A function that returns all primes up to the value of its argument");
 }
