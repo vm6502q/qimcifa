@@ -88,9 +88,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // reverse the true/false meaning, so we can use
     // default initialization. A value in notPrime[i]
     // will finally be false only if i is a prime.
-    const size_t bitsPerWord = 64U;
-    uint64_t notPrime[(cardinality + bitsPerWord) / bitsPerWord];
-    memset(notPrime, 0U, sizeof(notPrime));
+    boost::dynamic_bitset<size_t> notPrime(cardinality + 1U);
 
     // Get the remaining prime numbers.
     dispatch.resetResult();
@@ -109,9 +107,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             threadLimit *= threadLimit;
         }
 
-
-        const size_t q = (size_t)backward5(p);
-        if ((notPrime[q / bitsPerWord] >> (q % bitsPerWord)) & 1U) {
+        if (notPrime[(size_t)backward5(p)]) {
             continue;
         }
 
@@ -132,8 +128,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             // we can proceed with the 1 remainder loop.
             // This saves 2/3 of updates (or modulo).
             if ((p % 3U) == 2U) {
-                const size_t q = (size_t)backward5(i);
-                notPrime[q / bitsPerWord] |= (1ULL << (q % bitsPerWord));
+                notPrime[(size_t)backward5(i)] = true;
                 i += p2;
                 if (i > n) {
                     return false;
@@ -145,8 +140,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             for (int j = 0; j < 15; ++j) {
                 wheel30.push_back(i % 5);
                 if (wheel30[wheel30.size() - 1U]) {
-                    const size_t q = (size_t)backward5(i);
-                    notPrime[q / bitsPerWord] |= (1ULL << (q % bitsPerWord));
+                    notPrime[(size_t)backward5(i)] = true;
                 }
                 i += p4;
                 if (i > n) {
@@ -155,8 +149,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
                 wheel30.push_back(i % 5);
                 if (wheel30[wheel30.size() - 1U]) {
-                    const size_t q = (size_t)backward5(i);
-                    notPrime[q / bitsPerWord] |= (1ULL << (q % bitsPerWord));
+                    notPrime[(size_t)backward5(i)] = true;
                 }
                 i += p2;
                 if (i > n) {
@@ -167,8 +160,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             for (;;) {
                 for (int j = 0; j < 30; j+=2) {
                     if (wheel30[j]) {
-                        const size_t q = (size_t)backward5(i);
-                        notPrime[q / bitsPerWord] |= (1ULL << (q % bitsPerWord));
+                        notPrime[(size_t)backward5(i)] = true;
                     }
                     i += p4;
                     if (i > n) {
@@ -176,8 +168,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                     }
 
                     if (wheel30[j + 1]) {
-                        const size_t q = (size_t)backward5(i);
-                        notPrime[q / bitsPerWord] |= (1ULL << (q % bitsPerWord));
+                        notPrime[(size_t)backward5(i)] = true;
                     }
                     i += p2;
                     if (i > n) {
@@ -199,8 +190,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             break;
         }
 
-        const size_t q = (size_t)backward5(p);
-        if ((notPrime[q / bitsPerWord] >> (q % bitsPerWord)) & 1U) {
+        if (notPrime[(size_t)backward5(p)]) {
             continue;
         }
 
@@ -339,7 +329,7 @@ using namespace qimcifa;
 // Driver Code
 int main()
 {
-    BigInteger n = 100000000U; // 1e8
+    BigInteger n = 1000000000U; // 1e9
 
     std::cout << "Primes up to number: ";
     std::cin >> n;
@@ -347,7 +337,7 @@ int main()
     std::cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
 
     // const std::vector<BigInteger> primes = TrialDivision(n);
-    const std::vector<BigInteger> primes = SegmentedSieveOfEratosthenes(n);
+    const std::vector<BigInteger> primes = SieveOfEratosthenes(n);
 
     for (BigInteger p : primes) {
         std::cout << p << " ";
