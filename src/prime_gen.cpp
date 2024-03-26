@@ -76,6 +76,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
+    knownPrimes.reserve(log(n));
+
     BigInteger threadLimit = 26U;
 
     // We are excluding multiples of the first few
@@ -233,6 +235,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 
     // Compute all primes smaller than or equal to limit using simple sieve
     std::vector<BigInteger> knownPrimes = SieveOfEratosthenes(limit);
+    knownPrimes.reserve(log(n));
     dispatch.resetResult();
 
     const size_t bitsPerWord = 64U;
