@@ -214,4 +214,5 @@ inline size_t GetWheel5Increment(uint32_t& wheel5) {
 
 std::vector<BigInteger> TrialDivision(const BigInteger& n);
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n);
+std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n);
 } // namespace qimcifa
