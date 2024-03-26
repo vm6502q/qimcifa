@@ -135,11 +135,10 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                 }
             }
 
-            boost::dynamic_bitset<size_t> wheel30;
-            wheel30.reserve(30);
-            for (int j = 0; j < 15; ++j) {
-                wheel30.push_back(i % 5);
-                if (wheel30[wheel30.size() - 1U]) {
+            uint32_t wheel30 = 0U;
+            for (int j = 0; j < 30; j += 2) {
+                if (i % 5) {
+                    wheel30 |= (1ULL << j);
                     notPrime[(size_t)backward5(i)] = true;
                 }
                 i += p4;
@@ -147,8 +146,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                     return false;
                 }
 
-                wheel30.push_back(i % 5);
-                if (wheel30[wheel30.size() - 1U]) {
+                if (i % 5) {
+                    wheel30 |= (1ULL << (j + 1U));
                     notPrime[(size_t)backward5(i)] = true;
                 }
                 i += p2;
@@ -159,7 +158,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
             for (;;) {
                 for (int j = 0; j < 30; j+=2) {
-                    if (wheel30[j]) {
+                    if ((wheel30 >> j) & 1U) {
                         notPrime[(size_t)backward5(i)] = true;
                     }
                     i += p4;
@@ -167,7 +166,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                         return false;
                     }
 
-                    if (wheel30[j + 1]) {
+                    if ((wheel30 >> (j + 1)) & 1U) {
                         notPrime[(size_t)backward5(i)] = true;
                     }
                     i += p2;
