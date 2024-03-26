@@ -74,6 +74,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
+    knownPrimes.reserve(log(n));
+
     BigInteger threadLimit = 26U;
 
     // We are excluding multiples of the first few
@@ -86,14 +88,14 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // reverse the true/false meaning, so we can use
     // default initialization. A value in notPrime[i]
     // will finally be false only if i is a prime.
-    boost::dynamic_bitset<size_t> notPrime(cardinality + 1);
+    boost::dynamic_bitset<size_t> notPrime(cardinality + 1U);
 
     // Get the remaining prime numbers.
     dispatch.resetResult();
-    std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes, n);
+    uint32_t wheel5 = (1U << 7U) | 1U;
     size_t o = 1U;
     for (;;) {
-        o += GetWheelIncrement(inc_seqs);
+        o += GetWheel5Increment(wheel5);
 
         const BigInteger p = forward(o);
         if ((p * p) > n) {
@@ -105,9 +107,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             threadLimit *= threadLimit;
         }
 
-
-        const size_t q = (size_t)backward5(p);
-        if (notPrime[q] == true) {
+        if (notPrime[(size_t)backward5(p)]) {
             continue;
         }
 
@@ -135,11 +135,10 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                 }
             }
 
-            boost::dynamic_bitset<size_t> wheel30;
-            wheel30.reserve(30);
-            for (int j = 0; j < 15; ++j) {
-                wheel30.push_back(i % 5);
-                if (wheel30[wheel30.size() - 1U]) {
+            uint32_t wheel30 = 0U;
+            for (int j = 0; j < 30; j += 2) {
+                if (i % 5) {
+                    wheel30 |= (1ULL << j);
                     notPrime[(size_t)backward5(i)] = true;
                 }
                 i += p4;
@@ -147,8 +146,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                     return false;
                 }
 
-                wheel30.push_back(i % 5);
-                if (wheel30[wheel30.size() - 1U]) {
+                if (i % 5) {
+                    wheel30 |= (1ULL << (j + 1U));
                     notPrime[(size_t)backward5(i)] = true;
                 }
                 i += p2;
@@ -159,7 +158,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
             for (;;) {
                 for (int j = 0; j < 30; j+=2) {
-                    if (wheel30[j]) {
+                    if ((wheel30 >> j) & 1U) {
                         notPrime[(size_t)backward5(i)] = true;
                     }
                     i += p4;
@@ -167,7 +166,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
                         return false;
                     }
 
-                    if (wheel30[j + 1]) {
+                    if ((wheel30 >> (j + 1)) & 1U) {
                         notPrime[(size_t)backward5(i)] = true;
                     }
                     i += p2;
@@ -183,14 +182,14 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     dispatch.finish();
 
     for (;;) {
-        o += GetWheelIncrement(inc_seqs);
+        o += GetWheel5Increment(wheel5);
 
         const BigInteger p = forward(o);
         if (p > n) {
             break;
         }
 
-        if (notPrime[(size_t)backward5(p)] == true) {
+        if (notPrime[(size_t)backward5(p)]) {
             continue;
         }
 
@@ -203,8 +202,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 {
     // TODO: This should scale to the system.
-    // It's 16 GB in bytes.
-    const BigInteger limit = BigInteger(1U) << 37U;
+    // It's 8 GB in bits.
+    const size_t limit = 68719476736ULL;
 
     // `backward(n)` counts assuming that multiples
     // of 2 and 3 have been removed.
@@ -224,6 +223,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 
     // Compute all primes smaller than or equal to limit using simple sieve
     std::vector<BigInteger> knownPrimes = SieveOfEratosthenes(limit);
+    knownPrimes.reserve(log(n));
     dispatch.resetResult();
 
     // Process one segment at a time until we pass n
@@ -237,7 +237,8 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 
         // Cardinality with multiples of 2 and 3 removed is 1/3 of total.
         const BigInteger bLow = backward(low);
-        boost::dynamic_bitset<size_t> notPrime((size_t)(backward(high) - bLow) + 1U);
+        const size_t cardinality = (size_t)(backward(high) - bLow);
+        boost::dynamic_bitset<size_t> notPrime(cardinality + 1U);
 
         // Use the found primes by simpleSieve() to find
         // primes in current range
@@ -248,7 +249,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
             // we start with 33.
             const BigInteger& p = knownPrimes[k];
 
-            dispatch.dispatch([&bLow, &high, &low, p, &notPrime]() {
+            dispatch.dispatch([&bLow, &high, &low, &cardinality, p, &notPrime]() {
                 // We are skipping multiples of 2, 3, and 5
                 // for space complexity, for 4/15 the bits.
                 // More are skipped by the wheel for time.
@@ -270,7 +271,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
                 // This saves 2/3 of updates (or modulo).
                 if ((i % 3U) == 2U) {
                     const size_t q = (size_t)(backward(i) - bLow);
-                    if (q >= notPrime.size()) {
+                    if (q > cardinality) {
                         return false;
                     }
                     notPrime[q] = true;
@@ -279,14 +280,14 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 
                 for (;;) {
                     size_t q = (size_t)(backward(i) - bLow);
-                    if (q >= notPrime.size()) {
+                    if (q > cardinality) {
                         return false;
                     }
                     notPrime[q] = true;
                     i += p4;
 
                     q = (size_t)(backward(i) - bLow);
-                    if (q >= notPrime.size()) {
+                    if (q > cardinality) {
                         return false;
                     }
                     notPrime[q] = true;
@@ -299,9 +300,9 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
         dispatch.finish();
 
         // Numbers which are not marked as false are prime
-        for (size_t i = 0; i < notPrime.size(); ++i) {
-            if (notPrime[i] == false) {
-                knownPrimes.push_back(forward(i + bLow));
+        for (size_t q = 0; q <= cardinality; ++q) {
+            if (notPrime[q]) {
+                knownPrimes.push_back(forward(q + bLow));
             }
         }
 
