@@ -257,8 +257,11 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
                 const BigInteger p2 = p << 1U;
                 const BigInteger p4 = p << 2U;
                 BigInteger i = ((low + p - 1U) / p) * p;
-                while (((i & 1U) == 0U) || ((i % 3U) == 0U)) {
+                if ((i & 1U) == 0U) {
                     i += p;
+                }
+                if ((i % 3U) == 0U) {
+                    i += p2;
                 }
 
                 // "p" already definitely not a multiple of 3.
