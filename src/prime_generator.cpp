@@ -12,6 +12,8 @@
 
 #include "prime_generator.hpp"
 
+#include <cmath>
+
 namespace qimcifa {
 std::vector<BigInteger> TrialDivision(const BigInteger& n)
 {
@@ -74,7 +76,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
         return std::vector<BigInteger>(knownPrimes.begin(), highestPrimeIt);
     }
 
-    knownPrimes.reserve(n / log(n));
+    knownPrimes.reserve(std::expint(log(n)) - std::expint(log(2)));
 
     BigInteger threadLimit = 26U;
 
@@ -223,7 +225,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
 
     // Compute all primes smaller than or equal to limit using simple sieve
     std::vector<BigInteger> knownPrimes = SieveOfEratosthenes(limit);
-    knownPrimes.reserve(n / log(n));
+    knownPrimes.reserve(std::expint(log(n)) - std::expint(log(2)));
     dispatch.resetResult();
 
     // Process one segment at a time until we pass n
