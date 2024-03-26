@@ -197,6 +197,21 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
     return wheelIncrement;
 }
 
+inline size_t GetWheel5Increment(uint32_t& wheel5) {
+    size_t wheelIncrement = 0U;
+    bool is_wheel_multiple = false;
+    do {
+        is_wheel_multiple = (bool)(wheel5 & 1U);
+        wheel5 >>= 1U;
+        if (is_wheel_multiple) {
+            wheel5 |= 1U << 9U;
+        }
+        wheelIncrement++;
+    } while (is_wheel_multiple);
+
+    return wheelIncrement;
+}
+
 std::vector<BigInteger> TrialDivision(const BigInteger& n);
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n);
 } // namespace qimcifa

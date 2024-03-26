@@ -92,10 +92,10 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
     // Get the remaining prime numbers.
     dispatch.resetResult();
-    std::vector<boost::dynamic_bitset<size_t>> inc_seqs = wheel_gen(knownPrimes, n);
+    uint32_t wheel5 = (1U << 7U) | 1U;
     size_t o = 1U;
     for (;;) {
-        o += GetWheelIncrement(inc_seqs);
+        o += GetWheel5Increment(wheel5);
 
         const BigInteger p = forward(o);
         if ((p * p) > n) {
@@ -190,7 +190,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     dispatch.finish();
 
     for (;;) {
-        o += GetWheelIncrement(inc_seqs);
+        o += GetWheel5Increment(wheel5);
 
         const BigInteger p = forward(o);
         if (p > n) {
