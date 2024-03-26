@@ -217,14 +217,8 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
     }
 
     // Process segments of length `limit` at a time.
-    BigInteger low = limit | 1U;
-    if ((low % 3U) == 0U) {
-        low -= 2U;
-    }
-    BigInteger high = (limit << 1U) | 1U;
-    if ((high % 3U) == 0U) {
-        high -= 2U;
-    }
+    BigInteger low = makeNotMultiple(limit);
+    BigInteger high = makeNotMultiple(limit << 1U);
 
     // Compute all primes smaller than or equal to limit using simple sieve
     std::vector<BigInteger> knownPrimes = SieveOfEratosthenes(limit);
@@ -234,10 +228,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
     // Process one segment at a time until we pass n
     while (low < n) {
         if (high >= n) {
-            high = n | 1U;
-            if ((high % 3U) == 0U) {
-                high -= 2U;
-            }
+            high = makeNotMultiple(n);
         }
 
         // Cardinality with multiples of 2 and 3 removed is 1/3 of total.
@@ -312,14 +303,8 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n)
         }
 
         // Update low and high for next segment
-        low = (low + limit) | 1U;
-        if ((low % 3U) == 0U) {
-            low -= 2U;
-        }
-        high = (high + limit) | 1U;
-        if ((high % 3U) == 0U) {
-            high -= 2U;
-        }
+        low = makeNotMultiple(low + limit);
+        high = makeNotMultiple(high + limit);
     }
 
     return knownPrimes;

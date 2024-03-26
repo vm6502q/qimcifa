@@ -212,6 +212,15 @@ inline size_t GetWheel5Increment(uint32_t& wheel5) {
     return wheelIncrement;
 }
 
+inline BigInteger makeNotMultiple(BigInteger n) {
+    n |= 1U;
+    if ((n % 3U) == 0U) {
+        n -= 2U;
+    }
+
+    return n;
+}
+
 std::vector<BigInteger> TrialDivision(const BigInteger& n);
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n);
 std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n);
