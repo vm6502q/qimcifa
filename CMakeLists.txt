@@ -24,19 +24,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -O3")
 
-find_package(pybind11 CONFIG REQUIRED)
-message(STATUS "Found pybind11 v${pybind11_VERSION}: ${pybind11_INCLUDE_DIRS}")
-add_library(prime_gen MODULE src/prime_gen.cpp)
-target_link_libraries(prime_gen pybind11::module)
-configure_file(src/setup.py ${CMAKE_CURRENT_BINARY_DIR}/setup.py COPYONLY)
-configure_file(src/prime_gen.cpp ${CMAKE_CURRENT_BINARY_DIR}/prime_gen.cpp COPYONLY)
-configure_file(${CMAKE_CURRENT_BINARY_DIR}/include/common/config.h ${CMAKE_CURRENT_BINARY_DIR}/config.h COPYONLY)
-configure_file(include/big_integer.hpp ${CMAKE_CURRENT_BINARY_DIR}/big_integer.hpp COPYONLY)
-configure_file(include/dispatchqueue.hpp ${CMAKE_CURRENT_BINARY_DIR}/dispatchqueue.hpp COPYONLY)
-configure_file(include/prime_generator.hpp ${CMAKE_CURRENT_BINARY_DIR}/prime_generator.hpp COPYONLY)
-configure_file(src/common/big_integer.cpp ${CMAKE_CURRENT_BINARY_DIR}/big_integer.cpp COPYONLY)
-configure_file(src/common/dispatchqueue.cpp ${CMAKE_CURRENT_BINARY_DIR}/dispatchqueue.cpp COPYONLY)
-
 if (USE_GMP OR USE_BOOST)
 add_executable (qimcifa
     src/qimcifa.cpp
@@ -71,4 +58,3 @@ else (USE_GMP)
     target_link_libraries (prime_generator pthread)
 endif (USE_GMP)
 target_compile_features(prime_generator PRIVATE cxx_std_17)
-target_compile_features(prime_gen PRIVATE cxx_std_17)

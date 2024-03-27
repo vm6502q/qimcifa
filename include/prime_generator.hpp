@@ -223,5 +223,5 @@ inline BigInteger makeNotMultiple(BigInteger n) {
 
 std::vector<BigInteger> TrialDivision(const BigInteger& n);
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n);
-std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n);
+std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n, const size_t& limit);
 } // namespace qimcifa
