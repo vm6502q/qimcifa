@@ -183,6 +183,130 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     return knownPrimes;
 }
 
+// Pardon the obvious "copy/pasta."
+// I began to design a single method to switch off between these two,
+// then I realized the execution time overhead of the implementation.
+// (It would compound linearly over the cardinality to check.)
+// It is certainly "cheap" to copy/paste, but that's our only goal.
+
+BigInteger CountPrimesTo(const BigInteger& n)
+{
+    const std::vector<BigInteger> knownPrimes = { 2, 3, 5 };
+    if (n < 2) {
+        return 0U;
+    }
+
+    if (n < (knownPrimes.back() + 2)) {
+        const auto highestPrimeIt = std::upper_bound(knownPrimes.begin(), knownPrimes.end(), n);
+        return std::distance(knownPrimes.begin(), highestPrimeIt);
+    }
+
+    // We are excluding multiples of the first few
+    // small primes from outset. For multiples of
+    // 2, 3, and 5 this reduces complexity to 4/15.
+    const size_t cardinality = (size_t)backward5(n);
+
+    // Create a boolean array "prime[0..cardinality]"
+    // and initialize all entries it as true. Rather,
+    // reverse the true/false meaning, so we can use
+    // default initialization. A value in notPrime[i]
+    // will finally be false only if i is a prime.
+    std::unique_ptr<bool> uNotPrime(new bool[cardinality + 1U]());
+    bool* notPrime = uNotPrime.get();
+
+    // We dispatch multiple marking asynchronously.
+    // If we've already marked all primes up to x,
+    // we're free to continue to up to x * x,
+    // then we synchronize.
+    BigInteger threadBoundary = 36U;
+
+    // Get the remaining prime numbers.
+    uint32_t wheel5 = (1U << 7U) | 1U;
+    size_t o = 1U;
+    BigInteger count = 3U;
+    for (;;) {
+        o += GetWheel5Increment(wheel5);
+
+        const BigInteger p = forward(o);
+        if ((p * p) > n) {
+            break;
+        }
+
+        if (threadBoundary < p) {
+            dispatch.finish();
+            threadBoundary *= threadBoundary;
+        }
+
+        if (notPrime[(size_t)backward5(p)]) {
+            continue;
+        }
+
+        ++count;
+
+        dispatch.dispatch([&n, p, &notPrime]() {
+            // We are skipping multiples of 2, 3, and 5
+            // for space complexity, for 4/15 the bits.
+            // More are skipped by the wheel for time.
+            const BigInteger p2 = p << 1U;
+            const BigInteger p4 = p << 2U;
+            BigInteger i = p * p;
+
+            // "p" already definitely not a multiple of 3.
+            // Its remainder when divided by 3 can be 1 or 2.
+            // If it is 2, we can do a "half iteration" of the
+            // loop that would handle remainder of 1, and then
+            // we can proceed with the 1 remainder loop.
+            // This saves 2/3 of updates (or modulo).
+            if ((p % 3U) == 2U) {
+                notPrime[(size_t)backward5(i)] = true;
+                i += p2;
+                if (i > n) {
+                    return false;
+                }
+            }
+
+            for (;;) {
+                if (i % 5U) {
+                    notPrime[(size_t)backward5(i)] = true;
+                }
+                i += p4;
+                if (i > n) {
+                    return false;
+                }
+
+                if (i % 5U) {
+                    notPrime[(size_t)backward5(i)] = true;
+                }
+                i += p2;
+                if (i > n) {
+                    return false;
+                }
+            }
+
+            return false;
+        });
+    }
+
+    dispatch.finish();
+
+    for (;;) {
+        const BigInteger p = forward(o);
+        if (p > n) {
+            break;
+        }
+
+        o += GetWheel5Increment(wheel5);
+
+        if (notPrime[(size_t)backward5(p)]) {
+            continue;
+        }
+
+        ++count;
+    }
+
+    return count;
+}
+
 std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n, const size_t& limit)
 {
     // `backward(n)` counts assuming that multiples
@@ -307,18 +431,19 @@ int main()
 {
     BigInteger n = 1000000000U; // 1e9
 
-    std::cout << "Primes up to number: ";
+    std::cout << "Count primes up to number: ";
     std::cin >> n;
 
-    std::cout << "Following are the prime numbers smaller than or equal to " << n << ":" << std::endl;
+    std::cout << "Following is the count of prime numbers smaller than or equal to " << n << ":" << std::endl;
 
     // const std::vector<BigInteger> primes = TrialDivision(n);
-    const std::vector<BigInteger> primes = SieveOfEratosthenes(n);
+    // const std::vector<BigInteger> primes = SegmentedSieveOfEratosthenes(n, 100);
+    std::cout << CountPrimesTo(n) << std::endl;
 
-    for (BigInteger p : primes) {
-        std::cout << p << " ";
-    }
-    std::cout << std::endl;
+    // for (BigInteger p : primes) {
+    //     std::cout << p << " ";
+    // }
+    // std::cout << std::endl;
 
     return 0;
 }
