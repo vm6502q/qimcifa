@@ -90,8 +90,8 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // will finally be false only if i is a prime.
     size_t bitsPerWord = 64U;
     const size_t arrayWidth = (cardinality + bitsPerWord) / bitsPerWord;
-    std::unique_ptr<uint64_t> uNotPrime(new uint64_t[arrayWidth]);
-    std::unique_ptr<std::mutex> uNotPrimeMutex(new std::mutex[arrayWidth]);
+    std::unique_ptr<uint64_t> uNotPrime(new uint64_t[arrayWidth]());
+    std::unique_ptr<std::mutex> uNotPrimeMutex(new std::mutex[arrayWidth]());
     uint64_t* notPrime = uNotPrime.get();
     std::mutex* notPrimeMutex = uNotPrimeMutex.get();
 
