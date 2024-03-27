@@ -99,7 +99,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // If we've already marked all primes up to x,
     // we're free to continue to up to x * x,
     // then we synchronize.
-    BigInteger threadBoundary = 25U;
+    BigInteger threadBoundary = 36U;
 
     // Get the remaining prime numbers.
     uint32_t wheel5 = (1U << 7U) | 1U;
