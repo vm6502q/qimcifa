@@ -233,8 +233,8 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n, const 
         const size_t cardinality = (size_t)(backward5(high) - bLow);
         size_t bitsPerWord = 64U;
         const size_t arrayWidth = (cardinality + bitsPerWord) / bitsPerWord;
-        std::unique_ptr<uint64_t> uNotPrime(new uint64_t[arrayWidth]);
-        std::unique_ptr<std::mutex> uNotPrimeMutex(new std::mutex[arrayWidth]);
+        std::unique_ptr<uint64_t> uNotPrime(new uint64_t[arrayWidth]());
+        std::unique_ptr<std::mutex> uNotPrimeMutex(new std::mutex[arrayWidth]());
         uint64_t* notPrime = uNotPrime.get();
         std::mutex* notPrimeMutex = uNotPrimeMutex.get();
 
