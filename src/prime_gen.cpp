@@ -81,7 +81,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
     knownPrimes.reserve(std::expint(log(n)) - std::expint(log(2)));
 
-    BigInteger threadLimit = 26U;
+    BigInteger threadLimit = 25U;
 
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
@@ -189,12 +189,12 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     wheel5 = (1U << 7U) | 1U;
     o = 1U;
     for (;;) {
+        o += GetWheel5Increment(wheel5);
+
         const BigInteger p = forward(o);
         if (p > n) {
             break;
         }
-
-        o += GetWheel5Increment(wheel5);
 
         if (notPrime[(size_t)backward5(p)]) {
             continue;
