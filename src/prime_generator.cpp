@@ -319,15 +319,15 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n, const 
         // Numbers which are not marked as false are prime
         size_t q = 0U;
         for (size_t o = 0U; ; ++o) {
-            const size_t p = forward(o);
-            if (p > cardinality) {
+            const size_t p = forward(o + bLow);
+            if (p > n) {
                 break;
             }
             if ((p % 5U) == 0U) {
                 continue;
             }
             if (notPrime[q]) {
-                knownPrimes.push_back(forward(o + bLow));
+                knownPrimes.push_back(p);
             }
             ++q;
         }
