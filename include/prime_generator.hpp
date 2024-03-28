@@ -171,7 +171,7 @@ std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigIntege
     std::vector<BigInteger> wheelPrimes;
     for (const BigInteger& p : primes) {
         wheelPrimes.push_back(p);
-        if (wheelPrimes.back() > 3U) {
+        if (wheelPrimes.back() > 5U) {
             output.push_back(wheel_inc(wheelPrimes, limit));
         }
     }
@@ -197,7 +197,7 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
     return wheelIncrement;
 }
 
-inline size_t GetWheel5Increment(uint32_t& wheel5) {
+inline size_t GetWheel5and7Increment(uint32_t& wheel5, uint64_t& wheel7) {
     size_t wheelIncrement = 0U;
     bool is_wheel_multiple = false;
     do {
@@ -205,6 +205,14 @@ inline size_t GetWheel5Increment(uint32_t& wheel5) {
         wheel5 >>= 1U;
         if (is_wheel_multiple) {
             wheel5 |= 1U << 9U;
+            wheelIncrement++;
+            continue;
+        }
+
+        is_wheel_multiple = (bool)(wheel7 & 1U);
+        wheel7 >>= 1U;
+        if (is_wheel_multiple) {
+            wheel7 |= 1ULL << 55U;
         }
         wheelIncrement++;
     } while (is_wheel_multiple);

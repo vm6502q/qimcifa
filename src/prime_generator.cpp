@@ -66,7 +66,7 @@ std::vector<BigInteger> TrialDivision(const BigInteger& n)
 
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 {
-    std::vector<BigInteger> knownPrimes = { 2, 3, 5 };
+    std::vector<BigInteger> knownPrimes = { 2, 3, 5, 7 };
     if (n < 2) {
         return std::vector<BigInteger>();
     }
@@ -98,10 +98,11 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     BigInteger threadBoundary = 36U;
 
     // Get the remaining prime numbers.
-    uint32_t wheel5 = (1U << 7U) | 1U;
+    uint32_t wheel5 = 129U;
+    uint64_t wheel7 = 9009416540524545ULL;
     size_t o = 1U;
     for (;;) {
-        o += GetWheel5Increment(wheel5);
+        o += GetWheel5and7Increment(wheel5, wheel7);
 
         const BigInteger p = forward(o);
         if ((p * p) > n) {
@@ -171,7 +172,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             break;
         }
 
-        o += GetWheel5Increment(wheel5);
+        o += GetWheel5and7Increment(wheel5, wheel7);
 
         if (notPrime[(size_t)backward5(p)]) {
             continue;
@@ -191,7 +192,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
 BigInteger CountPrimesTo(const BigInteger& n)
 {
-    const std::vector<BigInteger> knownPrimes = { 2, 3, 5 };
+    const std::vector<BigInteger> knownPrimes = { 2, 3, 5, 7 };
     if (n < 2) {
         return 0U;
     }
@@ -221,11 +222,12 @@ BigInteger CountPrimesTo(const BigInteger& n)
     BigInteger threadBoundary = 36U;
 
     // Get the remaining prime numbers.
-    uint32_t wheel5 = (1U << 7U) | 1U;
+    uint32_t wheel5 = 129U;
+    uint64_t wheel7 = 9009416540524545ULL;
     size_t o = 1U;
-    BigInteger count = 3U;
+    BigInteger count = 4U;
     for (;;) {
-        o += GetWheel5Increment(wheel5);
+        o += GetWheel5and7Increment(wheel5, wheel7);
 
         const BigInteger p = forward(o);
         if ((p * p) > n) {
@@ -295,7 +297,7 @@ BigInteger CountPrimesTo(const BigInteger& n)
             break;
         }
 
-        o += GetWheel5Increment(wheel5);
+        o += GetWheel5and7Increment(wheel5, wheel7);
 
         if (notPrime[(size_t)backward5(p)]) {
             continue;
