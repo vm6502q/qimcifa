@@ -81,7 +81,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2, 3, and 5 this reduces complexity to 4/15.
-    const size_t cardinality = (size_t)backward5(n);
+    const size_t cardinality = (size_t)backward7(n);
 
     // Create a boolean array "prime[0..cardinality]"
     // and initialize all entries it as true. Rather,
@@ -114,7 +114,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             threadBoundary *= threadBoundary;
         }
 
-        if (notPrime[(size_t)backward5(p)]) {
+        if (notPrime[(size_t)backward7(p)]) {
             continue;
         }
 
@@ -135,7 +135,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             // we can proceed with the 1 remainder loop.
             // This saves 2/3 of updates (or modulo).
             if ((p % 3U) == 2U) {
-                notPrime[(size_t)backward5(i)] = true;
+                notPrime[(size_t)backward7(i)] = true;
                 i += p2;
                 if (i > n) {
                     return false;
@@ -143,16 +143,16 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
             }
 
             for (;;) {
-                if (i % 5U) {
-                    notPrime[(size_t)backward5(i)] = true;
+                if ((i % 5U) && (i % 7U)) {
+                    notPrime[(size_t)backward7(i)] = true;
                 }
                 i += p4;
                 if (i > n) {
                     return false;
                 }
 
-                if (i % 5U) {
-                    notPrime[(size_t)backward5(i)] = true;
+                if ((i % 5U) && (i % 7U)) {
+                    notPrime[(size_t)backward7(i)] = true;
                 }
                 i += p2;
                 if (i > n) {
@@ -174,7 +174,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
 
         o += GetWheel5and7Increment(wheel5, wheel7);
 
-        if (notPrime[(size_t)backward5(p)]) {
+        if (notPrime[(size_t)backward7(p)]) {
             continue;
         }
 
@@ -205,7 +205,7 @@ BigInteger CountPrimesTo(const BigInteger& n)
     // We are excluding multiples of the first few
     // small primes from outset. For multiples of
     // 2, 3, and 5 this reduces complexity to 4/15.
-    const size_t cardinality = (size_t)backward5(n);
+    const size_t cardinality = (size_t)backward7(n);
 
     // Create a boolean array "prime[0..cardinality]"
     // and initialize all entries it as true. Rather,
@@ -239,7 +239,7 @@ BigInteger CountPrimesTo(const BigInteger& n)
             threadBoundary *= threadBoundary;
         }
 
-        if (notPrime[(size_t)backward5(p)]) {
+        if (notPrime[(size_t)backward7(p)]) {
             continue;
         }
 
@@ -260,7 +260,7 @@ BigInteger CountPrimesTo(const BigInteger& n)
             // we can proceed with the 1 remainder loop.
             // This saves 2/3 of updates (or modulo).
             if ((p % 3U) == 2U) {
-                notPrime[(size_t)backward5(i)] = true;
+                notPrime[(size_t)backward7(i)] = true;
                 i += p2;
                 if (i > n) {
                     return false;
@@ -268,16 +268,16 @@ BigInteger CountPrimesTo(const BigInteger& n)
             }
 
             for (;;) {
-                if (i % 5U) {
-                    notPrime[(size_t)backward5(i)] = true;
+                if ((i % 5U) && (i % 7U)) {
+                    notPrime[(size_t)backward7(i)] = true;
                 }
                 i += p4;
                 if (i > n) {
                     return false;
                 }
 
-                if (i % 5U) {
-                    notPrime[(size_t)backward5(i)] = true;
+                if ((i % 5U) && (i % 7U)) {
+                    notPrime[(size_t)backward7(i)] = true;
                 }
                 i += p2;
                 if (i > n) {
@@ -299,7 +299,7 @@ BigInteger CountPrimesTo(const BigInteger& n)
 
         o += GetWheel5and7Increment(wheel5, wheel7);
 
-        if (notPrime[(size_t)backward5(p)]) {
+        if (notPrime[(size_t)backward7(p)]) {
             continue;
         }
 
@@ -313,7 +313,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n, const 
 {
     // `backward(n)` counts assuming that multiples
     // of 2 and 3 have been removed.
-    if ((n < 7U) || (backward5(n) <= limit)) {
+    if ((n < 7U) || (backward7(n) <= limit)) {
         return SieveOfEratosthenes(n);
     }
 
@@ -333,8 +333,8 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n, const 
         }
 
         // Cardinality with multiples of 2 and 3 removed is 1/3 of total.
-        const BigInteger bLow = backward5(low);
-        const size_t cardinality = (size_t)(backward5(high) - bLow);
+        const BigInteger bLow = backward7(low);
+        const size_t cardinality = (size_t)(backward7(high) - bLow);
         std::unique_ptr<bool> uNotPrime(new bool[cardinality]());
         bool* notPrime = uNotPrime.get();
 
@@ -368,7 +368,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n, const 
                 // we can proceed with the 1 remainder loop.
                 // This saves 2/3 of updates (or modulo).
                 if ((i % 3U) == 2U) {
-                    const size_t q = (size_t)(backward5(i) - bLow);
+                    const size_t q = (size_t)(backward7(i) - bLow);
                     if (q > cardinality) {
                         return false;
                     }
@@ -377,8 +377,8 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n, const 
                 }
 
                 for (;;) {
-                    if (i % 5U) {
-                        size_t q = (size_t)(backward5(i) - bLow);
+                    if ((i % 5U) && (i % 7U)) {
+                        size_t q = (size_t)(backward7(i) - bLow);
                         if (q > cardinality) {
                             return false;
                         }
@@ -386,8 +386,8 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n, const 
                     }
                     i += p4;
 
-                    if (i % 5U) {
-                        size_t q = (size_t)(backward5(i) - bLow);
+                    if ((i % 5U) && (i % 7U)) {
+                        size_t q = (size_t)(backward7(i) - bLow);
                         if (q > cardinality) {
                             return false;
                         }
