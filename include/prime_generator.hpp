@@ -94,7 +94,7 @@ inline BigInteger backward7(BigInteger n) {
         127, 131, 137, 139, 143, 149, 151, 157, 163, 167, 169, 173, 179, 181, 187, 191, 193, 197, 199, 209
     };
     const auto p = std::upper_bound(m, m + 48U, n % 210U);
-    return std::distance(m, p) + 48U * (n / 210U);
+    return std::distance(m, p) + 48U * (n / 210U) + 1U;
 }
 
 bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,
