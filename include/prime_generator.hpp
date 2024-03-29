@@ -73,28 +73,26 @@ inline BigInteger sqrt(const BigInteger& toTest)
     return ans;
 }
 
-inline BigInteger backward(const BigInteger& n) {
-    return ((~((~n) | 1U)) / 3U) + 1U;
-}
-
-inline BigInteger forward(const BigInteger& p) {
+inline BigInteger forward(const size_t& p) {
     // Make this NOT a multiple of 2 or 3.
     return (p << 1U) + (~(~p | 1U)) - 1U;
 }
 
-inline BigInteger backward5(BigInteger n) {
-    n = ((n + 1U) << 2U) / 5U;
-    n = ((n + 1U) << 1U) / 3U;
-    return (n + 1U) >> 1U;
+inline size_t backward(const BigInteger& n) {
+    return ((~((~n) | 1U)) / 3U) + 1U;
 }
 
-inline BigInteger backward7(BigInteger n) {
-    constexpr int m[48U] = {
-        1, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 121,
-        127, 131, 137, 139, 143, 149, 151, 157, 163, 167, 169, 173, 179, 181, 187, 191, 193, 197, 199, 209
+inline size_t backward5(const BigInteger& n) {
+    return (((((n + 1U) << 2U) / 5U + 1U) << 1U) / 3U + 1U) >> 1U;
+}
+
+inline size_t backward7(const BigInteger& n) {
+    constexpr unsigned char m[48U] = {
+        1U, 11U, 13U, 17U, 19U, 23U, 29U, 31U, 37U, 41U, 43U, 47U, 53U, 59U, 61U, 67U, 71U, 73U, 79U, 83U, 89U,
+        97U, 101U, 103U, 107U, 109U, 113U, 121U, 127U, 131U, 137U, 139U, 143U, 149U, 151U, 157U, 163U, 167U,
+        169U, 173U, 179U, 181U, 187U, 191U, 193U, 197U, 199U, 209U
     };
-    const auto p = std::lower_bound(m, m + 48U, n % 210U);
-    return std::distance(m, p) + 48U * (n / 210U) + 1U;
+    return std::distance(m, std::lower_bound(m, m + 48U, n % 210U)) + 48U * (n / 210U) + 1U;
 }
 
 bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,
@@ -206,15 +204,15 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
     return wheelIncrement;
 }
 
-inline size_t GetWheel5and7Increment(uint32_t& wheel5, uint64_t& wheel7) {
-    size_t wheelIncrement = 0U;
+inline size_t GetWheel5and7Increment(unsigned short& wheel5, unsigned long long& wheel7) {
+    unsigned wheelIncrement = 0U;
     bool is_wheel_multiple = false;
     do {
         is_wheel_multiple = (bool)(wheel5 & 1U);
         wheel5 >>= 1U;
         if (is_wheel_multiple) {
             wheel5 |= 1U << 9U;
-            wheelIncrement++;
+            ++wheelIncrement;
             continue;
         }
 
@@ -223,10 +221,10 @@ inline size_t GetWheel5and7Increment(uint32_t& wheel5, uint64_t& wheel7) {
         if (is_wheel_multiple) {
             wheel7 |= 1ULL << 55U;
         }
-        wheelIncrement++;
+        ++wheelIncrement;
     } while (is_wheel_multiple);
 
-    return wheelIncrement;
+    return (size_t)wheelIncrement;
 }
 
 inline BigInteger makeNotMultiple(BigInteger n) {
