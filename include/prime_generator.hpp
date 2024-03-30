@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#include <cstdint>
 #include <iostream>
 #include <vector>
 
@@ -24,12 +25,8 @@
 #include "big_integer.hpp"
 #endif
 
-#include "dispatchqueue.hpp"
-
 namespace qimcifa {
 const size_t BATCH_SIZE = 1 << 10;
-const size_t cpuCount = std::thread::hardware_concurrency();
-DispatchQueue dispatch(cpuCount);
 
 #if BIG_INT_BITS < 33
 typedef uint32_t BigInteger;
@@ -73,9 +70,18 @@ inline BigInteger sqrt(const BigInteger& toTest)
     return ans;
 }
 
+inline BigInteger forward2(const size_t& p) {
+    // Make this NOT a multiple of 2.
+    return (p << 1U) - 1U;
+}
+
 inline BigInteger forward(const size_t& p) {
     // Make this NOT a multiple of 2 or 3.
     return (p << 1U) + (~(~p | 1U)) - 1U;
+}
+
+inline size_t backward2(const BigInteger& p) {
+    return (p + 1U) >> 1U;
 }
 
 inline size_t backward(const BigInteger& n) {
@@ -96,24 +102,7 @@ inline size_t backward7(const BigInteger& n) {
 }
 
 bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,
-    const std::vector<BigInteger>& knownPrimes) {
-    const size_t _BATCH_SIZE = BATCH_SIZE;
-    const size_t maxLcv = (highestIndex - nextPrimeIndex) / BATCH_SIZE;
-    dispatch.resetResult();
-    for (size_t i = 0; i < maxLcv; ++i) {
-        size_t j = i * BATCH_SIZE + nextPrimeIndex;
-        dispatch.dispatch([&knownPrimes, &p, _BATCH_SIZE, j]() {
-            for (size_t k = 0; k < _BATCH_SIZE; ++k) {
-                if ((p % knownPrimes[j + k]) == 0) {
-                    return true;
-                }
-            }
-            return false;
-        });
-    }
-
-    return dispatch.finish();
-}
+    const std::vector<BigInteger>& knownPrimes);
 
 bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInteger>& knownPrimes) {
     const BigInteger sqrtP = sqrt(p);
