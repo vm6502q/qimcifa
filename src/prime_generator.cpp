@@ -343,7 +343,7 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(BigInteger n)
     // limit_segmented = limit * 2
     // limit_simple = ((((limit * 2) * 3) / 2) * 5) / 4
     constexpr size_t limit = 6291456ULL;
-    constexpr size_t limit_simple = 31457281ULL;
+    constexpr size_t limit_simple = 7864321ULL;
 
     if (!(n & 1U)) {
         --n;
@@ -438,7 +438,7 @@ BigInteger SegmentedCountPrimesTo(BigInteger n)
     // limit_segmented = ((limit * 2) * 3) / 2
     // limit_simple = ((((limit * 2) * 3) / 2) * 5) / 4
     constexpr size_t limit = 6291456ULL;
-    constexpr size_t limit_simple = 31457281ULL;
+    constexpr size_t limit_simple = 7864321ULL;
 
     if (!(n & 1U)) {
         --n;
