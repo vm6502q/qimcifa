@@ -342,24 +342,25 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(BigInteger n)
     // limit = 2048 KB = 2097152 B,
     // limit_segmented = limit * 2
     // limit_simple = ((((limit * 2) * 3) / 2) * 5) / 4
-    constexpr size_t limit = 4194304ULL;
+    constexpr size_t limit = 6291456ULL;
     constexpr size_t limit_simple = 31457281ULL;
 
     if (!(n & 1U)) {
         --n;
     }
+    if ((n % 3U) == 0) {
+        n -= 2U;
+    }
     if (limit_simple >= n) {
         return SieveOfEratosthenes(n);
     }
-    const BigInteger sqrtnp1 = sqrt(n) + 1U;
     std::vector<BigInteger> knownPrimes = SieveOfEratosthenes(limit_simple);
-    knownPrimes.reserve(std::expint(log(sqrtnp1)) - std::expint(log(2)));
+    knownPrimes.reserve(std::expint(log(n)) - std::expint(log(2)));
 
-    // Divide the range [0..n-1] in different segments
-    // We have chosen segment size as sqrt(n).
-    const size_t nCardinality = backward2(n);
-    size_t low = backward2(limit_simple);
-    size_t high = backward2(limit_simple) + limit;
+    // Divide the range in different segments
+    const size_t nCardinality = backward(n);
+    size_t low = backward(limit_simple);
+    size_t high = low + limit;
 
     // Process one segment at a time till we pass n.
     while (low < nCardinality)
@@ -368,16 +369,16 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(BigInteger n)
            high = nCardinality;
         }
 
-        const BigInteger fLo = forward2(low);
+        const BigInteger fLo = forward(low);
         const size_t sqrtIndex = std::distance(
             knownPrimes.begin(),
-            std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrt(forward2(high)) + 1U)
+            std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrt(forward(high)) + 1U)
         );
 
         const size_t cardinality = high - low;
         bool notPrime[cardinality + 1U] = { false };
 
-        for (size_t k = 1U; k < sqrtIndex; ++k) {
+        for (size_t k = 2U; k < sqrtIndex; ++k) {
             const BigInteger& p = knownPrimes[k];
             dispatch.dispatch([&fLo, &low, &cardinality, p, &notPrime]() {
                 // We are skipping multiples of 2.
@@ -396,11 +397,13 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(BigInteger n)
                 }
 
                 for (;;) {
-                    const size_t o = backward2(i) - low;
+                    const size_t o = backward(i) - low;
                     if (o > cardinality) {
                         return false;
                     }
-                    notPrime[o] = true;
+                    if (i % 3U) {
+                        notPrime[o] = true;
+                    }
                     i += p2;
                 }
 
@@ -412,13 +415,13 @@ std::vector<BigInteger> SegmentedSieveOfEratosthenes(BigInteger n)
         // Numbers which are not marked are prime
         for (size_t o = 1U; o <= cardinality; ++o) {
             if (!notPrime[o]) {
-                knownPrimes.push_back(forward2(o + low));
+                knownPrimes.push_back(forward(o + low));
             }
         }
 
         // Update low and high for next segment
         low = low + limit;
-        high = high + limit;
+        high = low + limit;
     }
 
     return knownPrimes;
@@ -432,28 +435,35 @@ BigInteger SegmentedCountPrimesTo(BigInteger n)
     // removing multiples of 2.
     // The simple sieve removes multiples of 2, 3, and 5.
     // limit = 2048 KB = 2097152 B,
-    // limit_segmented = limit * 2
+    // limit_segmented = ((limit * 2) * 3) / 2
     // limit_simple = ((((limit * 2) * 3) / 2) * 5) / 4
-    constexpr size_t limit = 4194304ULL;
+    constexpr size_t limit = 6291456ULL;
     constexpr size_t limit_simple = 31457281ULL;
 
     if (!(n & 1U)) {
         --n;
     }
+    if ((n % 3U) == 0) {
+        n -= 2U;
+    }
     if (limit_simple >= n) {
         return CountPrimesTo(n);
     }
-    const BigInteger sqrtnp1 = sqrt(n) + 1U;
-    const BigInteger practicalLimit = ((sqrtnp1 < limit_simple) ? sqrtnp1 : limit_simple) | 1U;
+    BigInteger sqrtnp1 = (sqrt(n) + 1U) | 1U;
+    if ((sqrtnp1 % 3U) == 0U) {
+        sqrtnp1 += 2U;
+    }
+    const BigInteger practicalLimit = (sqrtnp1 < limit_simple) ? sqrtnp1 : limit_simple;
     std::vector<BigInteger> knownPrimes = SieveOfEratosthenes(practicalLimit);
-    knownPrimes.reserve(std::expint(log(sqrtnp1)) - std::expint(log(2)));
+    if (practicalLimit < sqrtnp1) {
+        knownPrimes.reserve(std::expint(log(sqrtnp1)) - std::expint(log(2)));
+    }
     size_t count = knownPrimes.size();
 
-    // Divide the range [0..n-1] in different segments
-    // We have chosen segment size as sqrt(n).
-    const size_t nCardinality = backward2(n);
-    size_t low = backward2(practicalLimit);
-    size_t high = backward2(practicalLimit) + limit;
+    // Divide the range in different segments
+    const size_t nCardinality = backward(n);
+    size_t low = backward(practicalLimit);
+    size_t high = low + limit;
 
     // Process one segment at a time till we pass n.
     while (low < nCardinality)
@@ -461,21 +471,18 @@ BigInteger SegmentedCountPrimesTo(BigInteger n)
         if (high > nCardinality) {
            high = nCardinality;
         }
-        const BigInteger fLo = forward2(low);
+        const BigInteger fLo = forward(low);
         const size_t sqrtIndex = std::distance(
             knownPrimes.begin(),
-            std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrt(forward2(high)) + 1U)
+            std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrt(forward(high)) + 1U)
         );
 
-        // To mark primes in current range. A value in mark[i]
-        // will finally be false if 'i-low' is Not a prime,
-        // else true.
         const size_t cardinality = high - low;
         bool notPrime[cardinality + 1U] = { false };
 
-        // Use the found primes by simpleSieve() to find
-        // primes in current range
-        for (size_t k = 1U; k < sqrtIndex; ++k) {
+        // Use the primes found by the simple sieve
+        // to find primes in current range
+        for (size_t k = 2U; k < sqrtIndex; ++k) {
             const BigInteger& p = knownPrimes[k];
             dispatch.dispatch([&fLo, &low, &cardinality, p, &notPrime]() {
                 // We are skipping multiples of 2.
@@ -494,11 +501,13 @@ BigInteger SegmentedCountPrimesTo(BigInteger n)
                 }
 
                 for (;;) {
-                    const size_t o = backward2(i) - low;
+                    const size_t o = backward(i) - low;
                     if (o > cardinality) {
                         return false;
                     }
-                    notPrime[o] = true;
+                    if (i % 3U) {
+                        notPrime[o] = true;
+                    }
                     i += p2;
                 }
 
@@ -507,20 +516,27 @@ BigInteger SegmentedCountPrimesTo(BigInteger n)
         }
         dispatch.finish();
 
-        // Numbers which are not marked are prime
-        for (size_t o = 1U; o <= cardinality; ++o) {
-            if (!notPrime[o]) {
-                const BigInteger p = forward2(o + low);
-                if (p <= sqrtnp1) {
-                    knownPrimes.push_back(p);
+        if (knownPrimes.back() >= sqrtnp1) {
+            for (size_t o = 1U; o <= cardinality; ++o) {
+                if (!notPrime[o]) {
+                    ++count;
                 }
-                ++count;
+            }
+        } else {
+            for (size_t o = 1U; o <= cardinality; ++o) {
+                if (!notPrime[o]) {
+                    const BigInteger p = forward(o + low);
+                    if (p <= sqrtnp1) {
+                        knownPrimes.push_back(p);
+                    }
+                    ++count;
+                }
             }
         }
 
         // Update low and high for next segment
         low = low + limit;
-        high = high + limit;
+        high = low + limit;
     }
 
     return count;
