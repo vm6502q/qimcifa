@@ -67,8 +67,8 @@ double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
     inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 2U);
 
-    const BigInteger fullMaxBase = backward(sqrt<BigInteger>(toFactor));
-    const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * BIGGEST_WHEEL + 1U;
+    const BigInteger fullMaxBase = sqrt<BigInteger>(toFactor);
+    const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * (BIGGEST_WHEEL - 1U);
 
     std::vector<BigInteger> smoothNumbers;
     auto iterClock = std::chrono::high_resolution_clock::now();
