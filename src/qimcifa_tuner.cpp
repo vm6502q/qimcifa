@@ -70,7 +70,6 @@ double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::
     const BigInteger fullMaxBase = sqrt<BigInteger>(toFactor);
     const BigInteger offset = (fullMaxBase / BIGGEST_WHEEL) * (BIGGEST_WHEEL - 1U);
 
-    std::vector<BigInteger> smoothNumbers;
     auto iterClock = std::chrono::high_resolution_clock::now();
     getSmoothNumbers(toFactor, inc_seqs, offset, iterClock);
 
