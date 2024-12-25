@@ -66,6 +66,28 @@ int mainBody(const BigInteger& toFactor)
 
     const unsigned cpuCount = std::thread::hardware_concurrency();
 
+    size_t nodeCount = 1U;
+    size_t nodeId = 0U;
+#if IS_DISTRIBUTED
+    std::cout << "You can split this work across nodes, without networking!" << std::endl;
+    do {
+        std::cout << "Number of nodes (>=1): ";
+        std::cin >> nodeCount;
+        if (!nodeCount) {
+            std::cout << "Invalid node count choice!" << std::endl;
+        }
+    } while (!nodeCount);
+    if (nodeCount > 1U) {
+        do {
+            std::cout << "Which node is this? (0-" << (nodeCount - 1U) << "): ";
+            std::cin >> nodeId;
+            if (nodeId >= nodeCount) {
+                std::cout << "Invalid node ID choice!" << std::endl;
+            }
+        } while (nodeId >= nodeCount);
+    }
+#endif
+
     int64_t tdLevel = 7;
     std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of 9, or -1 for calibration file): ";
     std::cin >> tdLevel;
@@ -98,30 +120,8 @@ int mainBody(const BigInteger& toFactor)
         settingsFile.close();
 
         std::cout << "Calibrated reverse trial division level: " << tdLevel << std::endl;
-        std::cout << "Estimated average time to exit: " << (bestCost / (2 * cpuCount)) << " seconds" << std::endl;
+        std::cout << "Estimated average time to exit: " << (bestCost / (2 * cpuCount * nodeCount)) << " seconds" << std::endl;
     }
-
-    size_t nodeCount = 1U;
-    size_t nodeId = 0U;
-#if IS_DISTRIBUTED
-    std::cout << "You can split this work across nodes, without networking!" << std::endl;
-    do {
-        std::cout << "Number of nodes (>=1): ";
-        std::cin >> nodeCount;
-        if (!nodeCount) {
-            std::cout << "Invalid node count choice!" << std::endl;
-        }
-    } while (!nodeCount);
-    if (nodeCount > 1U) {
-        do {
-            std::cout << "Which node is this? (0-" << (nodeCount - 1U) << "): ";
-            std::cin >> nodeId;
-            if (nodeId >= nodeCount) {
-                std::cout << "Invalid node ID choice!" << std::endl;
-            }
-        } while (nodeId >= nodeCount);
-    }
-#endif
 
     // Starting clock right after user input is finished
     auto iterClock = std::chrono::high_resolution_clock::now();
