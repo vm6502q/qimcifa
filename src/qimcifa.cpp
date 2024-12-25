@@ -151,7 +151,7 @@ int mainBody(const BigInteger& toFactor)
 #endif
 
     std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs = wheel_gen(std::vector<BigInteger>(trialDivisionPrimes.begin(), trialDivisionPrimes.begin() + tdLevel), toFactor);
-    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + 4U);
+    inc_seqs.erase(inc_seqs.begin(), inc_seqs.begin() + MIN_RTD_LEVEL);
 
     const BigInteger nodeRange = (((fullRange + nodeCount - 1U) / nodeCount) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
     batchNumber = nodeId * nodeRange;

@@ -38,6 +38,6 @@ def wheel_gen(primes):
 if __name__ == '__main__':
     # print(wheel_gen([2, 3, 5, 7]))
     
-    for i in range(1, 31):
-        if (i % 2) != 0 and (i % 3) != 0 and (i % 5) != 0:
+    for i in range(1, 2310):
+        if (i % 2) != 0 and (i % 3) != 0 and (i % 5) != 0 and (i % 7) != 0 and (i % 11) != 0:
             print(i, end=" ")
