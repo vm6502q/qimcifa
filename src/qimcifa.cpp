@@ -61,8 +61,7 @@ namespace Qimcifa {
 template <typename BigInteger>
 int mainBody(const BigInteger& toFactor)
 {
-    // First 9 primes
-    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23 };
+    std::vector<BigInteger> trialDivisionPrimes = SegmentedSieveOfEratosthenes(sqrt(toFactor));
 
     const unsigned cpuCount = std::thread::hardware_concurrency();
 
@@ -133,7 +132,7 @@ int mainBody(const BigInteger& toFactor)
     }
 
     for (int64_t primeIndex = 0; primeIndex < tdLevel; ++primeIndex) {
-        const unsigned currentPrime = trialDivisionPrimes[primeIndex];
+        const unsigned currentPrime = (unsigned)trialDivisionPrimes[primeIndex];
         if ((toFactor % currentPrime) == 0) {
             std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
                       << std::endl;
