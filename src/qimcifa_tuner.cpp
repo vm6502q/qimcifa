@@ -175,16 +175,21 @@ int main() {
     std::cout << "Total thread count (across all nodes): ";
     std::cin >> threadCount;
 
+    // First 9 primes
+    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23 };
+
     const BigIntegerInput range = backward(sqrt(toFactor));
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
+    int wheelSize = 30;
     for (size_t i = MIN_RTD_LEVEL; i < 10U; ++i) {
         // Test
         const double time = mainCase(toFactor, i);
+        wheelSize *= trialDivisionPrimes[i];
 #if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
-        oSettingsFile << i << " " << range << " " << time << " " << (bi_to_double(range) * (time / BIGGEST_WHEEL)) << std::endl;
+        oSettingsFile << i << " " << range << " " << time << " " << (bi_to_double(range) * (time / wheelSize)) << std::endl;
 #else
-        oSettingsFile << i << " " << range << " " << time << " " << (range.convert_to<double>() * (time / BIGGEST_WHEEL)) << std::endl;
+        oSettingsFile << i << " " << range << " " << time << " " << (range.convert_to<double>() * (time / wheelSize)) << std::endl;
 #endif
     }
     oSettingsFile.close();
