@@ -84,7 +84,7 @@ namespace Qimcifa {
 
 // Make this a multiple of 2, 3, 5, 7, 11, 13, and 17.
 constexpr int BIGGEST_WHEEL = 510510;
-constexpr int MIN_RTD_LEVEL = 2;
+constexpr int MIN_RTD_LEVEL = 4;
 
 #if USE_GMP
 typedef boost::multiprecision::mpz_int BigIntegerInput;
@@ -224,12 +224,22 @@ void printSuccess(const BigInteger& f1, const BigInteger& f2, const BigInteger& 
 }
 
 template <typename BigInteger> inline BigInteger backward(BigInteger n) {
-    return ((~((~n) | 1U)) / 3U) + 1U;
+    constexpr unsigned char m[48U] = {
+        1U, 11U, 13U, 17U, 19U, 23U, 29U, 31U, 37U, 41U, 43U, 47U, 53U, 59U, 61U, 67U, 71U, 73U, 79U, 83U, 89U,
+        97U, 101U, 103U, 107U, 109U, 113U, 121U, 127U, 131U, 137U, 139U, 143U, 149U, 151U, 157U, 163U, 167U,
+        169U, 173U, 179U, 181U, 187U, 191U, 193U, 197U, 199U, 209U
+    };
+    return std::distance(m, std::lower_bound(m, m + 48U, n % 210U)) + 48U * (n / 210U) + 1U;
 }
 
 template <typename BigInteger> inline BigInteger forward(BigInteger p) {
-    // Make this NOT a multiple of 2 or 3.
-    return (p << 1U) + (~(~p | 1U)) - 1U;
+    // Make this NOT a multiple of 2, 3, 5, or 7.
+    constexpr unsigned char m[48U] = {
+        1U, 11U, 13U, 17U, 19U, 23U, 29U, 31U, 37U, 41U, 43U, 47U, 53U, 59U, 61U, 67U, 71U, 73U, 79U, 83U, 89U,
+        97U, 101U, 103U, 107U, 109U, 113U, 121U, 127U, 131U, 137U, 139U, 143U, 149U, 151U, 157U, 163U, 167U,
+        169U, 173U, 179U, 181U, 187U, 191U, 193U, 197U, 199U, 209U
+    };
+    return m[p % 48U] + (p / 48U) * 210U;
 }
 
 template <typename BigInteger> bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
