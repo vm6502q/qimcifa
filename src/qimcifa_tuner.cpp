@@ -182,9 +182,9 @@ int main() {
         // Test
         const double time = mainCase(toFactor, i);
 #if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
-        oSettingsFile << i << " " << range << " " << time << " " << (bi_to_double(range) * (time / BIGGEST_WHEEL)) << std::endl;
+        oSettingsFile << i << " " << range << " " << time << " " << (bi_to_double(range) * time) << std::endl;
 #else
-        oSettingsFile << i << " " << range << " " << time << " " << (range.convert_to<double>() * (time / BIGGEST_WHEEL)) << std::endl;
+        oSettingsFile << i << " " << range << " " << time << " " << (range.convert_to<double>() * time) << std::endl;
 #endif
     }
     oSettingsFile.close();
