@@ -187,7 +187,7 @@ int main() {
 #else
         oSettingsFile << i << " " << range << " " << time << " " << (time * range.convert_to<double>()) << std::endl;
 #endif
-        if (i < 10) {
+        if (i < 9) {
             range *= trialDivisionPrimes[i + 1U] - 1U;
             range /= trialDivisionPrimes[i + 1U];
         }
