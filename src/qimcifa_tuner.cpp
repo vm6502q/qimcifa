@@ -94,8 +94,8 @@ double mainCase(BigIntegerInput toFactor, int tdLevel)
         qubitCount++;
     }
 
-    // First 25 primes
-    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97  };
+    // First 10 primes
+    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
 
     if (qubitCount < 64) {
         typedef uint64_t BigInteger;
@@ -178,7 +178,7 @@ int main() {
     const BigIntegerInput range = backward(sqrt(toFactor));
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
-    for (size_t i = MIN_RTD_LEVEL; i < 26U; ++i) {
+    for (size_t i = MIN_RTD_LEVEL; i < 11U; ++i) {
         // Test
         const double time = mainCase(toFactor, i);
 #if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP

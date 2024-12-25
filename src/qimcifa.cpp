@@ -61,8 +61,8 @@ namespace Qimcifa {
 template <typename BigInteger>
 int mainBody(const BigInteger& toFactor)
 {
-    // First 25 primes
-    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
+    // First 10 primes
+    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
 
     const unsigned cpuCount = std::thread::hardware_concurrency();
 
@@ -72,8 +72,8 @@ int mainBody(const BigInteger& toFactor)
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
         tdLevel = MIN_RTD_LEVEL;
     }
-    if (tdLevel > 25) {
-        tdLevel = 25;
+    if (tdLevel > 10) {
+        tdLevel = 10;
     }
     if (tdLevel < 0) {
         std::ifstream settingsFile ("qimcifa_calibration.ssv");
