@@ -171,11 +171,11 @@ int main() {
     size_t threadCount = 1;
     std::cout << "Total thread count (across all nodes): ";
     std::cin >> threadCount;
-    double turboCorrection = 1.2e7;
+    double turboCorrection = 2e7;
     std::cout << "Turbo correction multiplier (0 for default): ";
     std::cin >> turboCorrection;
     if (turboCorrection <= 0) {
-        turboCorrection = 1.2e7;
+        turboCorrection = 2e7;
     }
 
     // First 9 primes
