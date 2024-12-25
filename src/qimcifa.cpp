@@ -119,7 +119,7 @@ int mainBody(const BigInteger& toFactor)
         }
         settingsFile.close();
 
-        std::cout << "Calibrated reverse trial division level: " << tdLevel << std::endl;
+        std::cout << "Calibrated wheel factorization level: " << tdLevel << std::endl;
         std::cout << "Estimated average time to exit: " << (bestCost / (2 * cpuCount * nodeCount)) << " seconds" << std::endl;
     }
 

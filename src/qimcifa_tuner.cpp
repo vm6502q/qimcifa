@@ -171,7 +171,7 @@ int main() {
     size_t threadCount = 1;
     std::cout << "Total thread count (across all nodes): ";
     std::cin >> threadCount;
-    double turboCorrection = 7e6;
+    double turboCorrection = 5e7;
     std::cout << "Turbo correction multiplier (0 for default): ";
     std::cin >> turboCorrection;
     if (turboCorrection <= 0) {
