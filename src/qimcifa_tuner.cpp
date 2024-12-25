@@ -179,7 +179,7 @@ int main() {
     }
 
     // First 9 primes
-    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23 };
+    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
 
     
     const BigIntegerInput batchCount = (sqrt(toFactor) + BIGGEST_WHEEL - 1) / BIGGEST_WHEEL;

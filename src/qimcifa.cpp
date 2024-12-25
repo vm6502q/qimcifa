@@ -62,7 +62,7 @@ template <typename BigInteger>
 int mainBody(const BigInteger& toFactor)
 {
     // First 9 primes
-    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23 };
+    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
 
     const unsigned cpuCount = std::thread::hardware_concurrency();
 
@@ -89,7 +89,7 @@ int mainBody(const BigInteger& toFactor)
 #endif
 
     int64_t tdLevel = 7;
-    std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of 9, or -1 for calibration file): ";
+    std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of " << trialDivisionPrimes.size() << ", or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
         tdLevel = MIN_RTD_LEVEL;
