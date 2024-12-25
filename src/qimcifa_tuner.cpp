@@ -173,17 +173,23 @@ int main() {
     std::cout << "Total thread count (across all nodes): ";
     std::cin >> threadCount;
 
-    const BigIntegerInput range = backward(sqrt(toFactor));
+    // First 9 primes
+    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23 };
+
+    BigIntegerInput range = backward(sqrt(toFactor));
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (ns), cost (s)" << std::endl;
     for (size_t i = MIN_RTD_LEVEL; i < 10U; ++i) {
         // Test
         const double time = mainCase(toFactor, i);
 #if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
-        oSettingsFile << i << " " << range << " " << time << " " << (time * bi_to_double(range) * BIGGEST_WHEEL / SMALLEST_WHEEL) << std::endl;
+        oSettingsFile << i << " " << range << " " << time << " " << (time * bi_to_double(range)) << std::endl;
 #else
-        oSettingsFile << i << " " << range << " " << time << " " << (time * range.convert_to<double>() * BIGGEST_WHEEL / SMALLEST_WHEEL) << std::endl;
+        oSettingsFile << i << " " << range << " " << time << " " << (time * range.convert_to<double>()) << std::endl;
 #endif
+        if (i < 10) {
+            range *= (trialDivisionPrimes[i + 1U] - 1U) / trialDivisionPrimes[i + 1U];
+        }
     }
     oSettingsFile.close();
 
