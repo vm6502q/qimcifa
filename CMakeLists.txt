@@ -31,24 +31,24 @@ endif (MSVC)
 if (USE_GMP OR USE_BOOST)
 add_executable (qimcifa
     src/qimcifa.cpp
-    src/dispatch_queue.cpp
+    src/dispatchqueue.cpp
     src/prime_gen.cpp
     )
 add_executable (qimcifa_tuner
     src/qimcifa_tuner.cpp
-    src/dispatch_queue.cpp
+    src/dispatchqueue.cpp
     src/prime_gen.cpp
     )
 else (USE_GMP OR USE_BOOST)
 add_executable (qimcifa
     src/qimcifa.cpp
-    src/dispatch_queue.cpp
+    src/dispatchqueue.cpp
     src/prime_gen.cpp
     src/common/big_integer.cpp
     )
 add_executable (qimcifa_tuner
     src/qimcifa_tuner.cpp
-    src/dispatch_queue.cpp
+    src/dispatchqueue.cpp
     src/prime_gen.cpp
     src/common/big_integer.cpp
     )
