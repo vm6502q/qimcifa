@@ -188,7 +188,7 @@ int main() {
         oSettingsFile << i << " " << range << " " << time << " " << (time * range.convert_to<double>()) << std::endl;
 #endif
         if (i < 9U) {
-            const unsigned nextPrime = trialDivisionPrimes[i + 1U];
+            const unsigned nextPrime = trialDivisionPrimes[i];
             range *= nextPrime - 1U;
             range = (range + nextPrime - 1U) / nextPrime;
         }
