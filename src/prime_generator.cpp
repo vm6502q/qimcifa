@@ -43,7 +43,7 @@ std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n)
     // reverse the true/false meaning, so we can use
     // default initialization. A value in notPrime[i]
     // will finally be false only if i is a prime.
-    std::unique_ptr<bool> uNotPrime(new bool[cardinality + 1U]());
+    std::unique_ptr<bool[]> uNotPrime(new bool[cardinality + 1U]());
     bool* notPrime = uNotPrime.get();
 
     // We dispatch multiple marking asynchronously.
@@ -167,7 +167,7 @@ BigInteger CountPrimesTo(const BigInteger& n)
     // reverse the true/false meaning, so we can use
     // default initialization. A value in notPrime[i]
     // will finally be false only if i is a prime.
-    std::unique_ptr<bool> uNotPrime(new bool[cardinality + 1U]());
+    std::unique_ptr<bool[]> uNotPrime(new bool[cardinality + 1U]());
     bool* notPrime = uNotPrime.get();
 
     // We dispatch multiple marking asynchronously.
