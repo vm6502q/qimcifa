@@ -175,6 +175,7 @@ int main() {
     // First 9 primes
     std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23 };
 
+    const double turboCorrection = 6e9;
     const BigIntegerInput batchCount = (sqrt(toFactor) + BIGGEST_WHEEL - 1) / BIGGEST_WHEEL;
     BigIntegerInput range = backward(sqrt(toFactor));
     BigIntegerInput batchSize = backward(BIGGEST_WHEEL);
@@ -184,9 +185,9 @@ int main() {
         // Test
         const double time = mainCase(toFactor, i);
 #if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
-        oSettingsFile << i << " " << range << " " << time << " " << (time * bi_to_double(batchCount)) << std::endl;
+        oSettingsFile << i << " " << range << " " << time << " " << (turboCorrection * time * bi_to_double(batchCount)) << std::endl;
 #else
-        oSettingsFile << i << " " << range << " " << time << " " << (time * batchCount.convert_to<double>()) << std::endl;
+        oSettingsFile << i << " " << range << " " << time << " " << (turboCorrection * time * batchCount.convert_to<double>()) << std::endl;
 #endif
         if (i < 9U) {
             const unsigned nextPrime = trialDivisionPrimes[i];
