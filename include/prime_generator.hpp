@@ -12,36 +12,24 @@
 
 #include "config.h"
 
+#include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <vector>
 
-#include <boost/dynamic_bitset.hpp>
-#if USE_GMP
-#include <boost/multiprecision/gmp.hpp>
-#elif USE_BOOST
+#if BIG_INT_BITS > 64
 #include <boost/multiprecision/cpp_int.hpp>
-#else
-#include "big_integer.hpp"
 #endif
 
 namespace qimcifa {
-const size_t BATCH_SIZE = 1 << 10;
 
 #if BIG_INT_BITS < 33
 typedef uint32_t BigInteger;
 #elif BIG_INT_BITS < 65
 typedef uint64_t BigInteger;
 #else
-#if USE_GMP
-typedef boost::multiprecision::mpz_int BigInteger;
-#elif USE_BOOST
 typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<BIG_INT_BITS, BIG_INT_BITS,
     boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
     BigInteger;
-#else
-typedef BigInteger BigInteger;
-#endif
 #endif
 
 inline BigInteger sqrt(const BigInteger& toTest)
@@ -70,18 +58,25 @@ inline BigInteger sqrt(const BigInteger& toTest)
     return ans;
 }
 
-inline BigInteger forward2(const size_t& p) {
-    // Make this NOT a multiple of 2.
-    return (p << 1U) - 1U;
-}
-
 inline BigInteger forward(const size_t& p) {
     // Make this NOT a multiple of 2 or 3.
     return (p << 1U) + (~(~p | 1U)) - 1U;
 }
 
-inline size_t backward2(const BigInteger& p) {
-    return (p + 1U) >> 1U;
+inline BigInteger forward5(const size_t& p) {
+    constexpr unsigned char m[8U] = {
+        1U, 7U, 11U, 13U, 17U, 19U, 23U, 29U
+    };
+    return m[p % 8U] + (p / 8U) * 30U;
+}
+
+inline BigInteger forward7(const size_t& p) {
+    constexpr unsigned char m[48U] = {
+        1U, 11U, 13U, 17U, 19U, 23U, 29U, 31U, 37U, 41U, 43U, 47U, 53U, 59U, 61U, 67U, 71U, 73U, 79U, 83U, 89U,
+        97U, 101U, 103U, 107U, 109U, 113U, 121U, 127U, 131U, 137U, 139U, 143U, 149U, 151U, 157U, 163U, 167U,
+        169U, 173U, 179U, 181U, 187U, 191U, 193U, 197U, 199U, 209U
+    };
+    return m[p % 48U] + (p / 48U) * 210U;
 }
 
 inline size_t backward(const BigInteger& n) {
@@ -101,106 +96,16 @@ inline size_t backward7(const BigInteger& n) {
     return std::distance(m, std::lower_bound(m, m + 48U, n % 210U)) + 48U * (n / 210U) + 1U;
 }
 
-bool isMultipleParallel(const BigInteger& p, const size_t& nextPrimeIndex, const size_t& highestIndex,
-    const std::vector<BigInteger>& knownPrimes);
-
-bool isMultiple(const BigInteger& p, size_t nextIndex, const std::vector<BigInteger>& knownPrimes) {
-    const BigInteger sqrtP = sqrt(p);
-    const size_t highestIndex = std::distance(knownPrimes.begin(), std::upper_bound(knownPrimes.begin(), knownPrimes.end(), sqrtP));
-
-    const size_t diff = highestIndex - nextIndex;
-    if ((highestIndex > nextIndex) && ((diff >> 1U) > BATCH_SIZE)) {
-        if (isMultipleParallel(p, nextIndex, highestIndex, knownPrimes)) {
-            return true;
-        }
-    }
-    nextIndex = diff % BATCH_SIZE;
-
-    for (size_t i = nextIndex; i < highestIndex; ++i) {
-        if ((p % knownPrimes[i]) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
-template <typename BigInteger>
-bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
-    for (const BigInteger& prime : knownPrimes) {
-        if ((p % prime) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
-template <typename BigInteger>
-boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes, BigInteger limit) {
-    BigInteger radius = 1U;
-    for (const BigInteger& i : primes) {
-        radius *= i;
-    }
-    if (limit < radius) {
-        radius = limit;
-    }
-    const BigInteger prime = primes.back();
-    primes.pop_back();
-    std::vector<bool> o;
-    for (BigInteger i = 1U; i <= radius; ++i) {
-        if (!isMultiple(i, primes)) {
-            o.push_back((i % prime) == 0);
-        }
-    }
-
-    boost::dynamic_bitset<size_t> output(o.size());
-    for (size_t i = 0U; i < o.size(); ++i) {
-        output[i] = o[i];
-    }
-    output >>= 1U;
-
-    return output;
-}
-
-template <typename BigInteger>
-std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigInteger>& primes, BigInteger limit) {
-    std::vector<boost::dynamic_bitset<size_t>> output;
-    std::vector<BigInteger> wheelPrimes;
-    for (const BigInteger& p : primes) {
-        wheelPrimes.push_back(p);
-        if (wheelPrimes.back() > 5U) {
-            output.push_back(wheel_inc(wheelPrimes, limit));
-        }
-    }
-    return output;
-}
-
-inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_seqs) {
-    size_t wheelIncrement = 0U;
-    bool is_wheel_multiple = false;
-    do {
-        for (size_t i = 0; i < inc_seqs.size(); ++i) {
-            boost::dynamic_bitset<size_t>& wheel = inc_seqs[i];
-            is_wheel_multiple = wheel.test(0U);
-            wheel >>= 1U;
-            if (is_wheel_multiple) {
-                wheel[wheel.size() - 1U] = true;
-                break;
-            }
-        }
-        wheelIncrement++;
-    } while (is_wheel_multiple);
-
-    return wheelIncrement;
-}
-
 inline size_t GetWheel5and7Increment(unsigned short& wheel5, unsigned long long& wheel7) {
+    constexpr unsigned short wheel5Back = 1U << 9U;
+    constexpr unsigned long long wheel7Back = 1ULL << 55U;
     unsigned wheelIncrement = 0U;
     bool is_wheel_multiple = false;
     do {
         is_wheel_multiple = (bool)(wheel5 & 1U);
         wheel5 >>= 1U;
         if (is_wheel_multiple) {
-            wheel5 |= 1U << 9U;
+            wheel5 |= wheel5Back;
             ++wheelIncrement;
             continue;
         }
@@ -208,7 +113,7 @@ inline size_t GetWheel5and7Increment(unsigned short& wheel5, unsigned long long&
         is_wheel_multiple = (bool)(wheel7 & 1U);
         wheel7 >>= 1U;
         if (is_wheel_multiple) {
-            wheel7 |= 1ULL << 55U;
+            wheel7 |= wheel7Back;
         }
         ++wheelIncrement;
     } while (is_wheel_multiple);
@@ -216,16 +121,7 @@ inline size_t GetWheel5and7Increment(unsigned short& wheel5, unsigned long long&
     return (size_t)wheelIncrement;
 }
 
-inline BigInteger makeNotMultiple(BigInteger n) {
-    n |= 1U;
-    if ((n % 3U) == 0U) {
-        n -= 2U;
-    }
-
-    return n;
-}
-
-std::vector<BigInteger> TrialDivision(const BigInteger& n);
+BigInteger CountPrimesTo(const BigInteger& n);
 std::vector<BigInteger> SieveOfEratosthenes(const BigInteger& n);
-std::vector<BigInteger> SegmentedSieveOfEratosthenes(const BigInteger& n, const size_t& limit);
+std::vector<BigInteger> SegmentedSieveOfEratosthenes(BigInteger n);
 } // namespace qimcifa
