@@ -177,20 +177,23 @@ int main() {
     std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23 };
 
     BigIntegerInput range = backward(sqrt(toFactor));
+    BigIntegerInput batchSize = backward(BIGGEST_WHEEL);
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (s), cost (s)" << std::endl;
     for (size_t i = MIN_RTD_LEVEL; i < 10U; ++i) {
         // Test
         const double time = mainCase(toFactor, i);
 #if BIG_INTEGER_BITS > 64 && !USE_BOOST && !USE_GMP
-        oSettingsFile << i << " " << range << " " << time << " " << ((time * bi_to_double(range) * SMALLEST_WHEEL) / BIGGEST_WHEEL) << std::endl;
+        oSettingsFile << i << " " << range << " " << time << " " << (time * bi_to_double(range) / batchSize) << std::endl;
 #else
-        oSettingsFile << i << " " << range << " " << time << " " << ((time * range.convert_to<double>() * SMALLEST_WHEEL) / BIGGEST_WHEEL) << std::endl;
+        oSettingsFile << i << " " << range << " " << time << " " << (time * range.convert_to<double>() / batchSize) << std::endl;
 #endif
         if (i < 9U) {
             const unsigned nextPrime = trialDivisionPrimes[i];
             range *= nextPrime - 1U;
             range = (range + nextPrime - 1U) / nextPrime;
+            batchSize *= nextPrime - 1U;
+            batchSize = (batchSize + nextPrime - 1U) / nextPrime;
         }
     }
     oSettingsFile.close();
