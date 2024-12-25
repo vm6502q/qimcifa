@@ -61,19 +61,19 @@ namespace Qimcifa {
 template <typename BigInteger>
 int mainBody(const BigInteger& toFactor)
 {
-    // First 10 primes
-    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
+    // First 8 primes
+    std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19 };
 
     const unsigned cpuCount = std::thread::hardware_concurrency();
 
     int64_t tdLevel = 7;
-    std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of 25, or -1 for calibration file): ";
+    std::cout << "Wheel factorization level (minimum of " << MIN_RTD_LEVEL << ", max of 8, or -1 for calibration file): ";
     std::cin >> tdLevel;
     if ((tdLevel > -1) && (tdLevel < MIN_RTD_LEVEL)) {
         tdLevel = MIN_RTD_LEVEL;
     }
-    if (tdLevel > 10) {
-        tdLevel = 10;
+    if (tdLevel > 8) {
+        tdLevel = 8;
     }
     if (tdLevel < 0) {
         std::ifstream settingsFile ("qimcifa_calibration.ssv");
