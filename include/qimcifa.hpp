@@ -229,7 +229,7 @@ template <typename BigInteger> inline BigInteger backward(BigInteger n) {
         97U, 101U, 103U, 107U, 109U, 113U, 121U, 127U, 131U, 137U, 139U, 143U, 149U, 151U, 157U, 163U, 167U,
         169U, 173U, 179U, 181U, 187U, 191U, 193U, 197U, 199U, 209U
     };
-    return std::distance(m, std::lower_bound(m, m + 48U, n % 210U)) + 48U * (n / 210U) + 1U;
+    return std::distance(m, std::lower_bound(m, m + 48U, size_t(n % 210U))) + 48U * (size_t)(n / 210U) + 1U;
 }
 
 template <typename BigInteger> inline BigInteger forward(BigInteger p) {
@@ -239,7 +239,7 @@ template <typename BigInteger> inline BigInteger forward(BigInteger p) {
         97U, 101U, 103U, 107U, 109U, 113U, 121U, 127U, 131U, 137U, 139U, 143U, 149U, 151U, 157U, 163U, 167U,
         169U, 173U, 179U, 181U, 187U, 191U, 193U, 197U, 199U, 209U
     };
-    return m[p % 48U] + (p / 48U) * 210U;
+    return m[(size_t)(p % 48U)] + (p / 48U) * 210U;
 }
 
 template <typename BigInteger> bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
