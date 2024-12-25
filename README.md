@@ -1,6 +1,8 @@
 # qimcifa
 Quantum-inspired Monte Carlo integer factoring algorithm
 
+_Virtus in numeris_
+
 ## Copyright and license
 (c) Daniel Strano and the Qrack contributors 2017-2024. All rights reserved.
 
