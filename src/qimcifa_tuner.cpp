@@ -175,7 +175,7 @@ int main() {
     // First 9 primes
     std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23 };
 
-    const double turboCorrection = 6e9;
+    const double turboCorrection = 2e7;
     const BigIntegerInput batchCount = (sqrt(toFactor) + BIGGEST_WHEEL - 1) / BIGGEST_WHEEL;
     BigIntegerInput range = backward(sqrt(toFactor));
     BigIntegerInput batchSize = backward(BIGGEST_WHEEL);
