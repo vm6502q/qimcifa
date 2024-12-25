@@ -349,7 +349,9 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
 template <typename BigInteger>
 inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteger& base,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
-#if IS_RSA_SEMIPRIME
+#if IS_SQUARES_CONGRUENCE_CHECK
+    return checkCongruenceOfSquares<BigInteger>(toFactor, base, iterClock);
+#elif IS_RSA_SEMIPRIME
     if ((toFactor % base) == 0U) {
         printSuccess<BigInteger>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
         return true;
@@ -362,11 +364,7 @@ inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteg
     }
 #endif
 
-#if IS_SQUARES_CONGRUENCE_CHECK
-    return checkCongruenceOfSquares<BigInteger>(toFactor, base, iterClock);
-#else
     return false;
-#endif
 }
 
 template <typename BigInteger>
