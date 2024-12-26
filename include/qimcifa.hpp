@@ -217,6 +217,7 @@ template <typename BigInteger>
 void printSuccess(const BigInteger& f1, const BigInteger& f2, const BigInteger& toFactor, const std::string& message,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
+    finish();
     std::cout << message << f1 << " * " << f2 << " = " << toFactor << std::endl;
     auto tClock =
         std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
