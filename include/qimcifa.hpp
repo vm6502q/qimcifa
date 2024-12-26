@@ -133,7 +133,7 @@ inline BigIntegerInput getNextBatch() {
 }
 
 // See https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int
-template <typename BigInteger> BigInteger ipow(BigInteger base, unsigned exp)
+template <typename BigInteger> inline BigInteger ipow(BigInteger base, unsigned exp)
 {
     BigInteger result = 1U;
     for (;;)
@@ -214,7 +214,7 @@ template <typename BigInteger> inline BigInteger gcd(BigInteger n1, BigInteger n
 }
 
 template <typename BigInteger>
-void printSuccess(const BigInteger& f1, const BigInteger& f2, const BigInteger& toFactor, const std::string& message,
+inline void printSuccess(const BigInteger& f1, const BigInteger& f2, const BigInteger& toFactor, const std::string& message,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     finish();
@@ -267,7 +267,7 @@ template <typename BigInteger> inline BigInteger backward(BigInteger n) {
     return std::distance(wheel11, std::lower_bound(wheel11, wheel11 + 480U, size_t(n % 2310U))) + 480U * (size_t)(n / 2310U) + 1U;
 }
 
-template <typename BigInteger> bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
+template <typename BigInteger> inline bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
     for (const BigInteger& prime : knownPrimes) {
         if ((p % prime) == 0) {
             return true;
@@ -277,7 +277,7 @@ template <typename BigInteger> bool isMultiple(const BigInteger& p, const std::v
 }
 
 template <typename BigInteger>
-boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes, BigInteger limit) {
+inline boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes, BigInteger limit) {
     BigInteger radius = 1U;
     for (const BigInteger& i : primes) {
         radius *= i;
@@ -304,7 +304,7 @@ boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes, BigInteg
 }
 
 template <typename BigInteger>
-std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigInteger>& primes, BigInteger limit) {
+inline std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigInteger>& primes, BigInteger limit) {
     std::vector<boost::dynamic_bitset<size_t>> output;
     std::vector<BigInteger> wheelPrimes;
     for (const BigInteger& p : primes) {
@@ -327,7 +327,7 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
                 break;
             }
         }
-        wheelIncrement++;
+        ++wheelIncrement;
     } while (is_wheel_multiple);
 
     return wheelIncrement;
@@ -391,7 +391,7 @@ inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteg
 }
 
 template <typename BigInteger>
-bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>>& inc_seqs, const BigInteger& offset,
+inline bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>>& inc_seqs, const BigInteger& offset,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
     for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchBound; batchNum = (BigInteger)getNextBatch()) {
