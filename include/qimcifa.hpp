@@ -116,6 +116,8 @@ inline BigIntegerInput getNextBatch() {
 
     if (batchNumber < batchBound) {
         ++batchNumber;
+    } else {
+        batchNumber = batchBound
     }
 
     return result;
