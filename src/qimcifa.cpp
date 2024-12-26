@@ -125,7 +125,7 @@ int mainBody(const BigInteger& toFactor)
     // Starting clock right after user input is finished
     auto iterClock = std::chrono::high_resolution_clock::now();
 
-    const BigInteger fullMaxBase = sqrt<BigInteger>(toFactor);
+    const BigInteger fullMaxBase = sqrt(toFactor);
     if (fullMaxBase * fullMaxBase == toFactor) {
         std::cout << "Number to factor is a perfect square: " << fullMaxBase << " * " << fullMaxBase << " = " << toFactor;
         return 0;

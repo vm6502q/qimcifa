@@ -353,7 +353,7 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
     }
     if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
         // Inform the other threads on this node that we've succeeded and are done:
-        printSuccess<BigInteger>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
+        printSuccess(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
         return true;
     }
 
@@ -364,16 +364,16 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
 inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteger& base,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
 #if IS_SQUARES_CONGRUENCE_CHECK
-    return checkCongruenceOfSquares<BigInteger>(toFactor, base, iterClock);
+    return checkCongruenceOfSquares(toFactor, base, iterClock);
 #elif IS_RSA_SEMIPRIME
     if ((toFactor % base) == 0U) {
-        printSuccess<BigInteger>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
+        printSuccess(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
         return true;
     }
 #else
     BigInteger n = gcd(base, toFactor);
     if (n != 1U) {
-        printSuccess<BigInteger>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
+        printSuccess(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
         return true;
     }
 #endif
@@ -389,7 +389,7 @@ inline bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dyna
         const BigInteger batchEnd = (batchNum + 1U) * BIGGEST_WHEEL + offset;
         for (BigInteger p = batchStart; p < batchEnd;) {
             p += GetWheelIncrement(inc_seqs);
-            if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(p), iterClock)) {
+            if (getSmoothNumbersIteration(toFactor, forward(p), iterClock)) {
                 return true;
             }
         }
