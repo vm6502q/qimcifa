@@ -258,12 +258,12 @@ constexpr unsigned short wheel11[480U] = {
     2281U, 2287U, 2291U, 2293U, 2297U, 2309U
 };
 
-template <typename BigInteger> inline BigInteger forward(BigInteger p) {
+template <typename BigInteger> inline BigInteger forward(const BigInteger& p) {
     // Make this NOT a multiple of 2, 3, 5, 7, or 11.
     return wheel11[(size_t)(p % 480U)] + (p / 480U) * 2310U;
 }
 
-template <typename BigInteger> inline BigInteger backward(BigInteger n) {
+template <typename BigInteger> inline BigInteger backward(const BigInteger& n) {
     return std::distance(wheel11, std::lower_bound(wheel11, wheel11 + 480U, size_t(n % 2310U))) + 480U * (size_t)(n / 2310U) + 1U;
 }
 
