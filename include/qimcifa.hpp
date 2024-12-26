@@ -89,18 +89,14 @@ constexpr int SMALLEST_WHEEL = 2310;
 constexpr int MIN_RTD_LEVEL = 5;
 
 #if USE_GMP
-typedef boost::multiprecision::mpz_int BigIntegerInput;
+typedef boost::multiprecision::mpz_int BigInteger;
 #elif USE_BOOST
-typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<8192, 8192,
-    boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-    BigIntegerInput;
-#else
-typedef BigInteger BigIntegerInput;
+typedef boost::multiprecision::cpp_int BigInteger;
 #endif
 
-BigIntegerInput batchNumber;
-BigIntegerInput batchBound;
-BigIntegerInput batchCount;
+BigInteger batchNumber;
+BigInteger batchBound;
+BigInteger batchCount;
 std::mutex batchMutex;
 
 inline void finish() {
@@ -108,11 +104,11 @@ inline void finish() {
     batchNumber = batchBound;
 }
 
-inline BigIntegerInput getNextBatch() {
+inline BigInteger getNextBatch() {
     std::lock_guard<std::mutex> lock(batchMutex);
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-    BigIntegerInput result = batchNumber;
+    BigInteger result = batchNumber;
 
     if (batchNumber < batchBound) {
         ++batchNumber;
@@ -120,7 +116,7 @@ inline BigIntegerInput getNextBatch() {
 
     return result;
 #else
-    BigIntegerInput result = batchCount - (batchNumber + 1U);
+    BigInteger result = batchCount - (batchNumber + 1U);
 
     if (batchNumber >= batchBound) {
         return batchBound;
@@ -133,7 +129,7 @@ inline BigIntegerInput getNextBatch() {
 }
 
 // See https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int
-template <typename BigInteger> inline BigInteger ipow(BigInteger base, unsigned exp)
+inline BigInteger ipow(BigInteger base, unsigned exp)
 {
     BigInteger result = 1U;
     for (;;)
@@ -151,7 +147,7 @@ template <typename BigInteger> inline BigInteger ipow(BigInteger base, unsigned 
     return result;
 }
 
-template <typename BigInteger> inline uint64_t log2(BigInteger n) {
+inline uint64_t log2(BigInteger n) {
 #if USE_GMP || USE_BOOST
     uint64_t pow = 0U;
     while (n >>= 1U) {
@@ -163,7 +159,7 @@ template <typename BigInteger> inline uint64_t log2(BigInteger n) {
 #endif
 }
 
-template <typename BigInteger> inline BigInteger sqrt(const BigInteger& toTest)
+inline BigInteger sqrt(const BigInteger& toTest)
 {
     // Otherwise, find b = sqrt(b^2).
     BigInteger start = 1U, end = toTest >> 1U, ans = 0U;
@@ -189,7 +185,7 @@ template <typename BigInteger> inline BigInteger sqrt(const BigInteger& toTest)
     return ans;
 }
 
-template <typename BigInteger> inline bool isPowerOfTwo(const BigInteger& x)
+inline bool isPowerOfTwo(const BigInteger& x)
 {
     // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
 #if USE_GMP || USE_BOOST
@@ -202,7 +198,7 @@ template <typename BigInteger> inline bool isPowerOfTwo(const BigInteger& x)
 #endif
 }
 
-template <typename BigInteger> inline BigInteger gcd(BigInteger n1, BigInteger n2)
+inline BigInteger gcd(BigInteger n1, BigInteger n2)
 {
     while (n2 != 0) {
         const BigInteger t = n1;
@@ -213,7 +209,6 @@ template <typename BigInteger> inline BigInteger gcd(BigInteger n1, BigInteger n
     return n1;
 }
 
-template <typename BigInteger>
 inline void printSuccess(const BigInteger& f1, const BigInteger& f2, const BigInteger& toFactor, const std::string& message,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
@@ -258,16 +253,16 @@ constexpr unsigned short wheel11[480U] = {
     2281U, 2287U, 2291U, 2293U, 2297U, 2309U
 };
 
-template <typename BigInteger> inline BigInteger forward(const BigInteger& p) {
+inline BigInteger forward(const BigInteger& p) {
     // Make this NOT a multiple of 2, 3, 5, 7, or 11.
     return wheel11[(size_t)(p % 480U)] + (p / 480U) * 2310U;
 }
 
-template <typename BigInteger> inline BigInteger backward(const BigInteger& n) {
+inline BigInteger backward(const BigInteger& n) {
     return std::distance(wheel11, std::lower_bound(wheel11, wheel11 + 480U, size_t(n % 2310U))) + 480U * (size_t)(n / 2310U) + 1U;
 }
 
-template <typename BigInteger> inline bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
+inline bool isMultiple(const BigInteger& p, const std::vector<BigInteger>& knownPrimes) {
     for (const BigInteger& prime : knownPrimes) {
         if ((p % prime) == 0) {
             return true;
@@ -276,7 +271,6 @@ template <typename BigInteger> inline bool isMultiple(const BigInteger& p, const
     return false;
 }
 
-template <typename BigInteger>
 inline boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes, BigInteger limit) {
     BigInteger radius = 1U;
     for (const BigInteger& i : primes) {
@@ -303,7 +297,6 @@ inline boost::dynamic_bitset<size_t> wheel_inc(std::vector<BigInteger> primes, B
     return output;
 }
 
-template <typename BigInteger>
 inline std::vector<boost::dynamic_bitset<size_t>> wheel_gen(const std::vector<BigInteger>& primes, BigInteger limit) {
     std::vector<boost::dynamic_bitset<size_t>> output;
     std::vector<BigInteger> wheelPrimes;
@@ -334,7 +327,6 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
 }
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-template <typename BigInteger>
 inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
@@ -369,7 +361,6 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
 }
 #endif
 
-template <typename BigInteger>
 inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteger& base,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
 #if IS_SQUARES_CONGRUENCE_CHECK
@@ -390,7 +381,6 @@ inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteg
     return false;
 }
 
-template <typename BigInteger>
 inline bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>>& inc_seqs, const BigInteger& offset,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {

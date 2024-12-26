@@ -58,7 +58,6 @@
 
 namespace Qimcifa {
 
-template <typename BigInteger>
 int mainBody(const BigInteger& toFactor)
 {
     // First 9 primes
@@ -186,13 +185,13 @@ using namespace Qimcifa;
 
 int main()
 {
-    BigIntegerInput toFactor;
+    BigInteger toFactor;
 
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
     uint32_t qubitCount = 0;
-    BigIntegerInput p = toFactor >> 1U;
+    BigInteger p = toFactor >> 1U;
     while (p != 0) {
         p >>= 1U;
         ++qubitCount;
@@ -204,63 +203,5 @@ int main()
     }
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
-#if !(USE_GMP || USE_BOOST)
-    typedef BigInteger BigInteger;
-    return mainBody<BigInteger>((BigInteger)toFactor);
-#else
-    if (qubitCount < 64) {
-        typedef uint64_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor);
-#if USE_GMP
-    } else {
-        return mainBody<BigIntegerInput>(toFactor);
-    }
-#elif USE_BOOST
-    } else if (qubitCount < 128) {
-        typedef boost::multiprecision::uint128_t BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 192) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 256) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 512) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 1024) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 2048) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 4096) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    } else if (qubitCount < 8192) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<8192, 8192,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor);
-    }
-
-    if (qubitCount >= 8192) {
-        throw std::runtime_error("Number to factor exceeds 8192 templated max bit width!");
-    }
-#endif
-#endif
-
-    return 0;
+    return mainBody(toFactor);
 }

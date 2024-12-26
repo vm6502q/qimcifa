@@ -79,10 +79,10 @@ double mainBody(const BigInteger& toFactor, const uint64_t& tdLevel, const std::
 
 using namespace Qimcifa;
 
-double mainCase(BigIntegerInput toFactor, int tdLevel)
+double mainCase(BigInteger toFactor, int tdLevel)
 {
     uint32_t qubitCount = 0;
-    BigIntegerInput p = toFactor;
+    BigInteger p = toFactor;
     while (p) {
         p >>= 1U;
         ++qubitCount;
@@ -94,71 +94,18 @@ double mainCase(BigIntegerInput toFactor, int tdLevel)
     // First 9 primes
     std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23 };
 
-    if (qubitCount < 64) {
-        typedef uint64_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
-#if USE_GMP
-    } else {
-        return mainBody<BigIntegerInput>(toFactor, tdLevel, trialDivisionPrimes);
-    }
-#else
-    } else if (qubitCount < 128) {
-        typedef boost::multiprecision::uint128_t BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 192) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<192, 192,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 256) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<256, 256,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 512) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<512, 512,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 1024) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1024, 1024,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody<BigInteger>((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 2048) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<2048, 2048,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 4096) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<4096, 4096,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
-    } else if (qubitCount < 8192) {
-        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<8192, 8192,
-            boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-            BigInteger;
-        return mainBody((BigInteger)toFactor, tdLevel, trialDivisionPrimes);
-    }
-
-    if (qubitCount >= 8192) {
-        throw std::runtime_error("Number to factor exceeds 8192 templated max bit width!");
-    }
-#endif
-
-    return -999.0;
+    return mainBody(toFactor, tdLevel, trialDivisionPrimes);
 }
 
 int main() {
-    BigIntegerInput toFactor;
+    BigInteger toFactor;
 
     std::cout << "The qimcifa_tuner number need not be the exact number that will be factored with qimcifa, but closer is better." << std::endl;
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
     uint32_t qubitCount = 0;
-    BigIntegerInput p = toFactor >> 1U;
+    BigInteger p = toFactor >> 1U;
     while (p) {
         p >>= 1U;
         ++qubitCount;
@@ -182,9 +129,9 @@ int main() {
     std::vector<unsigned> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
 
     
-    const BigIntegerInput batchCount = (sqrt(toFactor) + BIGGEST_WHEEL - 1) / BIGGEST_WHEEL;
-    BigIntegerInput range = backward(sqrt(toFactor));
-    BigIntegerInput batchSize = backward(BIGGEST_WHEEL);
+    const BigInteger batchCount = (sqrt(toFactor) + BIGGEST_WHEEL - 1) / BIGGEST_WHEEL;
+    BigInteger range = backward(sqrt(toFactor));
+    BigInteger batchSize = backward(BIGGEST_WHEEL);
     std::ofstream oSettingsFile ("qimcifa_calibration.ssv");
     oSettingsFile << "level, cardinality, batch time (s), cost (s)" << std::endl;
     for (size_t i = MIN_RTD_LEVEL; i < 10U; ++i) {
@@ -213,7 +160,7 @@ int main() {
     while (iSettingsFile.peek() != EOF)
     {
         size_t level;
-        BigIntegerInput cardinality;
+        BigInteger cardinality;
         double batchTime, cost;
         iSettingsFile >> level;
         iSettingsFile >> cardinality;
