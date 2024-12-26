@@ -116,15 +116,13 @@ inline BigIntegerInput getNextBatch() {
 
     if (batchNumber < batchBound) {
         ++batchNumber;
-    } else {
-        batchNumber = batchBound
     }
 
     return result;
 #else
     BigIntegerInput result = batchCount - (batchNumber + 1U);
 
-    if (batchNumber == batchBound) {
+    if (batchNumber >= batchBound) {
         return batchBound;
     }
 
